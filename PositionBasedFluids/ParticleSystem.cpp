@@ -20,7 +20,7 @@ static float width = 3;
 static float height = 3;
 static float depth = 3;
 
-ParticleSystem::ParticleSystem(float deltaT) : deltaT{ deltaT }, grid(width, height, depth) {
+ParticleSystem::ParticleSystem(float deltaT) : deltaT{ deltaT }, grid((int)width, (int)height, (int)depth) {
 	for (int i = 1; i < 3; i++) {
 		for (int j = 1; j < 2; j++) {
 			for (int k = 1; k < 2; k++) {
