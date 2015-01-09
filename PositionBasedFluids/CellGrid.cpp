@@ -4,24 +4,14 @@ using namespace std;
 
 CellGrid::CellGrid() {}
 
-CellGrid::CellGrid(int width, int height, int depth) {
-	this->w = width;
-	this->h = height;
-	this->d = depth;
-	cells.resize(w);
-	for (int i = 0; i < w; i++) {
-		cells[i].resize(h);
-		for (int j = 0; j < h; j++) {
-			cells[i][j].resize(d);
-		}
-	}
+CellGrid::CellGrid(int width, int height, int depth) : w{ width }, h{ height },	d{ depth },
+	cells(width, std::vector<std::vector<Cell>>(height, std::vector<Cell>(depth, Cell()))) {
 
-	for (int i = 0; i < w; i++) {
-		for (int j = 0; j < h; j++) {
-			for (int k = 0; k < d; k++) {
-				cells[i][j][k] = Cell();
-				cells[i][j][k].neighbors.reserve(27);
-				cells[i][j][k].particles.reserve(8);
+	for (auto &&row : cells) {
+		for (auto &&col : row) {
+			for (auto &&cell : col) {
+				cell.neighbors.reserve(27);
+				cell.particles.reserve(8);
 			}
 		}
 	}

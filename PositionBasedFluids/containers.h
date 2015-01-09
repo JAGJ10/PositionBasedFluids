@@ -10,7 +10,6 @@ struct Particle {
 		force = glm::vec3(0, 0, 0);
 		deltaP = glm::vec3(0, 0, 0);
 		lambda = 0;
-		pConstraint = 0;
 	}
 
 	glm::vec3 oldPos;
@@ -20,14 +19,14 @@ struct Particle {
 	glm::vec3 deltaP;
 	float mass;
 	float lambda;
-	float pConstraint;
 	std::vector<Particle*> neighbors;
 };
 
 struct Cell {
 	std::vector<Particle*> particles;
 	std::vector<Cell*> neighbors;
-
+	int b = 5;
+	int c = 10;
 	void addParticle(Particle &p) {
 		particles.push_back(&p);
 	}

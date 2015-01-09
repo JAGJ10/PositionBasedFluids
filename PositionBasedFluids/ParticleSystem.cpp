@@ -20,8 +20,7 @@ static float width = 3;
 static float height = 3;
 static float depth = 3;
 
-ParticleSystem::ParticleSystem(float deltaT) {
-	this->deltaT = deltaT;
+ParticleSystem::ParticleSystem(float deltaT) : deltaT{ deltaT }, grid(width, height, depth) {
 	for (int i = 1; i < 3; i++) {
 		for (int j = 1; j < 2; j++) {
 			for (int k = 1; k < 2; k++) {
@@ -29,8 +28,6 @@ ParticleSystem::ParticleSystem(float deltaT) {
 			}
 		}
 	}
-
-	grid = CellGrid((int)width, (int)height, (int)depth);
 }
 
 ParticleSystem::~ParticleSystem() {}
@@ -117,8 +114,6 @@ void ParticleSystem::update() {
 		//update position xi = x*i
 		p.oldPos = p.newPos;
 	}
-
-	cout << particles.at(0).oldPos.x + ', ' + particles.at(0).oldPos.y + ', ' + particles.at(0).oldPos.z << endl;
 }
 
 void ParticleSystem::applyGravity(Particle &p) {

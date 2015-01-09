@@ -10,6 +10,9 @@ public:
 	CellGrid(int width, int height, int depth);
 	~CellGrid();
 
+	CellGrid(const CellGrid&) = delete;
+	CellGrid& operator=(const CellGrid&) = delete;
+
 	void updateCells(std::vector<Particle> &particles);
 	void clearCells();
 
