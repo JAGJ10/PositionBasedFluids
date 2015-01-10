@@ -13,33 +13,98 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\physics">
+      <UniqueIdentifier>{a5ad0b92-87b0-4995-bf77-a727e528b232}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\physics">
+      <UniqueIdentifier>{381dbecf-1c77-49d2-b571-896309c6caaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\rendering">
+      <UniqueIdentifier>{9ae4adbf-a7d7-4759-9087-3619d143f24e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\rendering">
+      <UniqueIdentifier>{8da3c21d-52fe-45ad-921d-d529fd534080}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{17ce82f0-0425-44d4-9bed-9cc4186650e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\composite">
+      <UniqueIdentifier>{27806f55-d407-45df-9af7-680f932ada82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\blur">
+      <UniqueIdentifier>{43970175-7f7e-472d-bd67-46c95032e9e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\thickness">
+      <UniqueIdentifier>{1731ec1a-6c71-4a69-9e7f-8dc3b00b0097}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\depth">
+      <UniqueIdentifier>{a8127f3f-c976-4de8-8914-55d96c368f47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\normal">
+      <UniqueIdentifier>{b88ba2ac-c5c2-41fc-8c2e-81e760b3fb69}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CellGrid.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp">
+      <Filter>Source Files\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files\rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ParticleSystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CellGrid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="containers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Particle.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="CellGrid.h">
+      <Filter>Header Files\physics</Filter>
     </ClInclude>
+    <ClInclude Include="Particle.h">
+      <Filter>Header Files\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h">
+      <Filter>Header Files\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Header Files\rendering</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.frag">
+      <Filter>shaders\composite</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.vert">
+      <Filter>shaders\composite</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.frag">
+      <Filter>shaders\blur</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.vert">
+      <Filter>shaders\blur</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\thickness\particleThickness.frag">
+      <Filter>shaders\thickness</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.frag">
+      <Filter>shaders\depth</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.vert">
+      <Filter>shaders\depth</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.frag">
+      <Filter>shaders\normal</Filter>
+    </None>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.vert">
+      <Filter>shaders\normal</Filter>
+    </None>
   </ItemGroup>
 </Project>

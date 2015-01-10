@@ -7,14 +7,13 @@
 
 class ParticleSystem {
 public:
-	ParticleSystem(float deltaT);
+	ParticleSystem();
 	~ParticleSystem();
 
 	std::vector<glm::vec3> getPositions();
 	void update();
 
 private:
-	float deltaT;
 	std::vector<Particle> particles;
 	CellGrid grid;
 

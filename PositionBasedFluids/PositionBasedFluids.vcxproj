@@ -154,6 +154,7 @@
     <ClCompile Include="CellGrid.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CellGrid.h" />
@@ -161,6 +162,18 @@
     <ClInclude Include="containers.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="Renderer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.frag" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.vert" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.frag" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.vert" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.frag" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.vert" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.frag" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.vert" />
+    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\thickness\particleThickness.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

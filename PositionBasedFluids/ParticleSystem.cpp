@@ -2,7 +2,8 @@
 
 using namespace std;
 
-static const float PI = 3.14159265359f;
+static const float deltaT = 0.05f;
+static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8, 0);
 static const int PRESSURE_ITERATIONS = 6;
 static const float H = 1.25;
@@ -20,7 +21,7 @@ static float width = 3;
 static float height = 3;
 static float depth = 3;
 
-ParticleSystem::ParticleSystem(float deltaT) : deltaT{ deltaT }, grid((int)width, (int)height, (int)depth) {
+ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (int i = 1; i < 3; i++) {
 		for (int j = 1; j < 2; j++) {
 			for (int k = 1; k < 2; k++) {

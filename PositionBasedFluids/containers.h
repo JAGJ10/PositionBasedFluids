@@ -1,7 +1,8 @@
 #ifndef CONTAINERS_H
 #define CONTAINERS_H
 
-struct Particle {
+class Particle {
+public:
 	Particle(glm::vec3 pos, float mass) {
 		this->oldPos = pos;
 		this->mass = mass;
@@ -22,11 +23,11 @@ struct Particle {
 	std::vector<Particle*> neighbors;
 };
 
-struct Cell {
+class Cell {
+public:
 	std::vector<Particle*> particles;
 	std::vector<Cell*> neighbors;
-	int b = 5;
-	int c = 10;
+
 	void addParticle(Particle &p) {
 		particles.push_back(&p);
 	}
@@ -35,5 +36,7 @@ struct Cell {
 		neighbors.push_back(&c);
 	}
 };
+
+
 
 #endif
