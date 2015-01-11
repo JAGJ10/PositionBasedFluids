@@ -2,7 +2,7 @@
 #define PARTICLE_SYSTEM_H
 
 #include "common.h"
-#include "containers.h"
+#include "Cell.hpp"
 #include "CellGrid.h"
 
 class ParticleSystem {

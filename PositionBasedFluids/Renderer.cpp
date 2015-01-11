@@ -1,8 +1,9 @@
-#define GLEW_STATIC
+#define GLEW_DYNAMIC
 #include <GL/glew.h>
-#include <SFML/Window.hpp>
-#include <SFML/OpenGL.hpp>
+/*#include <SFML/Window.hpp>
+#include <SFML/OpenGL.hpp>*/
 #include "Renderer.h"
+#include <GLFW/glfw3.h>
 
 using namespace std;
 
@@ -21,7 +22,7 @@ Renderer::Renderer() {}
 Renderer::~Renderer() {}
 
 void Renderer::run() {
-	sf::Window window(sf::VideoMode(1024, 512), "Position Based Fluids");
+	/*sf::Window window(sf::VideoMode(1024, 512), "Position Based Fluids");
 	glewExperimental = GL_TRUE;
 	glewInit();
 
@@ -38,7 +39,35 @@ void Renderer::run() {
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		window.display();
+	}*/
+
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+	glfwMakeContextCurrent(window);
+
+	glewExperimental = GL_TRUE;
+	glewInit();
+
+	while (!glfwWindowShouldClose(window))
+	{
+		// Check and call events
+		glfwPollEvents();
+
+		// Render
+		// Clear the colorbuffer
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		// Swap the buffers
+		glfwSwapBuffers(window);
 	}
+
+	glfwTerminate();
 }
 
 void Renderer::initShaders() {

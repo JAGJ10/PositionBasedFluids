@@ -2,7 +2,7 @@
 #define RENDERER_H
 
 #include "common.h"
-#include "containers.h"
+#include "Cell.hpp"
 #include "ParticleSystem.h"
 
 class Renderer {

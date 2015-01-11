@@ -2,7 +2,7 @@
 #define CELL_GRID_H
 
 #include "common.h"
-#include "containers.h"
+#include "Cell.hpp"
 
 class CellGrid {
 public:
