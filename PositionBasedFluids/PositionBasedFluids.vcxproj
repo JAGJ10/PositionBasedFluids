@@ -166,17 +166,17 @@
     <ClInclude Include="Shader.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.frag" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.vert" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.frag" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.vert" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.frag" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.vert" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.frag" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.vert" />
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\thickness\particleThickness.frag" />
+    <None Include="blur.frag" />
+    <None Include="blur.vert" />
+    <None Include="composite.frag" />
+    <None Include="composite.vert" />
+    <None Include="depth.frag" />
+    <None Include="depth.vert" />
+    <None Include="normal.frag" />
+    <None Include="normal.vert" />
     <None Include="simple.frag" />
     <None Include="simple.vert" />
+    <None Include="thickness.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

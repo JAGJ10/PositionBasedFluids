@@ -3,6 +3,15 @@
 
 class Particle {
 public:
+	glm::vec3 oldPos;
+	glm::vec3 newPos;
+	glm::vec3 velocity;
+	glm::vec3 force;
+	glm::vec3 deltaP;
+	float mass;
+	float lambda;
+	std::vector<Particle*> neighbors;
+
 	Particle(glm::vec3 pos, float mass) {
 		this->oldPos = pos;
 		this->mass = mass;
@@ -12,15 +21,6 @@ public:
 		deltaP = glm::vec3(0, 0, 0);
 		lambda = 0;
 	}
-
-	glm::vec3 oldPos;
-	glm::vec3 newPos;
-	glm::vec3 velocity;
-	glm::vec3 force;
-	glm::vec3 deltaP;
-	float mass;
-	float lambda;
-	std::vector<Particle*> neighbors;
 };
 
 #endif

@@ -12,6 +12,11 @@ public:
 	void run();
 
 	ParticleSystem system;
+	Shader depth;
+	Shader normals;
+	Shader blur;
+	Shader thickness;
+	Shader composite;
 
 private:
 	void initShaders();

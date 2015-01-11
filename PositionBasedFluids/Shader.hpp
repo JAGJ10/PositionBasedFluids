@@ -7,7 +7,8 @@
 
 class Shader {
 public:
-	GLuint program;
+	GLuint program, tex, fbo, vao, vbo, ebo;
+
 	Shader(const GLchar* vertexPath, const GLchar* fragmentPath) {
 		std::string vertexCode;
 		std::string fragmentCode;
@@ -78,5 +79,51 @@ public:
 
 	}
 
-	void Use() { glUseProgram(this->program); }
+	void initFBO() {
+		glGenBuffers(1, &fbo);
+		glBindBuffer(GL_FRAMEBUFFER, fbo);
+	}
+
+	void initTexture(int width, int height, GLenum format, GLenum internalFormat) {
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, NULL);
+	}
+
+	void shaderVAOPoints(std::vector<glm::vec3> points) {
+
+	}
+
+	void shaderVAOQuad() {
+		GLfloat vertices[] = {
+			1.0f, 1.0f,	   // Top Right
+			1.0f, -1.0f,   // Bottom Right
+			-1.0f, -1.0f,  // Bottom Left
+			-1.0f, 1.0f	   // Top Left 
+		};
+		GLuint indices[] = {  // Note that we start from 0!
+			0, 1, 3,	// First Triangle
+			1, 2, 3	// Second Triangle
+		};
+
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+		
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindVertexArray(0);
+	}
 };

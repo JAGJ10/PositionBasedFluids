@@ -28,20 +28,20 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{17ce82f0-0425-44d4-9bed-9cc4186650e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\composite">
-      <UniqueIdentifier>{27806f55-d407-45df-9af7-680f932ada82}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\blur">
-      <UniqueIdentifier>{43970175-7f7e-472d-bd67-46c95032e9e8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\thickness">
-      <UniqueIdentifier>{1731ec1a-6c71-4a69-9e7f-8dc3b00b0097}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\depth">
-      <UniqueIdentifier>{a8127f3f-c976-4de8-8914-55d96c368f47}</UniqueIdentifier>
+      <UniqueIdentifier>{1d2cf512-0130-4849-9b03-84553bfc586e}</UniqueIdentifier>
     </Filter>
     <Filter Include="shaders\normal">
-      <UniqueIdentifier>{b88ba2ac-c5c2-41fc-8c2e-81e760b3fb69}</UniqueIdentifier>
+      <UniqueIdentifier>{91ba2cdc-36c3-4a09-bdfa-79ba028cf4e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\blur">
+      <UniqueIdentifier>{ff5c310d-81c3-4859-a835-e32b6716c456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\thickness">
+      <UniqueIdentifier>{45060a6c-f3fd-43e5-bf02-1611640ccb4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\composite">
+      <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -82,38 +82,38 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.frag">
-      <Filter>shaders\composite</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.vert">
-      <Filter>shaders\composite</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.frag">
-      <Filter>shaders\blur</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.vert">
-      <Filter>shaders\blur</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\thickness\particleThickness.frag">
-      <Filter>shaders\thickness</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.frag">
-      <Filter>shaders\depth</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\depth\particleDepth.vert">
-      <Filter>shaders\depth</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.frag">
-      <Filter>shaders\normal</Filter>
-    </None>
-    <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.vert">
-      <Filter>shaders\normal</Filter>
-    </None>
     <None Include="simple.vert">
       <Filter>shaders</Filter>
     </None>
     <None Include="simple.frag">
       <Filter>shaders</Filter>
+    </None>
+    <None Include="depth.vert">
+      <Filter>shaders\depth</Filter>
+    </None>
+    <None Include="depth.frag">
+      <Filter>shaders\depth</Filter>
+    </None>
+    <None Include="normal.vert">
+      <Filter>shaders\normal</Filter>
+    </None>
+    <None Include="normal.frag">
+      <Filter>shaders\normal</Filter>
+    </None>
+    <None Include="blur.vert">
+      <Filter>shaders\blur</Filter>
+    </None>
+    <None Include="blur.frag">
+      <Filter>shaders\blur</Filter>
+    </None>
+    <None Include="thickness.frag">
+      <Filter>shaders\thickness</Filter>
+    </None>
+    <None Include="composite.vert">
+      <Filter>shaders\composite</Filter>
+    </None>
+    <None Include="composite.frag">
+      <Filter>shaders\composite</Filter>
     </None>
   </ItemGroup>
 </Project>

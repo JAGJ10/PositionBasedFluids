@@ -16,14 +16,20 @@ static const glm::vec3 color;
 static const int useThickness;
 static const int filterRadius;
 
-Renderer::Renderer() {}
+Renderer::Renderer() :
+	depth{ Shader("depth.vert", "depth.frag") },
+	normals{ Shader("normal.vert", "normal.frag") },
+	blur{ Shader("blur.vert", "blur.frag") },
+	thickness{ Shader("depth.vert", "thickness.frag") },
+	composite{ Shader("composite.vert", "composite.frag") }
+	{}
 
 Renderer::~Renderer() {}
 
 void Renderer::run() {
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
@@ -36,31 +42,7 @@ void Renderer::run() {
 	// Define the viewport dimensions
 	glViewport(0, 0, 512, 512);
 
-	Shader simple("E:/Main Data/My Documents/GitHub/PositionBasedFluids/PositionBasedFluids/simple.vert", "E:/Main Data/My Documents/GitHub/PositionBasedFluids/PositionBasedFluids/simple.frag");
-	GLfloat vertices[] = {
-		// Positions	// Colors
-		0.5f, -0.5f, 1.0f, 0.0f, 0.0f,	// Bottom Right
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f,	// Bottom Left
-		0.0f, 0.5f, 0.0f, 0.0f, 1.0f	// Top 
-	};
-
-	GLuint VBO, VAO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	// Bind our Vertex Array Object first, then bind and set our buffers and pointers.
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// Position attribute
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	// Color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-
-	glBindVertexArray(0);
+	Shader simple("simple.vert", "simple.frag");
 
 	while (!glfwWindowShouldClose(window)) {
 		// Check and call events
@@ -70,9 +52,10 @@ void Renderer::run() {
 		// Clear the colorbuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		simple.Use();
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glUseProgram(simple.program);
+		simple.shaderVAOQuad();
+		glBindVertexArray(simple.vao);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		// Swap the buffers
