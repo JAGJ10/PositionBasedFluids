@@ -1,8 +1,7 @@
 #define GLEW_DYNAMIC
 #include <GL/glew.h>
-/*#include <SFML/Window.hpp>
-#include <SFML/OpenGL.hpp>*/
 #include "Renderer.h"
+#include "Shader.hpp"
 #include <GLFW/glfw3.h>
 
 using namespace std;
@@ -22,51 +21,64 @@ Renderer::Renderer() {}
 Renderer::~Renderer() {}
 
 void Renderer::run() {
-	/*sf::Window window(sf::VideoMode(1024, 512), "Position Based Fluids");
-	glewExperimental = GL_TRUE;
-	glewInit();
-
-	bool running = true;
-	while (running) {
-		glClearColor(1, 1, 1, 1);
-		sf::Event event;
-		while (window.pollEvent(event)) {
-			if (event.type == sf::Event::Closed)
-				running = false;
-			else if (event.type == sf::Event::Resized)
-				glViewport(0, 0, event.size.width, event.size.height);
-		}
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		window.display();
-	}*/
-
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(512, 512, "Position Based Fluids", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	while (!glfwWindowShouldClose(window))
-	{
+	// Define the viewport dimensions
+	glViewport(0, 0, 512, 512);
+
+	Shader simple("E:/Main Data/My Documents/GitHub/PositionBasedFluids/PositionBasedFluids/simple.vert", "E:/Main Data/My Documents/GitHub/PositionBasedFluids/PositionBasedFluids/simple.frag");
+	GLfloat vertices[] = {
+		// Positions	// Colors
+		0.5f, -0.5f, 1.0f, 0.0f, 0.0f,	// Bottom Right
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f,	// Bottom Left
+		0.0f, 0.5f, 0.0f, 0.0f, 1.0f	// Top 
+	};
+
+	GLuint VBO, VAO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	// Bind our Vertex Array Object first, then bind and set our buffers and pointers.
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Position attribute
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	// Color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+
+	while (!glfwWindowShouldClose(window)) {
 		// Check and call events
 		glfwPollEvents();
 
 		// Render
 		// Clear the colorbuffer
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+		simple.Use();
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
 	}
-
+	
 	glfwTerminate();
 }
 

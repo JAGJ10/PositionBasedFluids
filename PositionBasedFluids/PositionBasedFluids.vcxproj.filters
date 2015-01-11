@@ -77,6 +77,9 @@
     <ClInclude Include="Cell.hpp">
       <Filter>Header Files\physics</Filter>
     </ClInclude>
+    <ClInclude Include="Shader.hpp">
+      <Filter>Header Files\rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\composite\composite.frag">
@@ -105,6 +108,12 @@
     </None>
     <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.vert">
       <Filter>shaders\normal</Filter>
+    </None>
+    <None Include="simple.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="simple.frag">
+      <Filter>shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -163,6 +163,7 @@
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Shader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\blur\depthBlur.frag" />
@@ -174,6 +175,8 @@
     <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.frag" />
     <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\normal\normal.vert" />
     <None Include="..\..\Position-Based-Fluid\src\rendering\Shaders\thickness\particleThickness.frag" />
+    <None Include="simple.frag" />
+    <None Include="simple.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
