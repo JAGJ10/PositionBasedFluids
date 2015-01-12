@@ -1,3 +1,6 @@
+#ifndef SHADER_H
+#define SHADER_H
+
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -72,19 +75,19 @@ public:
 			glGetProgramInfoLog(this->program, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 		}
-
+		
 		// Delete the shaders as they're linked into our program now and no longer necessery
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
 
 	}
 
-	void initFBO() {
-		glGenBuffers(1, &fbo);
-		glBindBuffer(GL_FRAMEBUFFER, fbo);
+	void initFBO(GLuint &fbo) {
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	}
 
-	void initTexture(int width, int height, GLenum format, GLenum internalFormat) {
+	void initTexture(int width, int height, GLenum format, GLenum internalFormat, GLuint &tex) {
 		glGenTextures(1, &tex);
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -94,8 +97,18 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, NULL);
 	}
 
-	void shaderVAOPoints(std::vector<glm::vec3> points) {
+	void shaderVAOPoints(std::vector<glm::vec3> &points) {
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
 
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), &points[0], GL_STATIC_DRAW);
+		
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void shaderVAOQuad() {
@@ -127,3 +140,12 @@ public:
 		glBindVertexArray(0);
 	}
 };
+
+class BlurShader : public Shader {
+public:
+	GLuint fboV, fboH, texV, texH;
+
+	BlurShader(const GLchar* vertexPath, const GLchar* fragmentPath) : Shader(vertexPath, fragmentPath) {}
+};
+
+#endif

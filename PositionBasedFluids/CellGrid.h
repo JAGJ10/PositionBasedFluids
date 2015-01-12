@@ -6,7 +6,6 @@
 
 class CellGrid {
 public:
-	CellGrid();
 	CellGrid(int width, int height, int depth);
 	~CellGrid();
 

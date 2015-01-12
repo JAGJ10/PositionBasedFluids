@@ -2,8 +2,6 @@
 
 using namespace std;
 
-CellGrid::CellGrid() {}
-
 CellGrid::CellGrid(int width, int height, int depth) : w{ width }, h{ height },	d{ depth },
 	cells(width, std::vector<std::vector<Cell>>(height, std::vector<Cell>(depth, Cell()))) {
 

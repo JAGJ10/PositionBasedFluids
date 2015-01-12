@@ -15,6 +15,7 @@ public:
 
 private:
 	std::vector<Particle> particles;
+	std::vector<glm::vec3> positions;
 	CellGrid grid;
 
 	void applyGravity(Particle &p);

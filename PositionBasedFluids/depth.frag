@@ -6,7 +6,6 @@ in float radius;
 uniform mat4 mView;
 uniform mat4 projection;
 uniform vec2 screenSize;
-uniform vec3 lightPos;
 
 void main() {
 	//calculate normal
@@ -24,5 +23,6 @@ void main() {
 	vec4 pixelPos = vec4(pos + normal * 1.25f, 1.0);
 	vec4 clipSpacePos = projection * pixelPos;
 	
-	gl_FragDepth = clipSpacePos.z / clipSpacePos.w * 0.5f + 0.5f;
+	//gl_FragDepth = clipSpacePos.z / clipSpacePos.w * 0.5f + 0.5f;
+	gl_FragDepth = 0;
 }

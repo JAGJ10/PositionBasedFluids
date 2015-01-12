@@ -17,27 +17,28 @@ static const float C = 0.01f;
 static const float K = 0.001f;
 static const float deltaQMag = .3f * H;
 static const float wQH = KPOLY * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag);
-static float width = 3;
-static float height = 3;
-static float depth = 3;
+static float width = 31;
+static float height = 500;
+static float depth = 15;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (int i = 1; i < 3; i++) {
-		for (int j = 1; j < 2; j++) {
-			for (int k = 1; k < 2; k++) {
+	for (int i = 1; i < 30; i++) {
+		for (int j = 1; j < 30; j++) {
+			for (int k = 1; k < 8; k++) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
 	}
+
+	positions.reserve(particles.capacity());
 }
 
 ParticleSystem::~ParticleSystem() {}
 
 vector<glm::vec3> ParticleSystem::getPositions() {
-	vector<glm::vec3> positions;
-	for (auto &p : particles) {
-		glm::vec3 pos = p.oldPos;
-		positions.push_back(glm::vec3(pos.x, pos.y, pos.z));
+	positions.clear();
+	for (int i = 0; i < particles.size(); i++) {
+		positions.push_back(particles[i].oldPos);
 	}
 
 	return positions;
