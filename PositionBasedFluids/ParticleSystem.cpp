@@ -23,7 +23,7 @@ static float depth = 15;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (int i = 1; i < 30; i++) {
-		for (int j = 1; j < 30; j++) {
+		for (int j = 1; j < 100; j++) {
 			for (int k = 1; k < 8; k++) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
@@ -61,6 +61,7 @@ void ParticleSystem::update() {
 	//get neighbors
 	grid.updateCells(particles);
 	for (auto &p : particles) {
+		p.neighbors.clear();
 		glm::ivec3 pos = p.newPos;
 		vector<Cell*> neighborCells = grid.cells[pos.x][pos.y][pos.z].neighbors;
 		for (auto &c : neighborCells) {
