@@ -9,7 +9,6 @@ uniform sampler2D normalMap;
 uniform vec2 screenSize;
 uniform mat4 projection;
 uniform mat4 mView;
-uniform vec3 lightPos;
 uniform float zNear;
 uniform float zFar;
 

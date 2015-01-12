@@ -9,6 +9,8 @@ static const float zFar = 200;
 static const float zNear = 1;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
+static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
+static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec3 color;
 static const int filterRadius = 10;
 
@@ -57,18 +59,69 @@ void Renderer::run() {
 	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
 	
 
+	//--------------------Particle Blur-------------------------
+	glUseProgram(blur.program);
+
+	//Vertical blur
+	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboV);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	blur.shaderVAOQuad();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depth.tex);
+	GLint depthMap = glGetUniformLocation(blur.program, "depthMap");
+	glUniform1i(depthMap, 0);
+
+	setMatrix(blur, projection, "projection");
+	setVec2(blur, screenSize, "screenSize");
+	setVec2(blur, blurDirY, "blurDir");
+	setFloat(blur, filterRadius, "filterRadius");
+
+	glEnable(GL_DEPTH_TEST);
+
+	glBindVertexArray(blur.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	//Horizontal blur
+	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboH);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, blur.texV);
+	depthMap = glGetUniformLocation(blur.program, "depthMap");
+	glUniform1i(depthMap, 0);
+
+	setVec2(blur, screenSize, "screenSize");
+	setMatrix(blur, projection, "projection");
+	setVec2(blur, blurDirX, "blurDir");
+	setFloat(blur, filterRadius, "filterRadius");
+
+	glEnable(GL_DEPTH_TEST);
+
+	glBindVertexArray(blur.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 	//--------------------Particle Normals-------------------------
 	
 	glUseProgram(normals.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, normals.fbo);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	normals.shaderVAOQuad();
 		
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depth.tex);
-	GLint depthMap = glGetUniformLocation(normals.program, "depthMap");
+	glBindTexture(GL_TEXTURE_2D, blur.texH);
+	depthMap = glGetUniformLocation(normals.program, "depthMap");
 	glUniform1i(depthMap, 0);
 		
 	setMatrix(normals, mView, "mView");
@@ -83,12 +136,71 @@ void Renderer::run() {
 		
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	
+	//--------------------Particle Thickness-------------------------
+	glUseProgram(thickness.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, thickness.fbo);
 
-	//glUseProgram(simple.program);
-	//simple.shaderVAOQuad();
-	//glBindVertexArray(simple.vao);
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	//glBindVertexArray(0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	thickness.shaderVAOPoints(positions);
+
+	setMatrix(thickness, mView, "mView");
+	setMatrix(thickness, projection, "projection");
+	setVec2(thickness, screenSize, "screenSize");
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glBlendEquation(GL_FUNC_ADD);
+	glDisable(GL_DEPTH_TEST);
+
+	glBindVertexArray(thickness.vao);
+
+	glDrawArrays(GL_POINTS, 0, positions.size());
+
+	glDisable(GL_BLEND);
+
+	//--------------------Particle Composite-------------------------
+	glUseProgram(composite.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	composite.shaderVAOQuad();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, blur.texH);
+	depthMap = glGetUniformLocation(composite.program, "depthMap");
+	glUniform1i(depthMap, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, thickness.tex);
+	GLint thicknessMap = glGetUniformLocation(composite.program, "thicknessMap");
+	glUniform1i(thicknessMap, 1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normals.tex);
+	GLint normalMap = glGetUniformLocation(composite.program, "normalMap");
+	glUniform1i(normalMap, 2);
+
+	setMatrix(composite, projection, "projection");
+	setMatrix(composite, mView, "mView");
+	setVec2(composite, screenSize, "screenSize");
+	setVec3(composite, color, "color");
+	setFloat(composite, zFar, "zFar");
+	setFloat(composite, zNear, "zNear");
+
+	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	//glBlendEquation(GL_FUNC_ADD);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glBindVertexArray(composite.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
 	system.update();
 }
 
