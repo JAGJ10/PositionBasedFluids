@@ -12,29 +12,32 @@ static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec3 color;
-static const int filterRadius = 10;
+static const float filterRadius = 10;
 
 Renderer::Renderer() :
-	depth( Shader("depth.vert", "depth.frag") ),
-	normals{ Shader("normal.vert", "normal.frag") },
-	blur{ BlurShader("blur.vert", "blur.frag") },
-	thickness{ Shader("depth.vert", "thickness.frag") },
-	composite{ Shader("composite.vert", "composite.frag") },
-	system{ ParticleSystem() }
+	depth(Shader("depth.vert", "depth.frag")),
+	normals(Shader("normal.vert", "normal.frag")),
+	blur(BlurShader("blur.vert", "blur.frag")),
+	thickness(Shader("depth.vert", "thickness.frag")),
+	composite(Shader("composite.vert", "composite.frag")),
+	system(ParticleSystem())
 {
 	initFramebuffers();
 }
 
 Renderer::~Renderer() {}
 
-void Renderer::run() {
+void Renderer::run(Camera &cam) {
 	//Get particle positions
 	positions = system.getPositions();
-	glm::vec3 eye = glm::vec3(0, 0, -30.0f);
-	glm::vec3 target = glm::vec3(10, 0, 0);
-	glm::vec3 up = glm::vec3(0, -1, 0);
-	glm::mat4 mView = glm::lookAt(eye, target, up);
-	glm::mat4 projection = glm::perspective(30.0f, aspectRatio, zNear, zFar);
+
+	//Set camera
+	glm::mat4 mView = cam.getMView();
+	glm::mat4 projection = glm::perspective(cam.zoom, aspectRatio, zNear, zFar);
+
+	//Clear buffer
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//----------------------Particle Depth----------------------
 	
@@ -155,7 +158,7 @@ void Renderer::run() {
 
 	glBindVertexArray(thickness.vao);
 
-	glDrawArrays(GL_POINTS, 0, positions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
 
 	glDisable(GL_BLEND);
 

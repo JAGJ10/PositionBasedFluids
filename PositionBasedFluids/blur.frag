@@ -6,7 +6,6 @@ uniform sampler2D depthMap;
 uniform vec2 screenSize;
 uniform mat4 projection;
 uniform vec2 blurDir;
-uniform int useThickness;
 uniform float filterRadius;
 
 const float blurScale = .1;
@@ -18,18 +17,11 @@ void main() {
 		discard;
 	}
 	
-	if (useThickness == 1) {
-		depth /= 20;
-	}
-	
 	float sum = 0.0f;
 	float wsum = 0.0f;
 	
 	for (float x = -filterRadius; x <= filterRadius; x += 1.0f) {
 		float s = texture(depthMap, coord + x*blurDir).x;
-		if (useThickness == 1) {
-			s /= 20;
-		}
 
 		float r = x * blurScale;
 		float w = exp(-r*r);

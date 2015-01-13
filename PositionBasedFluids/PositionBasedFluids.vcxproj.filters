@@ -80,14 +80,11 @@
     <ClInclude Include="Shader.hpp">
       <Filter>Header Files\rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.hpp">
+      <Filter>Source Files\rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="simple.vert">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="simple.frag">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="depth.vert">
       <Filter>shaders\depth</Filter>
     </None>

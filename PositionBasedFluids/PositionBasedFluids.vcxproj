@@ -157,6 +157,7 @@
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.hpp" />
     <ClInclude Include="CellGrid.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="Cell.hpp" />
@@ -174,8 +175,6 @@
     <None Include="depth.vert" />
     <None Include="normal.frag" />
     <None Include="normal.vert" />
-    <None Include="simple.frag" />
-    <None Include="simple.vert" />
     <None Include="thickness.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

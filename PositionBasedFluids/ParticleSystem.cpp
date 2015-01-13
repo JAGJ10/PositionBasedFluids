@@ -24,7 +24,7 @@ static float depth = 15;
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (int i = 1; i < 30; i++) {
 		for (int j = 1; j < 30; j++) {
-			for (int k = 1; k < 8; k++) {
+			for (int k = 1; k < 9; k++) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
@@ -35,7 +35,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 
 ParticleSystem::~ParticleSystem() {}
 
-vector<glm::vec3> ParticleSystem::getPositions() {
+vector<glm::vec3>& ParticleSystem::getPositions() {
 	positions.clear();
 	for (int i = 0; i < particles.size(); i++) {
 		positions.push_back(particles[i].oldPos);

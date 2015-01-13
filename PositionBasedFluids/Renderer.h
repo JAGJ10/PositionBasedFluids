@@ -5,15 +5,18 @@
 #include "Cell.hpp"
 #include "ParticleSystem.h"
 #include "Shader.hpp"
+#include <GLFW/glfw3.h>
+#include "Camera.hpp"
 
 class Renderer {
 public:
 	Renderer();
 	~Renderer();
-	void run();
+	void run(Camera &cam);
 
 	ParticleSystem system;
 	std::vector<glm::vec3> positions;
+
 	Shader depth;
 	Shader normals;
 	BlurShader blur;
