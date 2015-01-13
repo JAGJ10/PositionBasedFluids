@@ -23,7 +23,7 @@ static float depth = 15;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (int i = 1; i < 30; i++) {
-		for (int j = 1; j < 30; j++) {
+		for (int j = 1; j < 50; j++) {
 			for (int k = 1; k < 9; k++) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}

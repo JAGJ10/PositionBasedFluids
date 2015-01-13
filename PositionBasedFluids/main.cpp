@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 
-static const int width = 512;
+static const int width = 1024;
 static const int height = 512;
 GLfloat lastX = (width / 2), lastY = (height / 2);
 double deltaTime = 0.0f;
@@ -33,7 +33,7 @@ int main() {
 	//Set callbacks for keyboard and mouse
 	//glfwSetKeyCallback(window, keyHandler);
 	//glfwSetCursorPosCallback(window, mouseMovementHandler);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -87,7 +87,11 @@ void handleInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 		cam.wasdMovement(UP, deltaTime);
 
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+		cam.wasdMovement(DOWN, deltaTime);
+
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
-	cam.mouseMovement((width/2) -  xpos, (height/2) - ypos, deltaTime);
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		cam.mouseMovement((xpos - lastX), (lastY - ypos), deltaTime);
 }

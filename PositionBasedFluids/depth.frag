@@ -23,6 +23,5 @@ void main() {
 	vec4 pixelPos = vec4(pos + normal * 1.25f, 1.0);
 	vec4 clipSpacePos = projection * pixelPos;
 	
-	//gl_FragDepth = clipSpacePos.z / clipSpacePos.w * 0.5f + 0.5f;
-	gl_FragDepth = 0;
+	gl_FragDepth = clipSpacePos.z / clipSpacePos.w * 0.5f + 0.5f;
 }
