@@ -20,8 +20,8 @@ public:
 	glm::vec3 up;
 	glm::vec3 right;
 	
-	double yaw;
-	double pitch;
+	GLfloat yaw;
+	GLfloat pitch;
 
 	double speed;
 	double mouseSens;
@@ -67,8 +67,8 @@ public:
 	}
 
 	void mouseMovement(double xoffset, double yoffset, double deltaTime) {
-		yaw += mouseSens * deltaTime * xoffset;
-		pitch += mouseSens * deltaTime * yoffset;
+		yaw += (GLfloat)(mouseSens * deltaTime * xoffset);
+		pitch += (GLfloat)(mouseSens * deltaTime * yoffset);
 		
 		if (pitch > 89.0f) pitch = 89.0f;
 		if (pitch < -89.0f)	pitch = -89.0f;

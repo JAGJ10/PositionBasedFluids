@@ -8,7 +8,7 @@ uniform mat4 projection;
 uniform vec2 blurDir;
 uniform float filterRadius;
 
-const float blurScale = .1;
+const float blurScale = .01;
 const float blurDepthFalloff = 2;
 
 void main() {
