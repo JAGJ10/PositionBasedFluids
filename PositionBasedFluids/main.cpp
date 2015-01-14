@@ -29,8 +29,6 @@ int main() {
 	glfwMakeContextCurrent(window);
 
 	//Set callbacks for keyboard and mouse
-	//glfwSetKeyCallback(window, keyHandler);
-	//glfwSetCursorPosCallback(window, mouseMovementHandler);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	
 	glewExperimental = GL_TRUE;
