@@ -14,8 +14,6 @@ double deltaTime = 0.0f;
 double lastFrame = 0.0f;
 Camera cam = Camera();
 
-//void keyHandler(GLFWwindow* window, int key, int scancode, int action, int mode);
-//void mouseMovementHandler(GLFWwindow* window, double xpos, double ypos);
 void handleInput(GLFWwindow* window);
 
 int main() {

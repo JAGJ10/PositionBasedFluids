@@ -45,7 +45,7 @@ void main() {
 	vec3 normal = texture(normalMap, coord).xyz;
 	
 	//Color from absorption
-    float thickness = texture(thicknessMap, coord).x / 5;
+    float thickness = texture(thicknessMap, coord).x / 10;
     vec3 cBeer = vec3(exp(-1*thickness), exp(-.05*thickness), exp(-.001*thickness));
     vec3 absorbColor = cBeer;
     
