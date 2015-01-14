@@ -84,6 +84,6 @@ void main() {
    	//fragColor = vec4(cBeer, 1.0f);
    	//fragColor = vec4(normal, 1.0f);
    	//fragColor = vec4(thickness);
-   	
+
    	gl_FragDepth = depth;
 }

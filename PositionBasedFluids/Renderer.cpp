@@ -12,7 +12,7 @@ static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec3 color = glm::vec3(0.0f, 0.0f, 1.0f);
-static const float filterRadius = 3;
+static const float filterRadius = 5;
 
 Renderer::Renderer() :
 	depth(Shader("depth.vert", "depth.frag")),
