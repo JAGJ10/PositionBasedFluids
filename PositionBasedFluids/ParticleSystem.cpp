@@ -10,9 +10,9 @@ static const float H = 1.1f;
 static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float VISC = 15 / (2 * PI * (H * H * H));
-static const float REST_DENSITY = 1;
-static const float EPSILON_LAMBDA = 50;
-static const float EPSILON_VORTICITY = 5;
+static const float REST_DENSITY = 1.0f;
+static const float EPSILON_LAMBDA = 50.0f;
+static const float EPSILON_VORTICITY = 5.0f;
 static const float C = 0.01f;
 static const float K = 0.001f;
 static const float deltaQMag = .2f * H;
@@ -80,7 +80,6 @@ void ParticleSystem::update() {
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
 		//set lambda
 		for (auto &p : particles) {
-			//vector<Particle*> neighbors = p->neighbors; //this is stupid
 			p.lambda = lambda(p, p.neighbors);
 		}
 
@@ -170,7 +169,7 @@ float ParticleSystem::lambda(Particle &p, vector<Particle*> &neighbors) {
 	float sumGradients = 0.0f;
 	for (auto &n : neighbors) {
 		//Calculate gradient with respect to j
-		glm::vec3 gradientJ = glm::vec3(WSpiky(p.newPos, n->newPos) / REST_DENSITY);
+		glm::vec3 gradientJ = WSpiky(p.newPos, n->newPos) / REST_DENSITY;
 
 		//Add magnitude squared to sum
 		sumGradients += glm::length2(gradientJ);
@@ -192,23 +191,8 @@ float ParticleSystem::calcDensityConstraint(Particle &p, vector<Particle*> &neig
 	return (sum / REST_DENSITY) - 1;
 }
 
-//Returns vorticity for a given particle
-glm::vec3 ParticleSystem::vorticity(Particle &p) {
-	glm::vec3 vorticity = glm::vec3(0.0f);
-	glm::vec3 velocityDiff;
-	glm::vec3 gradient;
-
-	for (auto &n : p.neighbors) {
-		velocityDiff = glm::vec3(n->velocity - p.velocity);
-		gradient = WViscosity(p.newPos, n->newPos);
-		vorticity += glm::cross(velocityDiff, gradient);
-	}
-
-	return vorticity;
-}
-
 //Returns the eta vector that points in the direction of the corrective force
-glm::vec3 ParticleSystem::eta(Particle &p, float vorticityMag) {
+glm::vec3 ParticleSystem::eta(Particle &p, float &vorticityMag) {
 	glm::vec3 eta = glm::vec3(0.0f);
 	for (auto &n : p.neighbors) {
 		eta += WViscosity(p.newPos, n->newPos) * vorticityMag;
@@ -219,25 +203,36 @@ glm::vec3 ParticleSystem::eta(Particle &p, float vorticityMag) {
 
 //Calculates the vorticity force for a particle
 glm::vec3 ParticleSystem::vorticityForce(Particle &p) {
-	glm::vec3 vorticityVal = vorticity(p);
-	if (glm::length(vorticityVal) == 0.0f) {
+	//Calculate omega_i
+	glm::vec3 omega = glm::vec3(0.0f);
+	glm::vec3 velocityDiff;
+	glm::vec3 gradient;
+
+	for (auto &n : p.neighbors) {
+		velocityDiff = n->velocity - p.velocity;
+		gradient = WViscosity(p.newPos, n->newPos);
+		omega += glm::cross(velocityDiff, gradient);
+	}
+
+	float omegaLength = glm::length(omega);
+	if (omegaLength == 0.0f) {
 		//No direction for eta
 		return glm::vec3(0.0f);
 	}
 
-	glm::vec3 etaVal = eta(p, glm::length(vorticityVal));
+	glm::vec3 etaVal = eta(p, omegaLength);
 	if (etaVal == glm::vec3(0.0f)) {
+		//Particle is isolated or net force is 0
 		return glm::vec3(0.0f);
 	}
 	
 	glm::vec3 n = glm::normalize(etaVal);
-	return (glm::cross(n, vorticityVal) * EPSILON_VORTICITY);
+	return (glm::cross(n, omega) * EPSILON_VORTICITY);
 }
 
 float ParticleSystem::sCorrCalc(Particle &pi, Particle* &pj) {
 	// Get Density from WPoly6 and divide by constant from paper
 	float corr = WPoly6(pi.newPos, pj->newPos) / wQH;
-	// take to power of 4
 	corr *= corr * corr * corr;
 	return -K * corr;
 }
