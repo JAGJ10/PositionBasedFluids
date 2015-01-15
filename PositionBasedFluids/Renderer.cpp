@@ -244,32 +244,32 @@ void Renderer::initFramebuffers() {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, composite.tex, 0);
 }
 
-void Renderer::setInt(Shader shader, int x, const GLchar* name) {
+void Renderer::setInt(Shader &shader, const int &x, const GLchar* name) {
 	GLint loc = glGetUniformLocation(shader.program, name);
 	glUniform1i(loc, x);
 }
 
-void Renderer::setFloat(Shader shader, float x, const GLchar* name) {
+void Renderer::setFloat(Shader &shader, const float &x, const GLchar* name) {
 	GLint loc = glGetUniformLocation(shader.program, name);
 	glUniform1f(loc, x);
 }
 
-void Renderer::setVec2(Shader shader, glm::vec2 v, const GLchar* name) {
+void Renderer::setVec2(Shader &shader, const glm::vec2 &v, const GLchar* name) {
 	GLint loc = glGetUniformLocation(shader.program, name);
 	glUniform2f(loc, v.x, v.y);
 }
 
-void Renderer::setVec3(Shader shader, glm::vec3 v, const GLchar* name) {
+void Renderer::setVec3(Shader &shader, const glm::vec3 &v, const GLchar* name) {
 	GLint loc = glGetUniformLocation(shader.program, name);
 	glUniform3f(loc, v.x, v.y, v.z);
 }
 
-void Renderer::setVec4(Shader shader, glm::vec4 v, const GLchar* name) {
+void Renderer::setVec4(Shader &shader, const glm::vec4 &v, const GLchar* name) {
 	GLint loc = glGetUniformLocation(shader.program, name);
 	glUniform4f(loc, v.x, v.y, v.z, v.w);
 }
 
-void Renderer::setMatrix(Shader shader, glm::mat4 m, const GLchar* name) {
+void Renderer::setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name) {
 	GLint loc = glGetUniformLocation(shader.program, name);
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m));
 }

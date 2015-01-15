@@ -275,7 +275,6 @@ float ParticleSystem::clampedConstraint(float x, float max) {
 	}
 }
 
-//Tests if a particle is out of range of the box
 bool ParticleSystem::outOfRange(float x, float min, float max) {
 	return x < min || x >= max;
 }

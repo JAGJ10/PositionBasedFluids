@@ -25,12 +25,12 @@ public:
 
 private:
 	void initFramebuffers();
-	void setInt(Shader shader, int x, const GLchar* name);
-	void setFloat(Shader shader, float x, const GLchar* name);
-	void setVec2(Shader shader, glm::vec2 v, const GLchar* name);
-	void setVec3(Shader shader, glm::vec3 v, const GLchar* name);
-	void setVec4(Shader shader, glm::vec4 v, const GLchar* name);
-	void setMatrix(Shader shader, glm::mat4 m, const GLchar* name);
+	void setInt(Shader &shader, const int &x, const GLchar* name);
+	void setFloat(Shader &shader, const float &x, const GLchar* name);
+	void setVec2(Shader &shader, const glm::vec2 &v, const GLchar* name);
+	void setVec3(Shader &shader, const glm::vec3 &v, const GLchar* name);
+	void setVec4(Shader &shader, const glm::vec4 &v, const GLchar* name);
+	void setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name);
 };
 
 #endif
