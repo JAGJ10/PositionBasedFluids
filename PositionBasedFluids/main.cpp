@@ -9,14 +9,15 @@
 
 static const int width = 1024;
 static const int height = 512;
-GLfloat lastX = (width / 2), lastY = (height / 2);
+static const GLfloat lastX = (width / 2);
+static const GLfloat lastY = (height / 2);
 double deltaTime = 0.0f;
 double lastFrame = 0.0f;
-Camera cam = Camera();
 
-void handleInput(GLFWwindow* window);
+void handleInput(GLFWwindow* window, Camera &cam);
 
 int main() {
+	//Checks for memory leaks in debug mode
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	glfwInit();
@@ -38,6 +39,7 @@ int main() {
 	// Define the viewport dimensions
 	glViewport(0, 0, width, height);
 	
+	Camera cam = Camera();
 	Renderer render = Renderer();
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	
@@ -49,14 +51,14 @@ int main() {
 
 		// Check and call events
 		glfwPollEvents();
-		handleInput(window);
+		handleInput(window, cam);
 
 		render.run(cam);
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
 
-		glfwSetCursorPos(window, width / 2, height / 2);
+		glfwSetCursorPos(window, lastX, lastY);
 	}
 
 	glfwTerminate();
@@ -64,7 +66,7 @@ int main() {
 	return 0;
 }
 
-void handleInput(GLFWwindow* window) {
+void handleInput(GLFWwindow* window, Camera &cam) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
