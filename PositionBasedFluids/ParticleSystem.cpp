@@ -11,20 +11,28 @@ static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float VISC = 15 / (2 * PI * (H * H * H));
 static const float REST_DENSITY = 1.0f;
-static const float EPSILON_LAMBDA = 50.0f;
-static const float EPSILON_VORTICITY = 5.0f;
+static const float EPSILON_LAMBDA = 100.0f;
+static const float EPSILON_VORTICITY = 15.0f;
 static const float C = 0.01f;
 static const float K = 0.001f;
 static const float deltaQMag = .2f * H;
 static const float wQH = KPOLY * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag);
 static float width = 31;
 static float height = 500;
-static float depth = 25;
+static float depth = 40;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (int i = 0; i < 30; i++) {
 		for (int j = 0; j < 30; j++) {
-			for (int k = 0; k < 10; k++) {
+			for (int k = 0; k < 20; k++) {
+				particles.push_back(Particle(glm::vec3(i, j, k), 1));
+			}
+		}
+	}
+
+	for (int i = 10; i < 20; i++) {
+		for (int j = 450; j < 460; j++) {
+			for (int k = 10; k < 20; k++) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
@@ -34,15 +42,6 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 }
 
 ParticleSystem::~ParticleSystem() {}
-
-vector<glm::vec3>& ParticleSystem::getPositions() {
-	positions.clear();
-	for (int i = 0; i < particles.size(); i++) {
-		positions.push_back(particles[i].oldPos);
-	}
-
-	return positions;
-}
 
 void ParticleSystem::update() {
 	for (auto &p : particles) {
@@ -68,13 +67,18 @@ void ParticleSystem::update() {
 			vector<Particle*> allParticles = c->particles;
 			for (auto &n : allParticles) {
 				if (p.newPos != n->newPos) {
-					if (glm::distance(p.newPos, n->newPos) <= H) {
-						p.neighbors.push_back(n);
-					}
+					//if (glm::distance(p.newPos, n->newPos) <= 2 * H) {
+						//p.renderNeighbors.push_back(n);
+						if (glm::distance(p.newPos, n->newPos) <= H) {
+							p.neighbors.push_back(n);
+						}
+					//}
 				}
 			}
 		}
 	}
+
+	updatePositions();
 
 	//while solver < iterations (2-4 enough in paper)
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
@@ -227,6 +231,10 @@ glm::vec3 ParticleSystem::vorticityForce(Particle &p) {
 	}
 	
 	glm::vec3 n = glm::normalize(etaVal);
+	if (glm::isinf(n.x) || glm::isinf(n.y) || glm::isinf(n.z)) {
+		return glm::vec3(0.0f);
+	}
+
 	return (glm::cross(n, omega) * EPSILON_VORTICITY);
 }
 
@@ -277,4 +285,39 @@ float ParticleSystem::clampedConstraint(float x, float max) {
 
 bool ParticleSystem::outOfRange(float x, float min, float max) {
 	return x < min || x >= max;
+}
+
+void ParticleSystem::updatePositions() {
+	positions.clear();
+	for (int i = 0; i < particles.size(); i++) {
+		particles[i].sumWeight = 0.0f;
+		particles[i].weightedPos = glm::vec3(0.0f);
+	}
+
+	for (int i = 0; i < particles.size(); i++) {
+		//positions.push_back(particles[i].oldPos);
+		positions.push_back(getWeightedPosition(particles[i]));
+	}
+}
+
+vector<glm::vec3>& ParticleSystem::getPositions() {
+	return positions;
+}
+
+glm::vec3 ParticleSystem::getWeightedPosition(Particle &p) {
+	for (auto &n : p.neighbors) {
+		float weight = 1 - (glm::distance(p.newPos, n->newPos) / H);
+
+		p.sumWeight += weight;
+
+		p.weightedPos += n->newPos * weight;
+	}
+
+	if (p.sumWeight != 0.0f) {
+		p.weightedPos /= p.sumWeight;
+	} else {
+		p.weightedPos = p.newPos;
+	}
+
+	return p.weightedPos;
 }

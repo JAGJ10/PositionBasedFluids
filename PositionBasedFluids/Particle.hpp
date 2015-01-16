@@ -11,6 +11,7 @@ public:
 	float mass;
 	float lambda;
 	std::vector<Particle*> neighbors;
+	std::vector<Particle*> renderNeighbors;
 
 	Particle(glm::vec3 pos, float mass) {
 		this->oldPos = pos;
@@ -21,6 +22,10 @@ public:
 		deltaP = glm::vec3(0, 0, 0);
 		lambda = 0;
 	}
+
+public:
+	glm::vec3 weightedPos;
+	float sumWeight;
 };
 
 #endif

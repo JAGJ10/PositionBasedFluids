@@ -17,6 +17,8 @@ public:
 	ParticleSystem system;
 	std::vector<glm::vec3> positions;
 
+	bool running;
+
 	Shader depth;
 	Shader normals;
 	BlurShader blur;

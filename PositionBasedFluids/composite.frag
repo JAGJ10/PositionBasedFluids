@@ -15,7 +15,7 @@ uniform float zFar;
 out vec4 fragColor;
 
 const vec3 lightDir = vec3(.5, .5, .5);
-const float shininess = 150.0;
+const float shininess = 75.0;
 const vec3 specularColor = vec3(1.0, 1.0, 1.0);
 const float fresPower = 2.0f;
 const float fresScale = 0.4;
@@ -55,23 +55,12 @@ void main() {
     //Phong specular
     vec3 viewDir = normalize(-pos);
     vec3 halfVec = normalize(viewDir + lightDir);
-    float specular = pow(max(0.0f, dot(normal, halfVec)), shininess);
-    
-    // specular light
-	//float k = max(dot(viewDir, reflect(-lightDir, normal)), 0);
-	//k = pow(k, 8);
-	
-	// Schlick's approximation for the fresnel term
-	//float cos_theta = dot(viewDir, normal);
-	//float fresnel = 0.75 + (1 - 0.75) * pow(1 - cos_theta, 5);
-	//k *= fresnel;
-	
-	//vec3 specular = k * min(cBeer + 0.5, 1);
+    float specular = pow(max(0.0f, dot(normal, halfVec)), shininess);	
     
     //Fresnel
-    float fresnel = fresBias + fresScale * pow(1.0f - max(0.0f, dot(normal, viewDir)), fresPower);
+    //float fresnel = fresBias + fresScale * pow(1.0f - max(0.0f, dot(normal, viewDir)), fresPower);
     
-    float alpha = 1 - exp(-.25*thickness);
+    float alpha = 1 - exp(-.5*thickness);
     
     //Compositing everything
     vec4 finalColor = vec4(absorbColor + diffuse*specularColor.xyz*specular, alpha);

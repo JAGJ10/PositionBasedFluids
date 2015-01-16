@@ -14,7 +14,7 @@ static const GLfloat lastY = (height / 2);
 double deltaTime = 0.0f;
 double lastFrame = 0.0f;
 
-void handleInput(GLFWwindow* window, Camera &cam);
+void handleInput(GLFWwindow* window, Renderer &render, Camera &cam);
 
 int main() {
 	//Checks for memory leaks in debug mode
@@ -51,7 +51,7 @@ int main() {
 
 		// Check and call events
 		glfwPollEvents();
-		handleInput(window, cam);
+		handleInput(window, render, cam);
 
 		render.run(cam);
 
@@ -66,7 +66,7 @@ int main() {
 	return 0;
 }
 
-void handleInput(GLFWwindow* window, Camera &cam) {
+void handleInput(GLFWwindow* window, Renderer &render, Camera &cam) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
@@ -87,6 +87,12 @@ void handleInput(GLFWwindow* window, Camera &cam) {
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		cam.wasdMovement(DOWN, deltaTime);
+
+	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+		render.running = false;
+
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+		render.running = true;
 
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);

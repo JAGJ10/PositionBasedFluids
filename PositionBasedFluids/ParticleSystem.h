@@ -10,8 +10,8 @@ public:
 	ParticleSystem();
 	~ParticleSystem();
 
-	std::vector<glm::vec3>& getPositions();
 	void update();
+	std::vector<glm::vec3>& getPositions();
 
 private:
 	std::vector<Particle> particles;
@@ -31,7 +31,8 @@ private:
 	float sCorrCalc(Particle &pi, Particle* &pj);
 	glm::vec3 xsphViscosity(Particle &p);
 	bool outOfRange(float x, float y, float z);
-	void initializeGrid();
+	void ParticleSystem::updatePositions();
+	glm::vec3 getWeightedPosition(Particle &p);
 };
 
 #endif

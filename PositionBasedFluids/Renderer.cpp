@@ -12,9 +12,10 @@ static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec3 color = glm::vec3(0.0f, 0.0f, 1.0f);
-static const float filterRadius = 5;
+static const float filterRadius = 4;
 
 Renderer::Renderer() :
+	running(true),
 	depth(Shader("depth.vert", "depth.frag")),
 	normals(Shader("normal.vert", "normal.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
@@ -28,6 +29,9 @@ Renderer::Renderer() :
 Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
+	if (running) {
+		system.update();
+	}
 	//Get particle positions
 	positions = system.getPositions();
 
@@ -192,9 +196,7 @@ void Renderer::run(Camera &cam) {
 	setFloat(composite, zFar, "zFar");
 	setFloat(composite, zNear, "zNear");
 
-	//glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glBindVertexArray(composite.vao);
@@ -203,8 +205,6 @@ void Renderer::run(Camera &cam) {
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
-
-	system.update();
 }
 
 void Renderer::initFramebuffers() {
