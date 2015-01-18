@@ -12,11 +12,8 @@ out float radius;
 void main() {
 	vec4 viewPos = mView * vec4(vertexPos, 1.0);
     float dist = length(viewPos);
-    pos = viewPos.xyz;
     gl_Position = projection * viewPos;
-    //radius = 10 * screenSize.y / (8.0 * gl_Position.z);
-    //radius = 5.0f / (-pos.z * 4.0f * (1.0f / screenSize.y));
-    radius = 1.25 * (600.0 / dist);
-    
+	pos = viewPos.xyz;
+	radius = 1.25 * viewPos.w * (600.0 / dist);
     gl_PointSize = radius;
 }
