@@ -2,11 +2,11 @@
 
 using namespace std;
 
-static const float deltaT = 0.05f;
+static const float deltaT = 0.016f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
-static const int PRESSURE_ITERATIONS = 4;
-static const float H = 1.1f;
+static const int PRESSURE_ITERATIONS = 6;
+static const float H = 1.0f;
 static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float VISC = 15 / (2 * PI * (H * H * H));
@@ -15,24 +15,16 @@ static const float EPSILON_LAMBDA = 100.0f;
 static const float EPSILON_VORTICITY = 15.0f;
 static const float C = 0.01f;
 static const float K = 0.001f;
-static const float deltaQMag = .2f * H;
+static const float deltaQMag = .1f * H;
 static const float wQH = KPOLY * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag);
-static float width = 31;
+static float width = 65;
 static float height = 500;
-static float depth = 40;
+static float depth = 50;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (int i = 0; i < 30; i++) {
-		for (int j = 0; j < 30; j++) {
-			for (int k = 0; k < 20; k++) {
-				particles.push_back(Particle(glm::vec3(i, j, k), 1));
-			}
-		}
-	}
-
-	for (int i = 10; i < 20; i++) {
-		for (int j = 450; j < 460; j++) {
-			for (int k = 10; k < 20; k++) {
+	for (float i = 0; i < 20; i+=.75f) {
+		for (float j = 0; j < 20; j+=.75f) {
+			for (float k = 0; k < 20; k+=.75f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}

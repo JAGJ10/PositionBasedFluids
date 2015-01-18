@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 
+#include <IL\il.h>
+#include <IL\ilut.h>
+
 static const int width = 1024;
 static const int height = 512;
 static const GLfloat lastX = (width / 2);
@@ -38,11 +41,17 @@ int main() {
 	
 	// Define the viewport dimensions
 	glViewport(0, 0, width, height);
+
+	ilutInit();
+	ilInit();
+	ilutRenderer(ILUT_OPENGL);
 	
 	Camera cam = Camera();
 	Renderer render = Renderer();
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	
+
+	int w = 0;
+
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
 		double currentFrame = glfwGetTime();
@@ -54,6 +63,18 @@ int main() {
 		handleInput(window, render, cam);
 
 		render.run(cam);
+
+		/*ILuint imageID = ilGenImage();
+		ilBindImage(imageID);
+		ilutGLScreen();
+		//ilEnable(IL_FILE_OVERWRITE);
+		std::string str = std::to_string(w) + ".png";
+		const char * c = str.c_str();
+		std::cout << c << std::endl;
+		ilSaveImage(c);
+		//ilutGLScreenie();
+		ilDeleteImage(imageID);
+		w++;*/
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
