@@ -5,16 +5,14 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 200;
-static const float zNear = 1;
+static const float zFar = 100;
+static const float zNear = 0.1f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec3 color = glm::vec3(0.2f, 0.5f, 1.0f);
 static const float filterRadius = 3;
-
-int w = 0;
 
 Renderer::Renderer() :
 	running(true),
@@ -160,12 +158,13 @@ void Renderer::run(Camera &cam) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
-	glDisable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 
 	glBindVertexArray(thickness.vao);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
 
+	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
 	//--------------------Particle Composite-------------------------

@@ -21,11 +21,7 @@ void main() {
 	
 	float nz = sqrt(1 - r2);
 	
-    thickness = nz * 1.25 * 2.0f * exp(-r2 * 2.0f);
+    //thickness = nz * 1.25 * 2.0f * exp(-r2 * 2.0f);
+	thickness = exp(-r2 * 2.0f);
     //thickness = 1 - r2;
-    //thickness = 1;
-    //float dist = length(gl_PointCoord.xy-vec2(0.5f,0.5f));
-	//float sigma = 3.0f;
-	//float mu = 0.0f;
-	//thickness = 0.02f * exp(-(dist-mu)*(dist-mu)/(2*sigma));
 }

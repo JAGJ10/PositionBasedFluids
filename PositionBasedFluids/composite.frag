@@ -36,7 +36,7 @@ vec3 uvToEye(vec2 p, float z) {
 void main() {
     float depth = texture(depthMap, coord).x;
     depth = linearizeDepth(depth);
-    if (depth == 1f) {
+    if (depth >= .99f) {
      	discard;
      }
     
@@ -46,11 +46,11 @@ void main() {
 	
 	//Color from absorption
     float thickness = texture(thicknessMap, coord).x / 10;
-    vec3 cBeer = vec3(exp(-1*thickness), exp(-.1*thickness), exp(-.001*thickness));
+    vec3 cBeer = vec3(exp(-1*thickness), exp(-.2*thickness), exp(-.001*thickness));
     vec3 absorbColor = cBeer;
     
     //Diffuse light
-    float diffuse = dot(normal, lightDir) * 0.5f + 0.5f;
+    float diffuse = max(0.0f, dot(normal, lightDir) * 0.5f + 0.5f);
     
     //Phong specular
     vec3 viewDir = normalize(-pos);

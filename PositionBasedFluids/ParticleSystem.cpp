@@ -15,16 +15,16 @@ static const float EPSILON_LAMBDA = 100.0f;
 static const float EPSILON_VORTICITY = 15.0f;
 static const float C = 0.01f;
 static const float K = 0.001f;
-static const float deltaQMag = .1f * H;
-static const float wQH = KPOLY * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag) * (H * H - deltaQMag * deltaQMag);
-static float width = 65;
+static const float deltaQMag = 0; //.1f * H;
+static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
+static float width = 25;
 static float height = 500;
-static float depth = 50;
+static float depth = 25;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 20; i+=.75f) {
-		for (float j = 0; j < 20; j+=.75f) {
-			for (float k = 0; k < 20; k+=.75f) {
+	for (float i = 0; i < 20; i+=.95f) {
+		for (float j = 0; j < 20; j+=.95f) {
+			for (float k = 0; k < 20; k+=.95f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
