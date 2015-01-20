@@ -176,6 +176,7 @@
     <None Include="normal.frag" />
     <None Include="normal.vert" />
     <None Include="thickness.frag" />
+    <None Include="thicknessBlur.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

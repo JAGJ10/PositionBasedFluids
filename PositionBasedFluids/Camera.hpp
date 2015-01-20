@@ -27,7 +27,7 @@ public:
 	double mouseSens;
 	GLfloat zoom;
 
-	Camera() : eye(glm::vec3(15.0f, 10.0f, 50.0f)),
+	Camera() : eye(glm::vec3(15.0f, 15.0f, 60.0f)),
 		front(glm::normalize(glm::vec3(cos(glm::radians(-90.0f)), 0.0f, sin(glm::radians(-90.0f))))),
 		up(glm::vec3(0.0f, 1.0f, 0.0f)),
 		right(glm::cross(up, (eye - front))),
@@ -39,7 +39,8 @@ public:
 	{}
 
 	glm::mat4 getMView() {
-		return glm::lookAt(eye, eye + front, up);
+		return glm::lookAt(eye, glm::vec3(20, 8, 5), up);
+		//return glm::lookAt(eye, eye + front, up);
 	}
 
 	void wasdMovement(Movement dir, double deltaTime) {

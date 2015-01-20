@@ -22,6 +22,7 @@ void main() {
 	float nz = sqrt(1 - r2);
 	
     //thickness = nz * 1.25 * 2.0f * exp(-r2 * 2.0f);
-	thickness = exp(-r2 * 2.0f);
+	//thickness = exp(-r2 * 2.0f);
+	thickness = nz * .005;
     //thickness = 1 - r2;
 }

@@ -43,6 +43,9 @@
     <Filter Include="shaders\composite">
       <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\thickness blur">
+      <UniqueIdentifier>{81c22d60-2ebb-40c4-bd63-b70a034e053f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -111,6 +114,9 @@
     </None>
     <None Include="composite.frag">
       <Filter>shaders\composite</Filter>
+    </None>
+    <None Include="thicknessBlur.frag">
+      <Filter>shaders\thickness blur</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -24,9 +24,8 @@ vec3 uvToEye(vec2 p, float z) {
 void main() {
 	float depth = texture(depthMap, coord).x;
 	depth = linearizeDepth(depth);
-	if (depth == 1f) {
+	if (depth >= .99f) {
 		discard;
-		return;
 	}
 	
 	vec3 pos = uvToEye(coord, depth);

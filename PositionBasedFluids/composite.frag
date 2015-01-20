@@ -15,7 +15,7 @@ uniform float zFar;
 out vec4 fragColor;
 
 const vec3 lightDir = vec3(.5, .5, .5);
-const float shininess = 75.0;
+const float shininess = 100.0;
 const vec3 specularColor = vec3(1.0, 1.0, 1.0);
 const float fresPower = 2.0f;
 const float fresScale = 0.4;
@@ -45,8 +45,9 @@ void main() {
 	vec3 normal = texture(normalMap, coord).xyz;
 	
 	//Color from absorption
-    float thickness = texture(thicknessMap, coord).x / 10;
-    vec3 cBeer = vec3(exp(-1*thickness), exp(-.2*thickness), exp(-.001*thickness));
+    float thickness = texture(thicknessMap, coord).x;
+
+    vec3 cBeer = vec3(exp(-1*thickness), exp(-.1*thickness), exp(-.001*thickness));
     vec3 absorbColor = cBeer;
     
     //Diffuse light
@@ -60,7 +61,7 @@ void main() {
     //Fresnel
     //float fresnel = fresBias + fresScale * pow(1.0f - max(0.0f, dot(normal, viewDir)), fresPower);
     
-    float alpha = 1 - exp(-.5*thickness);
+    float alpha = thickness;
     
     //Compositing everything
     vec4 finalColor = vec4(absorbColor + diffuse*specularColor.xyz*specular, alpha);
