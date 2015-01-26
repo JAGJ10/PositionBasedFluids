@@ -11,8 +11,9 @@ static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
-static const glm::vec3 color = glm::vec3(0.2f, 0.5f, 1.0f);
+static const glm::vec4 color = glm::vec4(0.1f, 0.4f, 0.9f, 0.2f);
 static float filterRadius = 5;
+static const float radius = 0.6f;
 
 Renderer::Renderer() :
 	running(true),
@@ -20,7 +21,6 @@ Renderer::Renderer() :
 	normals(Shader("normal.vert", "normal.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
-	thicknessBlur(BlurShader("blur.vert", "thicknessBlur.frag")),
 	composite(Shader("composite.vert", "composite.frag")),
 	system(ParticleSystem())
 {
@@ -58,15 +58,21 @@ void Renderer::run(Camera &cam) {
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
 	setVec2(depth, screenSize, "screenSize");
+	setFloat(depth, radius, "pointRadius");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
 		
 	glBindVertexArray(depth.vao);
 		
 	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
-	
 
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
+	
 	//--------------------Particle Blur-------------------------
 	glUseProgram(blur.program);
 
@@ -88,6 +94,8 @@ void Renderer::run(Camera &cam) {
 	setVec2(blur, screenSize, "screenSize");
 	setVec2(blur, blurDirY, "blurDir");
 	setFloat(blur, filterRadius, "filterRadius");
+	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+	setFloat(blur, 0.01f, "blurScale");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -111,6 +119,8 @@ void Renderer::run(Camera &cam) {
 	setMatrix(blur, projection, "projection");
 	setVec2(blur, blurDirX, "blurDir");
 	setFloat(blur, filterRadius, "filterRadius");
+	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+	setFloat(blur, 0.01f, "blurScale");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -155,62 +165,24 @@ void Renderer::run(Camera &cam) {
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
 	setVec2(thickness, screenSize, "screenSize");
+	setFloat(depth, radius * 4.0f, "pointRadius");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
 
 	glBindVertexArray(thickness.vao);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
 
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
-
-	//--------------------Particle Thickness Blur-------------------------
-	filterRadius = 10;
-	glUseProgram(thicknessBlur.program);
-
-	//Vertical blur
-	glBindFramebuffer(GL_FRAMEBUFFER, thicknessBlur.fboV);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	thicknessBlur.shaderVAOQuad();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, thickness.tex);
-	GLint thicknessMap = glGetUniformLocation(thicknessBlur.program, "thicknessMap");
-	glUniform1i(thicknessMap, 0);
-
-	setMatrix(thicknessBlur, projection, "projection");
-	setVec2(thicknessBlur, screenSize, "screenSize");
-	setVec2(thicknessBlur, blurDirY, "blurDir");
-	setFloat(thicknessBlur, filterRadius, "filterRadius");
-
-	glBindVertexArray(thicknessBlur.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	//Horizontal blur
-	glBindFramebuffer(GL_FRAMEBUFFER, thicknessBlur.fboH);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, thicknessBlur.texV);
-	thicknessMap = glGetUniformLocation(thicknessBlur.program, "thicknessMap");
-	glUniform1i(thicknessMap, 0);
-
-	setVec2(thicknessBlur, screenSize, "screenSize");
-	setMatrix(thicknessBlur, projection, "projection");
-	setVec2(thicknessBlur, blurDirX, "blurDir");
-	setFloat(thicknessBlur, filterRadius, "filterRadius");
-
-	glBindVertexArray(thicknessBlur.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//--------------------Particle Composite-------------------------
 	glUseProgram(composite.program);
@@ -227,7 +199,7 @@ void Renderer::run(Camera &cam) {
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, thickness.tex);
-	thicknessMap = glGetUniformLocation(composite.program, "thicknessMap");
+	GLint thicknessMap = glGetUniformLocation(composite.program, "thicknessMap");
 	glUniform1i(thicknessMap, 1);
 
 	glActiveTexture(GL_TEXTURE2);
@@ -238,12 +210,16 @@ void Renderer::run(Camera &cam) {
 	setMatrix(composite, projection, "projection");
 	setMatrix(composite, mView, "mView");
 	setVec2(composite, screenSize, "screenSize");
-	setVec3(composite, color, "color");
+	setVec4(composite, color, "color");
 	setFloat(composite, zFar, "zFar");
 	setFloat(composite, zNear, "zNear");
+	setVec2(composite, glm::vec2(tanf(cam.zoom*0.5f)*aspectRatio, tanf(cam.zoom*0.5f)), "clipPosToEye");
+	setVec2(composite, glm::vec2(1.0f / width, aspectRatio / width), "invTexScale");
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_TRUE);
 
 	glBindVertexArray(composite.vao);
 
@@ -282,17 +258,6 @@ void Renderer::initFramebuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, normals.fbo);
 	normals.initTexture(width, height, GL_RGBA, GL_RGBA32F, normals.tex);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normals.tex, 0);
-
-	// Thickness Blur buffer
-	thicknessBlur.initFBO(thicknessBlur.fboV);
-	glBindFramebuffer(GL_FRAMEBUFFER, thicknessBlur.fboV);
-	thicknessBlur.initTexture(width, height, GL_RGBA, GL_RGBA32F, thicknessBlur.texV);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, thicknessBlur.texV, 0);
-
-	thicknessBlur.initFBO(thicknessBlur.fboH);
-	glBindFramebuffer(GL_FRAMEBUFFER, thicknessBlur.fboH);
-	thicknessBlur.initTexture(width, height, GL_RGBA, GL_RGBA32F, thicknessBlur.texH);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, thicknessBlur.texH, 0);
 
 	// Composite buffer
 	composite.initFBO(composite.fbo);

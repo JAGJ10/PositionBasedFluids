@@ -23,7 +23,6 @@ public:
 	Shader normals;
 	BlurShader blur;
 	Shader thickness;
-	BlurShader thicknessBlur;
 	Shader composite;
 
 private:

@@ -48,7 +48,6 @@ int main() {
 	
 	Camera cam = Camera();
 	Renderer render = Renderer();
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
 	int w = 0;
 

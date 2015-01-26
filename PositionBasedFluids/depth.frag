@@ -1,7 +1,6 @@
 #version 400 core
 
 in vec3 pos;
-in float radius;
 
 uniform mat4 mView;
 uniform mat4 projection;

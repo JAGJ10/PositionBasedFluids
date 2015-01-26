@@ -1,7 +1,6 @@
 #version 400 core
 
 in vec3 pos;
-in float radius;
 
 uniform mat4 mView;
 uniform mat4 projection;
@@ -19,10 +18,7 @@ void main() {
 		discard;
 	}
 	
-	float nz = sqrt(1 - r2);
+	normal.z = sqrt(1 - r2);
 	
-    //thickness = nz * 1.25 * 2.0f * exp(-r2 * 2.0f);
-	//thickness = exp(-r2 * 2.0f);
-	thickness = nz * .005;
-    //thickness = 1 - r2;
+	thickness = normal.z * 0.005f;
 }

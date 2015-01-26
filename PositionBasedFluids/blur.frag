@@ -7,9 +7,9 @@ uniform vec2 screenSize;
 uniform mat4 projection;
 uniform vec2 blurDir;
 uniform float filterRadius;
+uniform float blurScale;
 
-const float blurScale = .01;
-const float blurDepthFalloff = 2;
+const float blurDepthFalloff = 5.5;
 
 void main() {
 	float depth = texture(depthMap, coord).x;

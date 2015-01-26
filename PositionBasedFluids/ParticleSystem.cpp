@@ -17,14 +17,14 @@ static const float C = 0.01f;
 static const float K = 0.001f;
 static const float deltaQMag = 0; //.1f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
-static float width = 35;
+static float width = 20;
 static float height = 500;
-static float depth = 35;
+static float depth = 20;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 10; i+=.55f) {
-		for (float j = 0; j < 10; j+=.55f) {
-			for (float k = 0; k < 10; k+=.55f) {
+	for (float i = 5; i < 15; i+=.55f) {
+		for (float j = 5; j < 15; j+=.55f) {
+			for (float k = 5; k < 15; k+=.55f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
@@ -98,8 +98,6 @@ void ParticleSystem::update() {
 	}
 
 	for (auto &p : particles) {
-		imposeConstraints(p);
-
 		//set new velocity vi = (x*i - xi) / deltaT
 		p.velocity = (p.newPos - p.oldPos) / deltaT;
 
