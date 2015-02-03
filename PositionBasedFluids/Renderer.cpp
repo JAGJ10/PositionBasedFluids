@@ -11,7 +11,7 @@ static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
-static const glm::vec4 color = glm::vec4(0.1f, 0.4f, 0.9f, 0.2f);
+static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.8f);
 static float filterRadius = 5;
 static const float radius = 0.6f;
 
@@ -95,7 +95,7 @@ void Renderer::run(Camera &cam) {
 	setVec2(blur, blurDirY, "blurDir");
 	setFloat(blur, filterRadius, "filterRadius");
 	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
-	setFloat(blur, 0.01f, "blurScale");
+	setFloat(blur, 0.1f, "blurScale");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -120,7 +120,7 @@ void Renderer::run(Camera &cam) {
 	setVec2(blur, blurDirX, "blurDir");
 	setFloat(blur, filterRadius, "filterRadius");
 	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
-	setFloat(blur, 0.01f, "blurScale");
+	setFloat(blur, 0.1f, "blurScale");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -171,7 +171,8 @@ void Renderer::run(Camera &cam) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
-	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	//glEnable(GL_DEPTH_TEST);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glEnable(GL_POINT_SPRITE);
 
@@ -216,10 +217,10 @@ void Renderer::run(Camera &cam) {
 	setVec2(composite, glm::vec2(tanf(cam.zoom*0.5f)*aspectRatio, tanf(cam.zoom*0.5f)), "clipPosToEye");
 	setVec2(composite, glm::vec2(1.0f / width, aspectRatio / width), "invTexScale");
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
-	//glDepthMask(GL_TRUE);
+	glDepthMask(GL_TRUE);
 
 	glBindVertexArray(composite.vao);
 

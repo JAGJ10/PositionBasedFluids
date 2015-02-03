@@ -39,7 +39,7 @@ public:
 	{}
 
 	glm::mat4 getMView() {
-		//return glm::lookAt(eye, glm::vec3(20, 8, 5), up);
+		//return glm::lookAt(eye, glm::vec3(8, 8, 5), up);
 		return glm::lookAt(eye, eye + front, up);
 	}
 

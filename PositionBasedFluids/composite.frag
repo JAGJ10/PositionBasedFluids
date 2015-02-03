@@ -16,20 +16,26 @@ uniform vec2 invTexScale;
 
 out vec4 fragColor;
 
-const vec3 lightDir = vec3(.5, .5, .5);
-const vec3 lightPos = vec3(5, 5, 5);
-const float shininess = 400.0;
+const vec3 lightDir = vec3(0, 1, 0);
+const vec3 lightPos = vec3(0, 1000, 0);
+const float shininess = 300.0;
 const vec3 specularColor = vec3(1.0, 1.0, 1.0);
 const float fresPower = 3.0f;
 const float fresScale = 0.9;
 const float fresBias = 0.1;
-const vec3 thicknessRefraction = vec3(0.02, 0.03, 0.06);
 
 vec3 uvToEye(vec2 p, float z) {
-	vec2 pos = p * 2.0f - 1.0f;
+	vec2 pos = p * 0.5f - 0.5f;
 	vec4 clipPos = vec4(pos, z, 1.0f);
 	vec4 viewPos = inverse(projection) * clipPos;
 	return viewPos.xyz / viewPos.w;
+}
+
+vec3 viewportToEyeSpace(vec2 c, float eyeZ) {
+	// find position at z=1 plane
+	vec2 uv = (c*2.0 - vec2(1.0))*clipPosToEye;
+
+	return vec3(-uv*eyeZ, eyeZ);
 }
 
 void main() {
@@ -58,26 +64,26 @@ void main() {
 	if (abs(zb.z) < abs(zt.z))
 		dy = zb;
 
-
 	vec3 normal = normalize(cross(dx, dy));
     
-    vec3 pos = uvToEye(coord, depth);
-	vec4 worldPos = inverse(mView) * vec4(pos, 1.0);
+	vec4 worldPos = inverse(mView) * vec4(eyePos, 1.0);
     
 	//vec3 normal = texture(normalMap, coord).xyz;
     
     //Phong specular
 	vec3 l = (mView * vec4(lightDir, 0.0)).xyz;
-    vec3 viewDir = -normalize(pos);
+    vec3 viewDir = -normalize(eyePos);
     vec3 halfVec = normalize(viewDir + l);
-    float specular = 1.2*pow(max(0.0f, dot(normal, halfVec)), shininess);	
+    float specular = pow(max(0.0f, dot(normal, halfVec)), shininess);	
 
 	vec2 texScale = vec2(0.75, 1.0);
-	float refractScale = 1000.0 * 0.025;
+	float refractScale = 1.33 * 0.025;
 	refractScale *= smoothstep(0.1, 0.4, worldPos.y);
 	vec2 refractCoord = coord + normal.xy*refractScale*texScale;
 
-	float thickness = max(texture(thicknessMap, refractCoord).x, 0.3);
+	//float thickness = max(texture(thicknessMap, refractCoord).x, 0.3);
+	float thickness = max(texture(thicknessMap, coord).x, 0.3);
+	//vec3 transmission = exp(-(vec3(1.0)-color.xyz)*thickness);
 	vec3 transmission = (1.0-(1.0-color.xyz)*thickness*0.8)*color.w;
     
 	vec3 lVec = normalize(worldPos.xyz-lightPos);
@@ -89,18 +95,33 @@ void main() {
     float fresnel = fresBias + fresScale * pow(1.0f - max(dot(normal, viewDir), 0.0), fresPower);
 
 	//Diffuse light
-    //float diffuse = max(0.0f, dot(normal, lightDir) * 0.5f + 0.5f);
-	vec3 diffuse = color.xyz * mix(vec3(0.29, 0.379, 0.59), vec3(1.0), (ln*0.5 + 0.5)*0.4)*(1-color.w);
+    //vec3 diffuse = max(0.0f, dot(normal, lightDir) * 0.5f + 0.5f) * color.xyz;
+	vec3 diffuse = color.xyz * mix(vec3(0.29, 0.379, 0.59), vec3(1.0), (ln*0.5 + 0.5)) * (1 - color.w);
+	//vec3 diffuse = color.xyz * mix(vec3(0.29, 0.379, 0.59), vec3(1.0), (ln*0.5 + 0.5));
+
+	vec3 skyColor = vec3(0.1, 0.2, 0.4)*1.2;
+	vec3 groundColor = vec3(0.1, 0.1, 0.2);
+
+	vec3 rEye = reflect(viewDir, normal).xyz;
+	vec3 rWorld = (inverse(mView)*vec4(rEye, 0.0)).xyz;
+
+	vec3 reflect = vec3(1.0) + mix(groundColor, skyColor, smoothstep(0.15, 0.25, rWorld.y));
+
+	vec3 cBeer = vec3(exp(-.6*thickness), exp(-.2*thickness), exp(-.05*thickness));
     
     //Compositing everything
-    //vec4 finalColor = vec4(transmission + diffuse*specularColor.xyz*specular, 1);
-    vec3 finalColor = diffuse + (mix(transmission, vec3(2.0), fresnel) + specular) * color.w;
-	//vec3 finalColor = diffuse;
+    //vec4 finalColor = vec4(cBeer + diffuse*specularColor.xyz*specular, 1-exp(-3*thickness));
+    vec3 finalColor = diffuse + (mix(transmission, reflect, fresnel) + specular) * color.w;
+	//vec3 finalColor = diffuse + specular * color.w;
 
-	//fragColor = vec4(diffuse * color, 1.0f);
+	//fragColor = vec4(diffuse * color.xyz, 1.0f);
 	fragColor = vec4(finalColor, 1.0);
-	//fragColor = vec4(normal*0.5 + vec3(0.5), 1.0);
+	//fragColor = finalColor;
+	//fragColor = vec4(normal * 0.5 + 0.5, 1.0);
 	//fragColor = vec4(transmission, 1.0);
+	//fragColor = vec4(cBeer, 1);
+	//fragColor = vec4(vec3(ln*0.5+0.5), 1);
+	//fragColor = vec4(vec3(fresnel), 1);
 
 	//vec4 clipPos = projection * vec4(0.0, 0.0, depth, 1.0);
 	//clipPos.z /= clipPos.w;
