@@ -19,8 +19,8 @@ void main() {
 	normal.z = sqrt(1.0 - r2);
 
 	//calculate depth
-	vec4 pixelPos = vec4(pos + normal * 1.25f, 1.0);
+	vec4 pixelPos = vec4(pos + normal * 0.6f, 1.0);
 	vec4 clipSpacePos = projection * pixelPos;
 	
-	gl_FragDepth = clipSpacePos.z / clipSpacePos.w * 0.5f + 0.5f;
+	gl_FragDepth = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
 }

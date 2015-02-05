@@ -25,17 +25,10 @@ const float fresScale = 0.9;
 const float fresBias = 0.1;
 
 vec3 uvToEye(vec2 p, float z) {
-	vec2 pos = p * 0.5f - 0.5f;
+	vec2 pos = p * 2.0f - 1.0f;
 	vec4 clipPos = vec4(pos, z, 1.0f);
 	vec4 viewPos = inverse(projection) * clipPos;
 	return viewPos.xyz / viewPos.w;
-}
-
-vec3 viewportToEyeSpace(vec2 c, float eyeZ) {
-	// find position at z=1 plane
-	vec2 uv = (c*2.0 - vec2(1.0))*clipPosToEye;
-
-	return vec3(-uv*eyeZ, eyeZ);
 }
 
 void main() {
@@ -43,6 +36,7 @@ void main() {
 
 	if (depth == 0.0f) {
 		discard;
+		return;
 	}
 
 	// reconstruct eye space pos from depth
@@ -114,7 +108,7 @@ void main() {
     vec3 finalColor = diffuse + (mix(transmission, reflect, fresnel) + specular) * color.w;
 	//vec3 finalColor = diffuse + specular * color.w;
 
-	//fragColor = vec4(diffuse * color.xyz, 1.0f);
+	//fragColor = vec4(diffuse, 1.0f);
 	fragColor = vec4(finalColor, 1.0);
 	//fragColor = finalColor;
 	//fragColor = vec4(normal * 0.5 + 0.5, 1.0);
@@ -122,6 +116,9 @@ void main() {
 	//fragColor = vec4(cBeer, 1);
 	//fragColor = vec4(vec3(ln*0.5+0.5), 1);
 	//fragColor = vec4(vec3(fresnel), 1);
+	//fragColor = vec4(vec3(viewDir), 1);
+	//fragColor = vec4(normal, 1);
+	//fragColor = vec4(vec3(depth), 1);
 
 	//vec4 clipPos = projection * vec4(0.0, 0.0, depth, 1.0);
 	//clipPos.z /= clipPos.w;

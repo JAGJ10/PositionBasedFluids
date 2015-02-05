@@ -13,13 +13,14 @@ const float blurDepthFalloff = 4;
 
 void main() {
 	float depth = texture(depthMap, coord).x;
-	if (depth == 1.0f) {
-		gl_FragDepth = 1;
+
+	if (depth == 0.0f) {
+		gl_FragDepth = depth;
 		return;
 	}
 
-	if (depth == 0.0f) {
-		gl_FragDepth = 0;
+	if (depth == 1.0f) {
+		gl_FragDepth = depth;
 		return;
 	}
 	

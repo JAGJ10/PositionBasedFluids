@@ -215,7 +215,7 @@ void Renderer::run(Camera &cam) {
 	setFloat(composite, zFar, "zFar");
 	setFloat(composite, zNear, "zNear");
 	setVec2(composite, glm::vec2(tanf(cam.zoom*0.5f)*aspectRatio, tanf(cam.zoom*0.5f)), "clipPosToEye");
-	setVec2(composite, glm::vec2(1.0f / width, aspectRatio / width), "invTexScale");
+	setVec2(composite, glm::vec2(1.0f / width, 1.0f / height), "invTexScale");
 
 	//glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
