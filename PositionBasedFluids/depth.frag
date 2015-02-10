@@ -6,6 +6,10 @@ uniform mat4 mView;
 uniform mat4 projection;
 uniform vec2 screenSize;
 
+float linearizeDepth(float depth) {	
+	return (2.0 * 0.1) / (100 + 0.1 - depth * (100 - 0.1));
+}
+
 void main() {
 	//calculate normal
 	vec3 normal;
@@ -22,5 +26,7 @@ void main() {
 	vec4 pixelPos = vec4(pos + normal * 0.6f, 1.0);
 	vec4 clipSpacePos = projection * pixelPos;
 	
-	gl_FragDepth = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
+	float d = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
+	//d = linearizeDepth(d);
+	gl_FragDepth = d;
 }

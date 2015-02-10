@@ -35,7 +35,12 @@ void main() {
     float depth = texture(depthMap, coord).x;
 
 	if (depth == 0.0f) {
-		discard;
+		fragColor = vec4(0);
+		return;
+	}
+
+	if (depth == 1.0) {
+		fragColor = vec4(1);
 		return;
 	}
 
@@ -58,6 +63,11 @@ void main() {
 	if (abs(zb.z) < abs(zt.z))
 		dy = zb;
 
+	float dxDot = dot(dx, vec3(1, 0, 0));
+	float dyDot = dot(dy, vec3(0, 1, 0));
+	fragColor = vec4(dxDot > 0.0 ? 1.0 : 0.0, dyDot > 0.0 ? 1.0 : 0.0, 0.0, 1.0);
+	//return;
+
 	vec3 normal = normalize(cross(dx, dy));
     
 	vec4 worldPos = inverse(mView) * vec4(eyePos, 1.0);
@@ -77,8 +87,8 @@ void main() {
 
 	//float thickness = max(texture(thicknessMap, refractCoord).x, 0.3);
 	float thickness = max(texture(thicknessMap, coord).x, 0.3);
-	//vec3 transmission = exp(-(vec3(1.0)-color.xyz)*thickness);
-	vec3 transmission = (1.0-(1.0-color.xyz)*thickness*0.8)*color.w;
+	vec3 transmission = exp(-(vec3(1.0)-color.xyz)*thickness);
+	//vec3 transmission = (1.0-(1.0-color.xyz)*thickness*0.8)*color.w;
     
 	vec3 lVec = normalize(worldPos.xyz-lightPos);
 	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(lVec, -lightDir))), 0.05);

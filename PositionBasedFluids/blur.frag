@@ -9,17 +9,17 @@ uniform vec2 blurDir;
 uniform float filterRadius;
 uniform float blurScale;
 
-const float blurDepthFalloff = 4;
+const float blurDepthFalloff = 5.5f;
 
 void main() {
 	float depth = texture(depthMap, coord).x;
 
-	if (depth == 0.0f) {
-		gl_FragDepth = depth;
+	if (depth <= 0.0f) {
+		gl_FragDepth = 0;
 		return;
 	}
 
-	if (depth == 1.0f) {
+	if (depth >= 1.0f) {
 		gl_FragDepth = depth;
 		return;
 	}
@@ -28,7 +28,9 @@ void main() {
 	float wsum = 0.0f;
 	
 	for (float x = -filterRadius; x <= filterRadius; x += 1.0f) {
-		float s = texture(depthMap, coord + x*blurDir).x;
+		float s = texture(depthMap, coord + x * blurDir).x;
+
+		if (s >= 1.0f) continue;
 
 		float r = x * blurScale;
 		float w = exp(-r*r);
@@ -43,6 +45,6 @@ void main() {
 	if (wsum > 0.0f) {
 		sum /= wsum;
 	}
-	
+
 	gl_FragDepth = sum;
 }
