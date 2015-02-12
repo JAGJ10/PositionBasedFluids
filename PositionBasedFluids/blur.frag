@@ -9,7 +9,7 @@ uniform vec2 blurDir;
 uniform float filterRadius;
 uniform float blurScale;
 
-const float blurDepthFalloff = 65.0f;
+const float blurDepthFalloff = 5.5f;
 
 void main() {
 	float depth = texture(depthMap, coord).x;

@@ -5,14 +5,14 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 250;
-static const float zNear = 30.0f;
+static const float zFar = 100;
+static const float zNear = 0.1f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
-static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.9f);
-static float filterRadius = 3;
+static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.8f);
+static float filterRadius = 5;
 static const float radius = 0.6f;
 
 Renderer::Renderer() :
