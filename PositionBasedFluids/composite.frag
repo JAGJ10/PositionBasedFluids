@@ -18,8 +18,9 @@ out vec4 fragColor;
 
 const vec3 lightDir = vec3(0, 1, 0);
 const vec3 lightPos = vec3(0, 1000, 0);
-const float shininess = 1000.0;
-const float fresPower = 5.0f;
+const float shininess = 300.0;
+const vec3 specularColor = vec3(1.0, 1.0, 1.0);
+const float fresPower = 3.0f;
 const float fresScale = 0.9;
 const float fresBias = 0.1;
 
@@ -62,9 +63,16 @@ void main() {
 	if (abs(zb.z) < abs(zt.z))
 		dy = zb;
 
+	float dxDot = dot(dx, vec3(1, 0, 0));
+	float dyDot = dot(dy, vec3(0, 1, 0));
+	fragColor = vec4(dxDot > 0.0 ? 1.0 : 0.0, dyDot > 0.0 ? 1.0 : 0.0, 0.0, 1.0);
+	//return;
+
 	vec3 normal = normalize(cross(dx, dy));
     
 	vec4 worldPos = inverse(mView) * vec4(eyePos, 1.0);
+    
+	//vec3 normal = texture(normalMap, coord).xyz;
     
     //Phong specular
 	vec3 l = (mView * vec4(lightDir, 0.0)).xyz;
