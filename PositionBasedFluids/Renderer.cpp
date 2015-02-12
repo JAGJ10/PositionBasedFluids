@@ -5,20 +5,19 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 250;
-static const float zNear = 30.0f;
+static const float zFar = 100;
+static const float zNear = 10.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.9f);
-static float filterRadius = 3;
+static float filterRadius = 5;
 static const float radius = 0.6f;
 
 Renderer::Renderer() :
 	running(true),
 	depth(Shader("depth.vert", "depth.frag")),
-	normals(Shader("normal.vert", "normal.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
 	composite(Shader("composite.vert", "composite.frag")),
@@ -45,7 +44,6 @@ void Renderer::run(Camera &cam) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//----------------------Particle Depth----------------------
-	
 	glUseProgram(depth.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
 	glDrawBuffer(GL_NONE);
@@ -57,7 +55,6 @@ void Renderer::run(Camera &cam) {
 
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
-	setVec2(depth, screenSize, "screenSize");
 	setFloat(depth, radius, "pointRadius");
 	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
@@ -128,32 +125,8 @@ void Renderer::run(Camera &cam) {
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	//--------------------Particle Normals-------------------------
-	
-	glUseProgram(normals.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, normals.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	normals.shaderVAOQuad();
-		
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, blur.texH);
-	depthMap = glGetUniformLocation(normals.program, "depthMap");
-	glUniform1i(depthMap, 0);
-		
-	setMatrix(normals, mView, "mView");
-	setMatrix(normals, projection, "projection");
-	setVec2(normals, screenSize, "screenSize");
-	setFloat(normals, zFar, "zFar");
-	setFloat(normals, zNear, "zNear");
-		
 	glDisable(GL_DEPTH_TEST);
-		
-	glBindVertexArray(normals.vao);
-		
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	
+
 	//--------------------Particle Thickness-------------------------
 	glUseProgram(thickness.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, thickness.fbo);
@@ -164,7 +137,6 @@ void Renderer::run(Camera &cam) {
 
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
-	setVec2(thickness, screenSize, "screenSize");
 	setFloat(depth, radius * 4.0f, "pointRadius");
 	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
@@ -203,22 +175,11 @@ void Renderer::run(Camera &cam) {
 	GLint thicknessMap = glGetUniformLocation(composite.program, "thicknessMap");
 	glUniform1i(thicknessMap, 1);
 
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normals.tex);
-	GLint normalMap = glGetUniformLocation(composite.program, "normalMap");
-	glUniform1i(normalMap, 2);
-
 	setMatrix(composite, projection, "projection");
 	setMatrix(composite, mView, "mView");
-	setVec2(composite, screenSize, "screenSize");
 	setVec4(composite, color, "color");
-	setFloat(composite, zFar, "zFar");
-	setFloat(composite, zNear, "zNear");
-	setVec2(composite, glm::vec2(tanf(cam.zoom*0.5f)*aspectRatio, tanf(cam.zoom*0.5f)), "clipPosToEye");
 	setVec2(composite, glm::vec2(1.0f / width, 1.0f / height), "invTexScale");
 
-	//glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
@@ -227,7 +188,6 @@ void Renderer::run(Camera &cam) {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
 }
 
 void Renderer::initFramebuffers() {
@@ -253,12 +213,6 @@ void Renderer::initFramebuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboH);
 	blur.initTexture(width, height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, blur.texH);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, blur.texH, 0);
-
-	// Normal buffer
-	normals.initFBO(normals.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, normals.fbo);
-	normals.initTexture(width, height, GL_RGBA, GL_RGBA32F, normals.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normals.tex, 0);
 
 	// Composite buffer
 	composite.initFBO(composite.fbo);

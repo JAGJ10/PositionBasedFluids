@@ -5,13 +5,8 @@ in vec2 coord;
 uniform vec4 color;
 uniform sampler2D depthMap;
 uniform sampler2D thicknessMap;
-uniform sampler2D normalMap;
-uniform vec2 screenSize;
 uniform mat4 projection;
 uniform mat4 mView;
-uniform float zNear;
-uniform float zFar;
-uniform vec2 clipPosToEye;
 uniform vec2 invTexScale;
 
 out vec4 fragColor;
@@ -91,7 +86,6 @@ void main() {
     float fresnel = fresBias + fresScale * pow(1.0f - max(dot(normal, viewDir), 0.0), fresPower);
 
 	//Diffuse light
-    //vec3 diffuse = max(0.0f, dot(normal, lightDir) * 0.5f + 0.5f) * color.xyz;
 	vec3 diffuse = color.xyz * mix(vec3(0.29, 0.379, 0.59), vec3(1.0), (ln*0.5 + 0.5)) * (1 - color.w);
 	//vec3 diffuse = color.xyz * mix(vec3(0.29, 0.379, 0.59), vec3(1.0), (ln*0.5 + 0.5));
 
@@ -102,29 +96,11 @@ void main() {
 	vec3 rWorld = (inverse(mView)*vec4(rEye, 0.0)).xyz;
 
 	vec3 reflect = vec3(1.0) + mix(groundColor, skyColor, smoothstep(0.15, 0.25, rWorld.y));
-
-	vec3 cBeer = vec3(exp(-.6*thickness), exp(-.2*thickness), exp(-.05*thickness));
     
     //Compositing everything
-    //vec4 finalColor = vec4(cBeer + diffuse*specularColor.xyz*specular, 1-exp(-3*thickness));
     vec3 finalColor = diffuse + (mix(transmission, reflect, fresnel) + specular) * color.w;
-	//vec3 finalColor = diffuse + specular * color.w;
 
-	//fragColor = vec4(diffuse, 1.0f);
 	fragColor = vec4(finalColor, 1.0);
-	//fragColor = finalColor;
-	//fragColor = vec4(normal * 0.5 + 0.5, 1.0);
-	//fragColor = vec4(transmission, 1.0);
-	//fragColor = vec4(cBeer, 1);
-	//fragColor = vec4(vec3(ln*0.5+0.5), 1);
-	//fragColor = vec4(vec3(fresnel), 1);
-	//fragColor = vec4(vec3(viewDir), 1);
-	//fragColor = vec4(normal, 1);
-	//fragColor = vec4(vec3(depth), 1);
 
-	//vec4 clipPos = projection * vec4(0.0, 0.0, depth, 1.0);
-	//clipPos.z /= clipPos.w;
-
-	//gl_FragDepth = clipPos.z*0.5 + 0.5;
 	gl_FragDepth = depth;
 }

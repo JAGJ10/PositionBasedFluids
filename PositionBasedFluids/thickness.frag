@@ -4,7 +4,6 @@ in vec3 pos;
 
 uniform mat4 mView;
 uniform mat4 projection;
-uniform vec2 screenSize;
 
 out float thickness;
 
