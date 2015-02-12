@@ -7,21 +7,30 @@ uniform vec2 screenSize;
 uniform mat4 projection;
 uniform vec2 blurDir;
 uniform float filterRadius;
+uniform float blurScale;
 
-const float blurScale = .01;
-const float blurDepthFalloff = 2;
+const float blurDepthFalloff = 65.0f;
 
 void main() {
 	float depth = texture(depthMap, coord).x;
-	if (depth == 1f) {
-		discard;
+
+	if (depth <= 0.0f) {
+		gl_FragDepth = 0;
+		return;
+	}
+
+	if (depth >= 1.0f) {
+		gl_FragDepth = depth;
+		return;
 	}
 	
 	float sum = 0.0f;
 	float wsum = 0.0f;
 	
 	for (float x = -filterRadius; x <= filterRadius; x += 1.0f) {
-		float s = texture(depthMap, coord + x*blurDir).x;
+		float s = texture(depthMap, coord + x * blurDir).x;
+
+		if (s >= 1.0f) continue;
 
 		float r = x * blurScale;
 		float w = exp(-r*r);
@@ -36,6 +45,6 @@ void main() {
 	if (wsum > 0.0f) {
 		sum /= wsum;
 	}
-	
+
 	gl_FragDepth = sum;
 }

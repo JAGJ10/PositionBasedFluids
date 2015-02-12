@@ -5,14 +5,15 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 100;
-static const float zNear = 0.1f;
+static const float zFar = 250;
+static const float zNear = 30.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
-static const glm::vec3 color = glm::vec3(0.2f, 0.5f, 1.0f);
-static const float filterRadius = 3;
+static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.9f);
+static float filterRadius = 3;
+static const float radius = 0.6f;
 
 Renderer::Renderer() :
 	running(true),
@@ -57,15 +58,21 @@ void Renderer::run(Camera &cam) {
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
 	setVec2(depth, screenSize, "screenSize");
+	setFloat(depth, radius, "pointRadius");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
 		
 	glBindVertexArray(depth.vao);
 		
 	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
-	
 
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
+	
 	//--------------------Particle Blur-------------------------
 	glUseProgram(blur.program);
 
@@ -87,6 +94,8 @@ void Renderer::run(Camera &cam) {
 	setVec2(blur, screenSize, "screenSize");
 	setVec2(blur, blurDirY, "blurDir");
 	setFloat(blur, filterRadius, "filterRadius");
+	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+	setFloat(blur, 0.1f, "blurScale");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -110,6 +119,8 @@ void Renderer::run(Camera &cam) {
 	setMatrix(blur, projection, "projection");
 	setVec2(blur, blurDirX, "blurDir");
 	setFloat(blur, filterRadius, "filterRadius");
+	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+	setFloat(blur, 0.1f, "blurScale");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -154,16 +165,23 @@ void Renderer::run(Camera &cam) {
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
 	setVec2(thickness, screenSize, "screenSize");
+	setFloat(depth, radius * 4.0f, "pointRadius");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glBlendEquation(GL_FUNC_ADD);
+	glDepthMask(GL_FALSE);
 	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
 
 	glBindVertexArray(thickness.vao);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
 
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
@@ -193,12 +211,16 @@ void Renderer::run(Camera &cam) {
 	setMatrix(composite, projection, "projection");
 	setMatrix(composite, mView, "mView");
 	setVec2(composite, screenSize, "screenSize");
-	setVec3(composite, color, "color");
+	setVec4(composite, color, "color");
 	setFloat(composite, zFar, "zFar");
 	setFloat(composite, zNear, "zNear");
+	setVec2(composite, glm::vec2(tanf(cam.zoom*0.5f)*aspectRatio, tanf(cam.zoom*0.5f)), "clipPosToEye");
+	setVec2(composite, glm::vec2(1.0f / width, 1.0f / height), "invTexScale");
 
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 
 	glBindVertexArray(composite.vao);
 

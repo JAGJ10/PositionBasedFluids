@@ -5,26 +5,26 @@ using namespace std;
 static const float deltaT = 0.016f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
-static const int PRESSURE_ITERATIONS = 6;
-static const float H = 1.0f;
-static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
+static const int PRESSURE_ITERATIONS = 4;
+static const float H = 0.6f;
+static const float KPOLY = 100 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float VISC = 15 / (2 * PI * (H * H * H));
 static const float REST_DENSITY = 1.0f;
 static const float EPSILON_LAMBDA = 100.0f;
-static const float EPSILON_VORTICITY = 15.0f;
+static const float EPSILON_VORTICITY = 1.0f;
 static const float C = 0.01f;
 static const float K = 0.001f;
 static const float deltaQMag = 0; //.1f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
-static float width = 25;
+static float width = 90;
 static float height = 500;
-static float depth = 25;
+static float depth = 90;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 20; i+=.95f) {
-		for (float j = 0; j < 20; j+=.95f) {
-			for (float k = 0; k < 20; k+=.95f) {
+	for (float i = 0; i < 45; i+=.55f) {
+		for (float j = 10; j < 55; j+=.55f) {
+			for (float k = 0; k < 45; k+=.55f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
@@ -98,8 +98,6 @@ void ParticleSystem::update() {
 	}
 
 	for (auto &p : particles) {
-		imposeConstraints(p);
-
 		//set new velocity vi = (x*i - xi) / deltaT
 		p.velocity = (p.newPos - p.oldPos) / deltaT;
 
@@ -266,7 +264,7 @@ void ParticleSystem::imposeConstraints(Particle &p) {
 }
 
 float ParticleSystem::clampedConstraint(float x, float max) {
-	if (x < 0.0f) {
+	if (x <= 0.0f) {
 		return 0.0f;
 	} else if (x >= max) {
 		return max - 0.1f;
@@ -276,7 +274,7 @@ float ParticleSystem::clampedConstraint(float x, float max) {
 }
 
 bool ParticleSystem::outOfRange(float x, float min, float max) {
-	return x < min || x >= max;
+	return x <= min || x >= max;
 }
 
 void ParticleSystem::updatePositions() {

@@ -48,7 +48,6 @@ int main() {
 	
 	Camera cam = Camera();
 	Renderer render = Renderer();
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
 	int w = 0;
 
@@ -64,7 +63,7 @@ int main() {
 
 		render.run(cam);
 
-		/*ILuint imageID = ilGenImage();
+		ILuint imageID = ilGenImage();
 		ilBindImage(imageID);
 		ilutGLScreen();
 		//ilEnable(IL_FILE_OVERWRITE);
@@ -74,7 +73,7 @@ int main() {
 		ilSaveImage(c);
 		//ilutGLScreenie();
 		ilDeleteImage(imageID);
-		w++;*/
+		w++;
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
