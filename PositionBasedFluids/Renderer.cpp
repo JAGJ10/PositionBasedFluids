@@ -5,8 +5,8 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 250;
-static const float zNear = 30.0f;
+static const float zFar = 300;
+static const float zNear = 50.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
@@ -30,7 +30,9 @@ Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
-		system.update();
+		for (int i = 0; i < 4; i++) {
+			system.update();
+		}
 	}
 	//Get particle positions
 	positions = system.getPositions();

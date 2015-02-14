@@ -17,14 +17,14 @@ static const float C = 0.01f;
 static const float K = 0.01f;
 static const float deltaQMag = 0; //.1f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
-static float width = 90;
+static float width = 125;
 static float height = 500;
-static float depth = 90;
+static float depth = 125;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 5; i < 20; i+=.9f) {
-		for (float j = 0; j < .9f; j+=.9f) {
-			for (float k = 5; k < 20; k +=.9f) {
+	for (float i = 45; i < 120; i+=.9f) {
+		for (float j = 0; j < 70; j+=.9f) {
+			for (float k = 45; k < 120; k +=.9f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
