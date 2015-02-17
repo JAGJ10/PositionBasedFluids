@@ -27,7 +27,7 @@ public:
 	double mouseSens;
 	GLfloat zoom;
 
-	Camera() : eye(glm::vec3(50.0f, 150.0f, 250.0f)),
+	Camera() : eye(glm::vec3(50.0f, 150.0f, 400.0f)),
 		front(glm::normalize(glm::vec3(cos(glm::radians(-90.0f)), 0.0f, sin(glm::radians(-90.0f))))),
 		up(glm::vec3(0.0f, 1.0f, 0.0f)),
 		right(glm::cross(up, (eye - front))),

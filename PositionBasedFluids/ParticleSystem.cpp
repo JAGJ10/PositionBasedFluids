@@ -17,14 +17,22 @@ static const float C = 0.01f;
 static const float K = 0.01f;
 static const float deltaQMag = 0; //.1f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
-static float width = 125;
+static float width = 205;
 static float height = 500;
-static float depth = 125;
+static float depth = 205;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 45; i < 120; i+=.9f) {
-		for (float j = 0; j < 70; j+=.9f) {
-			for (float k = 45; k < 120; k +=.9f) {
+	for (float i = 135; i < 200; i+=.9f) {
+		for (float j = 0; j < 65; j+=.9f) {
+			for (float k = 135; k < 200; k +=.9f) {
+				particles.push_back(Particle(glm::vec3(i, j, k), 1));
+			}
+		}
+	}
+
+	for (float i = 5; i < 70; i += .9f) {
+		for (float j = 0; j < 65; j += .9f) {
+			for (float k = 5; k < 70; k += .9f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1));
 			}
 		}
@@ -109,6 +117,24 @@ void ParticleSystem::update() {
 		//update position xi = x*i
 		p.oldPos = p.newPos;
 	}
+
+	//----------------FOAM-----------------
+	calcNormals();
+	for (auto &p : particles) {
+		glm::vec3 velocityDiff = glm::vec3(0.0f);
+		glm::vec3 curvature = glm::vec3(0.0f);
+		for (auto &n : p.neighbors) {
+			float wAir = WAirPotential(p.newPos, n->newPos);
+			glm::vec3 normPos = glm::normalize(n->newPos - p.newPos);
+			glm::vec3 normVel = glm::normalize(n->velocity - p.velocity);
+			velocityDiff += glm::length(n->velocity - p.velocity) * (1 - glm::dot(normVel, normPos)) * wAir;
+			if (glm::dot(normPos, p.normal) < 0) {
+				curvature += (1 - glm::dot(p.normal, n->normal) * wAir);
+			}
+			
+			float deltaVN = (glm::dot(glm::normalize(p.velocity), p.normal) < 0.6f) ? 0 : 1;
+		}
+	}
 }
 
 void ParticleSystem::applyGravity(Particle &p) {
@@ -124,7 +150,20 @@ float ParticleSystem::WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 		return 0;
 	}
 
-	return KPOLY * glm::pow((H * H - glm::length2(rLen)), 3);
+	return KPOLY * glm::pow((H * H - glm::length2(r)), 3);
+}
+
+glm::vec3 ParticleSystem::gradWPoly6(glm::vec3 &pi, glm::vec3 &pj) {
+	glm::vec3 r = pi - pj;
+	float rLen = glm::length(r);
+	if (rLen > H || rLen == 0) {
+		return glm::vec3(0.0f);
+	}
+
+	float coeff = (H - rLen) * (H - rLen);
+	coeff *= 6 * KPOLY;
+	coeff /= rLen;
+	return r * -coeff * glm::pow(H * H - glm::length2(r), 2);
 }
 
 //Spiky Kernel
@@ -154,6 +193,16 @@ glm::vec3 ParticleSystem::WViscosity(glm::vec3 &pi, glm::vec3 &pj) {
 	coeff += ((rLen * rLen) / (H * H));
 	coeff += (H / (2 * rLen)) - 1;
 	return r * coeff;
+}
+
+float ParticleSystem::WAirPotential(glm::vec3 &pi, glm::vec3 &pj) {
+	glm::vec3 r = pi - pj;
+	float rLen = glm::length(r);
+	if (rLen > H) {
+		return 0.0f;
+	}
+
+	return 1 - (rLen / H);
 }
 
 //Calculate the lambda value for pressure correction
@@ -311,4 +360,15 @@ glm::vec3 ParticleSystem::getWeightedPosition(Particle &p) {
 	}
 
 	return p.weightedPos;
+}
+
+void ParticleSystem::calcNormals() {
+	for (auto &p : particles) {
+		glm::vec3 sum = glm::vec3(0.0f);
+		for (auto &n : p.neighbors) {
+			sum += gradWPoly6(p.newPos, n->newPos);
+		}
+
+		p.normal = glm::normalize(sum);
+	}
 }

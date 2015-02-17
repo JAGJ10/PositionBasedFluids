@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\physics">
-      <UniqueIdentifier>{a5ad0b92-87b0-4995-bf77-a727e528b232}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\physics">
-      <UniqueIdentifier>{381dbecf-1c77-49d2-b571-896309c6caaa}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\rendering">
       <UniqueIdentifier>{9ae4adbf-a7d7-4759-9087-3619d143f24e}</UniqueIdentifier>
     </Filter>
@@ -43,6 +37,15 @@
     <Filter Include="shaders\composite">
       <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\foam">
+      <UniqueIdentifier>{a4ba35b4-ce25-4384-9167-1e6f3593e2cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\water">
+      <UniqueIdentifier>{381dbecf-1c77-49d2-b571-896309c6caaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\physics">
+      <UniqueIdentifier>{a5ad0b92-87b0-4995-bf77-a727e528b232}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -63,25 +66,28 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CellGrid.h">
-      <Filter>Header Files\physics</Filter>
+      <Filter>Header Files\water</Filter>
     </ClInclude>
     <ClInclude Include="ParticleSystem.h">
-      <Filter>Header Files\physics</Filter>
+      <Filter>Header Files\water</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Header Files\rendering</Filter>
     </ClInclude>
     <ClInclude Include="Particle.hpp">
-      <Filter>Header Files\physics</Filter>
+      <Filter>Header Files\water</Filter>
     </ClInclude>
     <ClInclude Include="Cell.hpp">
-      <Filter>Header Files\physics</Filter>
+      <Filter>Header Files\water</Filter>
     </ClInclude>
     <ClInclude Include="Shader.hpp">
       <Filter>Header Files\rendering</Filter>
     </ClInclude>
     <ClInclude Include="Camera.hpp">
       <Filter>Source Files\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="FoamParticle.hpp">
+      <Filter>Header Files\foam</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

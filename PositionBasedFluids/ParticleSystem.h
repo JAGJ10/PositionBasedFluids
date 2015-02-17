@@ -4,6 +4,7 @@
 #include "common.h"
 #include "Cell.hpp"
 #include "CellGrid.h"
+#include "FoamParticle.hpp"
 
 class ParticleSystem {
 public:
@@ -20,8 +21,10 @@ private:
 
 	void applyGravity(Particle &p);
 	float WPoly6(glm::vec3 &pi, glm::vec3 &pj);
+	glm::vec3 gradWPoly6(glm::vec3 &pi, glm::vec3 &pj);
 	glm::vec3 WSpiky(glm::vec3 &pi, glm::vec3 &pj);
 	glm::vec3 WViscosity(glm::vec3 &pi, glm::vec3 &pj);
+	float WAirPotential(glm::vec3 &pi, glm::vec3 &pj);
 	float lambda(Particle &p, std::vector<Particle*> &neighbors);
 	float calcDensityConstraint(Particle &p, std::vector<Particle*> &neighbors);
 	glm::vec3 eta(Particle &p, float &vorticityMag);
@@ -33,6 +36,7 @@ private:
 	bool outOfRange(float x, float y, float z);
 	void ParticleSystem::updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
+	void calcNormals();
 };
 
 #endif

@@ -8,6 +8,7 @@ public:
 	glm::vec3 velocity;
 	glm::vec3 force;
 	glm::vec3 deltaP;
+	glm::vec3 normal;
 	float mass;
 	float lambda;
 	std::vector<Particle*> neighbors;
@@ -20,6 +21,7 @@ public:
 		velocity = glm::vec3(0, 0, 0);
 		force = glm::vec3(0, 0, 0);
 		deltaP = glm::vec3(0, 0, 0);
+		normal = glm::vec3(0, 0, 0);
 		lambda = 0;
 	}
 
