@@ -240,7 +240,7 @@ float ParticleSystem::lambda(Particle &p, vector<Particle*> &neighbors) {
 float ParticleSystem::calcDensityConstraint(Particle &p, vector<Particle*> &neighbors) {
 	float sum = 0.0f;
 	for (auto &n : neighbors) {
-		sum += n->mass * WPoly6(p.newPos, n->newPos);
+		sum += WPoly6(p.newPos, n->newPos);
 	}
 
 	return (sum / REST_DENSITY) - 1;

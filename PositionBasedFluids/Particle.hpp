@@ -14,7 +14,7 @@ public:
 
 	Particle(glm::vec3 pos) {
 		this->oldPos = pos;
-		newPos = glm::vec3(0, 0, 0);
+		this->newPos = pos;
 		velocity = glm::vec3(0, 0, 0);
 		deltaP = glm::vec3(0, 0, 0);
 		normal = glm::vec3(0, 0, 0);
