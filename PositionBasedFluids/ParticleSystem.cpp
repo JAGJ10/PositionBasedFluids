@@ -36,7 +36,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 135; i < 200; i+=.9f) {
 		for (float j = 0; j < 65; j+=.9f) {
 			for (float k = 135; k < 200; k +=.9f) {
-				particles.push_back(Particle(glm::vec3(i, j, k), 1));
+				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
 	}
@@ -44,7 +44,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 5; i < 70; i += .9f) {
 		for (float j = 0; j < 65; j += .9f) {
 			for (float k = 5; k < 70; k += .9f) {
-				particles.push_back(Particle(glm::vec3(i, j, k), 1));
+				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
 	}
