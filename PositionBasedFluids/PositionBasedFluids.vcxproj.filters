@@ -22,21 +22,6 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{17ce82f0-0425-44d4-9bed-9cc4186650e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\depth">
-      <UniqueIdentifier>{1d2cf512-0130-4849-9b03-84553bfc586e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\normal">
-      <UniqueIdentifier>{91ba2cdc-36c3-4a09-bdfa-79ba028cf4e6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\blur">
-      <UniqueIdentifier>{ff5c310d-81c3-4859-a835-e32b6716c456}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\thickness">
-      <UniqueIdentifier>{45060a6c-f3fd-43e5-bf02-1611640ccb4f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="shaders\composite">
-      <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\foam">
       <UniqueIdentifier>{a4ba35b4-ce25-4384-9167-1e6f3593e2cc}</UniqueIdentifier>
     </Filter>
@@ -45,6 +30,21 @@
     </Filter>
     <Filter Include="Source Files\physics">
       <UniqueIdentifier>{a5ad0b92-87b0-4995-bf77-a727e528b232}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\water">
+      <UniqueIdentifier>{35e0aedf-75f8-43ab-adc2-aeeb5eae332a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\water\depth">
+      <UniqueIdentifier>{1d2cf512-0130-4849-9b03-84553bfc586e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\water\blur">
+      <UniqueIdentifier>{ff5c310d-81c3-4859-a835-e32b6716c456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\water\composite">
+      <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\water\thickness">
+      <UniqueIdentifier>{45060a6c-f3fd-43e5-bf02-1611640ccb4f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -92,31 +92,25 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="depth.vert">
-      <Filter>shaders\depth</Filter>
+      <Filter>shaders\water\depth</Filter>
     </None>
     <None Include="depth.frag">
-      <Filter>shaders\depth</Filter>
-    </None>
-    <None Include="normal.vert">
-      <Filter>shaders\normal</Filter>
-    </None>
-    <None Include="normal.frag">
-      <Filter>shaders\normal</Filter>
+      <Filter>shaders\water\depth</Filter>
     </None>
     <None Include="blur.vert">
-      <Filter>shaders\blur</Filter>
+      <Filter>shaders\water\blur</Filter>
     </None>
     <None Include="blur.frag">
-      <Filter>shaders\blur</Filter>
+      <Filter>shaders\water\blur</Filter>
     </None>
     <None Include="thickness.frag">
-      <Filter>shaders\thickness</Filter>
+      <Filter>shaders\water\thickness</Filter>
     </None>
     <None Include="composite.vert">
-      <Filter>shaders\composite</Filter>
+      <Filter>shaders\water\composite</Filter>
     </None>
     <None Include="composite.frag">
-      <Filter>shaders\composite</Filter>
+      <Filter>shaders\water\composite</Filter>
     </None>
   </ItemGroup>
 </Project>

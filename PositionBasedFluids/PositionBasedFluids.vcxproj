@@ -174,8 +174,6 @@
     <None Include="composite.vert" />
     <None Include="depth.frag" />
     <None Include="depth.vert" />
-    <None Include="normal.frag" />
-    <None Include="normal.vert" />
     <None Include="thickness.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -17,6 +17,17 @@ static const float C = 0.01f;
 static const float K = 0.01f;
 static const float deltaQMag = 0; //.1f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
+
+static const int wcmin = 2;
+static const int wcmax = 8;
+static const int tamin = 5;
+static const int tamax = 20;
+static const int kmin = 5;
+static const int kmax = 50;
+
+static const int kta = 1000;
+static const int kwc = 1000;
+
 static float width = 205;
 static float height = 500;
 static float depth = 205;
@@ -45,11 +56,8 @@ ParticleSystem::~ParticleSystem() {}
 
 void ParticleSystem::update() {
 	for (auto &p : particles) {
-		applyGravity(p);
-		p.newPos = p.oldPos;
-
 		//update velocity vi = vi + deltaT * fExt
-		p.velocity += p.force * deltaT;
+		p.velocity += GRAVITY * deltaT;
 
 		//predict position x* = xi + deltaT * vi
 		p.newPos += p.velocity * deltaT;
@@ -121,25 +129,29 @@ void ParticleSystem::update() {
 	//----------------FOAM-----------------
 	calcNormals();
 	for (auto &p : particles) {
-		glm::vec3 velocityDiff = glm::vec3(0.0f);
-		glm::vec3 curvature = glm::vec3(0.0f);
+		float velocityDiff = 0.0f;
+		float curvature = 0.0f;
 		for (auto &n : p.neighbors) {
 			float wAir = WAirPotential(p.newPos, n->newPos);
-			glm::vec3 normPos = glm::normalize(n->newPos - p.newPos);
-			glm::vec3 normVel = glm::normalize(n->velocity - p.velocity);
-			velocityDiff += glm::length(n->velocity - p.velocity) * (1 - glm::dot(normVel, normPos)) * wAir;
-			if (glm::dot(normPos, p.normal) < 0) {
+			glm::vec3 xij = glm::normalize(p.newPos - n->newPos);
+			glm::vec3 xji = glm::normalize(n->newPos - p.newPos);
+			glm::vec3 normVel = glm::normalize(p.velocity - n->velocity);
+			velocityDiff += glm::length(n->velocity - p.velocity) * (1 - glm::dot(normVel, xij)) * wAir;
+			if (glm::dot(xji, p.normal) < 0) {
 				curvature += (1 - glm::dot(p.normal, n->normal) * wAir);
 			}
-			
-			float deltaVN = (glm::dot(glm::normalize(p.velocity), p.normal) < 0.6f) ? 0 : 1;
 		}
-	}
-}
 
-void ParticleSystem::applyGravity(Particle &p) {
-	p.force = glm::vec3(0.0f);
-	p.force += GRAVITY;
+		float ita = foamPotential(velocityDiff, tamin, tamax);
+
+		int deltaVN = (glm::dot(glm::normalize(p.velocity), p.normal) < 0.6f) ? 0 : 1;
+		float iwc = foamPotential(curvature * deltaVN, wcmin, wcmax);
+		
+		float ek = 0.5f * glm::length2(p.velocity);
+		float ik = foamPotential(ek, kmin, kmax);
+
+		int nd = int(ik * (kta * ita + kwc * iwc) * deltaT);
+	}
 }
 
 //Poly6 Kernel
@@ -371,4 +383,8 @@ void ParticleSystem::calcNormals() {
 
 		p.normal = glm::normalize(sum);
 	}
+}
+
+float ParticleSystem::foamPotential(float i, int rmin, int rmax) {
+	return (min(i, rmax) - min(i, rmin)) / (rmax - rmin);
 }

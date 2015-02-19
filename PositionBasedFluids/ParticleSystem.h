@@ -37,6 +37,7 @@ private:
 	void ParticleSystem::updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
 	void calcNormals();
+	float foamPotential(float i, int rmin, int rmax);
 };
 
 #endif
