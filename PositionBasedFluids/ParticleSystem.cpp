@@ -130,11 +130,20 @@ void ParticleSystem::update() {
 	}
 
 	for (auto &p : bubbles) {
-
+		p.velocity += 
 	}
 
 	for (auto &p : foam) {
+		glm::vec3 vfk = glm::vec3(0.0f);
+		glm::vec3 k = glm::vec3(0.0f);
+		for (auto &pf : p.fluidNeighbors) {
+			glm::vec3 cs = cubicSpline(p.pos, pf->newPos);
+			vfk += pf->velocity * cs; //todo
+			k += cs;
+		}
 
+		p.velocity = vfk / k;
+		p.pos += p.velocity * deltaT;
 	}
 
 
@@ -228,6 +237,16 @@ glm::vec3 ParticleSystem::WViscosity(glm::vec3 &pi, glm::vec3 &pj) {
 	coeff += ((rLen * rLen) / (H * H));
 	coeff += (H / (2 * rLen)) - 1;
 	return r * coeff;
+}
+
+glm::vec3 ParticleSystem::cubicSpline(glm::vec3 &pi, glm::vec3 &pj) {
+	glm::vec3 r = pi - pj;
+	float rLen = glm::length(r);
+	if (rLen > H || rLen == 0) {
+		return glm::vec3(0.0f);
+	}
+
+	float coeff = 1 / 6;
 }
 
 float ParticleSystem::WAirPotential(glm::vec3 &pi, glm::vec3 &pj) {

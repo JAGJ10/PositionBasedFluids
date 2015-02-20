@@ -37,10 +37,11 @@ private:
 	float sCorrCalc(Particle &pi, Particle* &pj);
 	glm::vec3 xsphViscosity(Particle &p);
 	bool outOfRange(float x, float y, float z);
-	void ParticleSystem::updatePositions();
+	void updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
 	void calcNormals();
 	float foamPotential(float i, int rmin, int rmax);
+	glm::vec3 cubicSpline(glm::vec3 &pi, glm::vec3 &pj);
 };
 
 #endif
