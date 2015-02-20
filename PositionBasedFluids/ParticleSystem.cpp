@@ -28,28 +28,25 @@ static const int kmax = 50;
 static const int kta = 1000;
 static const int kwc = 1000;
 
-static float width = 205;
+static float width = 150;
 static float height = 500;
-static float depth = 205;
+static float depth = 150;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 135; i < 200; i+=.9f) {
-		for (float j = 0; j < 65; j+=.9f) {
-			for (float k = 135; k < 200; k +=.9f) {
+	for (float i = 0; i < 30; i+=.9f) {
+		for (float j = 0; j < 30; j+=.9f) {
+			for (float k = 0; k < 30; k +=.9f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
 	}
 
-	for (float i = 5; i < 70; i += .9f) {
-		for (float j = 0; j < 65; j += .9f) {
-			for (float k = 5; k < 70; k += .9f) {
-				particles.push_back(Particle(glm::vec3(i, j, k)));
-			}
-		}
-	}
-
+	spray.reserve(100000);
+	bubbles.reserve(100000);
+	foam.reserve(100000);
 	positions.reserve(particles.capacity());
+
+	srand(time(0));
 }
 
 ParticleSystem::~ParticleSystem() {}
@@ -70,10 +67,8 @@ void ParticleSystem::update() {
 	for (auto &p : particles) {
 		p.neighbors.clear();
 		glm::ivec3 pos = p.newPos;
-		vector<Cell*> neighborCells = grid.cells[pos.x][pos.y][pos.z].neighbors;
-		for (auto &c : neighborCells) {
-			vector<Particle*> allParticles = c->particles;
-			for (auto &n : allParticles) {
+		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
+			for (auto &n : c->particles) {
 				if (p.newPos != n->newPos) {
 					//if (glm::distance(p.newPos, n->newPos) <= 2 * H) {
 						//p.renderNeighbors.push_back(n);
@@ -127,6 +122,22 @@ void ParticleSystem::update() {
 	}
 
 	//----------------FOAM-----------------
+	
+	//Update velocities
+	for (auto &p : spray) {
+		p.velocity += GRAVITY * deltaT;
+		p.pos += p.velocity * deltaT;
+	}
+
+	for (auto &p : bubbles) {
+
+	}
+
+	for (auto &p : foam) {
+
+	}
+
+
 	calcNormals();
 	for (auto &p : particles) {
 		float velocityDiff = 0.0f;
@@ -151,6 +162,18 @@ void ParticleSystem::update() {
 		float ik = foamPotential(ek, kmin, kmax);
 
 		int nd = int(ik * (kta * ita + kwc * iwc) * deltaT);
+
+		float xr = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float xtheta = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float xh = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
+		float r = H * glm::sqrt(xr);
+		float theta = xtheta * 2 * PI;
+		float distH = xh * glm::length(deltaT * p.velocity);
+
+		glm::vec3 xd = p.newPos + (r * glm::cos(theta * 2)) + (r * glm::sin(theta * 2)) + (distH * glm::normalize(p.velocity));
+		glm::vec3 vd = (r * glm::cos(theta * 2)) + (r * glm::sin(theta * 2)) + p.velocity;
+		
 	}
 }
 

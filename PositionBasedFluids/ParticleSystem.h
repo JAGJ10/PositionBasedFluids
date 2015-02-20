@@ -16,6 +16,9 @@ public:
 
 private:
 	std::vector<Particle> particles;
+	std::vector<FoamParticle> spray;
+	std::vector<FoamParticle> foam;
+	std::vector<FoamParticle> bubbles;
 	std::vector<glm::vec3> positions;
 	CellGrid grid;
 
