@@ -2,8 +2,8 @@
 
 using namespace std;
 
-CellGrid::CellGrid(int width, int height, int depth) : w{ width }, h{ height },	d{ depth },
-	cells(width, vector<vector<Cell>>(height, vector<Cell>(depth, Cell()))) {
+CellGrid::CellGrid(int width, int height, int depth) : w{ width * 10 }, h{ height * 10 }, d{ depth * 10 },
+	cells(width * 10, vector<vector<Cell>>(height * 10, vector<Cell>(depth * 10, Cell()))) {
 
 	for (auto &&row : cells) {
 		for (auto &&col : row) {
@@ -36,7 +36,7 @@ CellGrid::~CellGrid() {}
 void CellGrid::updateCells(vector<Particle> &particles) {
 	clearCells();
 	for (auto &p : particles) {
-		glm::ivec3 pos = p.newPos;
+		glm::ivec3 pos = p.newPos * 10;
 		//assuming indices are always valid because the box keeps the particles contained
 		cells[pos.x][pos.y][pos.z].addParticle(p);
 	}

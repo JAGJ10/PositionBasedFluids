@@ -2,20 +2,19 @@
 
 using namespace std;
 
-static const float deltaT = 0.016f;
+static const float deltaT = 0.0083f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
-static const int PRESSURE_ITERATIONS = 10;
-static const float H = 0.95f;
-static const float KPOLY = 300 / (64 * PI * glm::pow(H, 9));
-static const float SPIKY = 15 / (PI * glm::pow(H, 6));
-static const float VISC = 15 / (2 * PI * (H * H * H));
-static const float REST_DENSITY = 1.0f;
-static const float EPSILON_LAMBDA = 150.0f;
-static const float EPSILON_VORTICITY = 0.5f;
+static const int PRESSURE_ITERATIONS = 4;
+static const float H = 0.1f;
+static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
+static const float SPIKY = 45 / (PI * glm::pow(H, 6));
+static const float REST_DENSITY = 6378.0f;
+static const float EPSILON_LAMBDA = 600.0f;
+static const float EPSILON_VORTICITY = 0.0001f;
 static const float C = 0.01f;
-static const float K = 0.01f;
-static const float deltaQMag = 0; //.1f * H;
+static const float K = 0.0001f;
+static const float deltaQMag = 0.3f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
 
 static const int wcmin = 2;
@@ -28,14 +27,14 @@ static const int kmax = 50;
 static const int kta = 1000;
 static const int kwc = 1000;
 
-static float width = 15;
+static float width = 4;
 static float height = 500;
-static float depth = 15;
+static float depth = 4;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 10; i+=.9f) {
-		for (float j = 0; j < 10; j+=.9f) {
-			for (float k = 0; k < 10; k +=.9f) {
+	for (float i = 0.25f; i < 2; i+=.05f) {
+		for (float j = 1; j < 3; j+=.05f) {
+			for (float k = 0.25f; k < 2; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
@@ -66,7 +65,7 @@ void ParticleSystem::update() {
 	grid.updateCells(particles);
 	for (auto &p : particles) {
 		p.neighbors.clear();
-		glm::ivec3 pos = p.newPos;
+		glm::ivec3 pos = p.newPos * 10;
 		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
 			for (auto &n : c->particles) {
 				if (p.newPos != n->newPos) {
@@ -95,6 +94,7 @@ void ParticleSystem::update() {
 			for (auto &n : p.neighbors) {
 				float lambdaSum = p.lambda + n->lambda;
 				float sCorr = sCorrCalc(p, n);
+				//sCorr = 0;
 				deltaP += WSpiky(p.newPos, n->newPos) * (lambdaSum + sCorr);
 			}
 
@@ -115,7 +115,7 @@ void ParticleSystem::update() {
 		p.velocity += vorticityForce(p) * deltaT;
 
 		//apply XSPH viscosity
-		p.velocity += xsphViscosity(p);
+		p.velocity += xsphViscosity(p) * deltaT;
 
 		//update position xi = x*i
 		p.oldPos = p.newPos;
@@ -288,21 +288,6 @@ glm::vec3 ParticleSystem::WSpiky(glm::vec3 &pi, glm::vec3 &pj) {
 	return r * -coeff;
 }
 
-//Viscosity Kernel
-glm::vec3 ParticleSystem::WViscosity(glm::vec3 &pi, glm::vec3 &pj) {
-	glm::vec3 r = pi - pj;
-	float rLen = glm::length(r);
-	if (rLen > H || rLen == 0) {
-		return glm::vec3(0.0f);
-	}
-
-	float coeff = (-1 * (rLen * rLen * rLen)) / (2 * (H * H * H));
-	coeff *= VISC;
-	coeff += ((rLen * rLen) / (H * H));
-	coeff += (H / (2 * rLen)) - 1;
-	return r * coeff;
-}
-
 float ParticleSystem::WAirPotential(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
@@ -346,7 +331,7 @@ float ParticleSystem::calcDensityConstraint(Particle &p, vector<Particle*> &neig
 glm::vec3 ParticleSystem::eta(Particle &p, float &vorticityMag) {
 	glm::vec3 eta = glm::vec3(0.0f);
 	for (auto &n : p.neighbors) {
-		eta += WViscosity(p.newPos, n->newPos) * vorticityMag;
+		eta += WSpiky(p.newPos, n->newPos) * vorticityMag;
 	}
 
 	return eta;
@@ -361,7 +346,7 @@ glm::vec3 ParticleSystem::vorticityForce(Particle &p) {
 
 	for (auto &n : p.neighbors) {
 		velocityDiff = n->velocity - p.velocity;
-		gradient = WViscosity(p.newPos, n->newPos);
+		gradient = WSpiky(p.newPos, n->newPos);
 		omega += glm::cross(velocityDiff, gradient);
 	}
 
@@ -372,11 +357,11 @@ glm::vec3 ParticleSystem::vorticityForce(Particle &p) {
 	}
 
 	glm::vec3 etaVal = eta(p, omegaLength);
-	if (etaVal == glm::vec3(0.0f)) {
+	if (etaVal == glm::vec3(0.0f) || glm::isinf(etaVal.x) || glm::isinf(etaVal.y) || glm::isinf(etaVal.z)) {
 		//Particle is isolated or net force is 0
 		return glm::vec3(0.0f);
 	}
-	
+
 	glm::vec3 n = glm::normalize(etaVal);
 	if (glm::isinf(n.x) || glm::isinf(n.y) || glm::isinf(n.z)) {
 		return glm::vec3(0.0f);
@@ -425,7 +410,7 @@ float ParticleSystem::clampedConstraint(float x, float max) {
 	if (x <= 0.0f) {
 		return 0.0f;
 	} else if (x >= max) {
-		return max - 0.1f;
+		return max - 0.00001f;
 	} else {
 		return x;
 	}

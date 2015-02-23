@@ -5,15 +5,15 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 100.0f;
-static const float zNear = 10.0f;
+static const float zFar = 30.0f;
+static const float zNear = 3.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.9f);
 static float filterRadius = 5;
-static const float radius = 0.95f;
+static const float radius = 0.1f;
 
 Renderer::Renderer() :
 	running(true),
@@ -32,15 +32,15 @@ Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 1; i++) {
 			system.update();
 		}
 	}
 
 	//Get particle positions
 	fluidPositions = system.getFluidPositions();
-	sprayPositions = system.getSprayPositions();
-	cout << sprayPositions.size() << endl;
+	//sprayPositions = system.getSprayPositions();
+	//cout << fluidPositions.size() << endl;
 	//foamPositions = system.getFoamPositions();
 	//bubblePositions = system.getBubblePositions();
 
