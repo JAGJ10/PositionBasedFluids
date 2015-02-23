@@ -34,7 +34,7 @@ void main() {
 	}
 
 	if (depth == 1.0) {
-		fragColor = vec4(1);
+		fragColor = vec4(0);
 		return;
 	}
 

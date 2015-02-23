@@ -204,7 +204,7 @@ void Renderer::run(Camera &cam) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foam.shaderVAOPoints(foamPositions);
+	foam.shaderVAOPoints(bubblePositions);
 
 	setMatrix(foam, projection, "projection");
 	setMatrix(foam, mView, "mView");
@@ -217,7 +217,7 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(foam.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)bubblePositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);

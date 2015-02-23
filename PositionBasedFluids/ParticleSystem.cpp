@@ -24,8 +24,8 @@ static const int tamax = 20;
 static const int kmin = 5;
 static const int kmax = 50;
 
-static const int kta = 500;
-static const int kwc = 500;
+static const int kta = 1000;
+static const int kwc = 1000;
 
 static float width = 2;
 static float height = 10;
@@ -208,7 +208,13 @@ void ParticleSystem::update() {
 			glm::vec3 xd = p.newPos + (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + (distH * glm::normalize(p.velocity));
 			glm::vec3 vd = (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + p.velocity;
 
-			foam.push_back(FoamParticle(p.newPos + xr, p.velocity, 60, 0));
+			int type;
+			if (p.neighbors.size() < 6) type = 0;
+			else if (p.neighbors.size() > 20) type = 1;
+			else type = 2;
+
+			foam.push_back(FoamParticle(p.newPos + xr, p.velocity * deltaT, 60, type));
+			imposeConstraints(foam.back());
 		}
 	}
 
