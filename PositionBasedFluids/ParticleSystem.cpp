@@ -11,7 +11,7 @@ static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float REST_DENSITY = 6378.0f;
 static const float EPSILON_LAMBDA = 600.0f;
-static const float EPSILON_VORTICITY = 0.0001f;
+static const float EPSILON_VORTICITY = 0.00001f;
 static const float C = 0.01f;
 static const float K = 0.0001f;
 static const float deltaQMag = 0.3f * H;
@@ -24,28 +24,26 @@ static const int tamax = 20;
 static const int kmin = 5;
 static const int kmax = 50;
 
-static const int kta = 1000;
-static const int kwc = 1000;
+static const int kta = 500;
+static const int kwc = 500;
 
-static float width = 4;
-static float height = 500;
-static float depth = 4;
+static float width = 3;
+static float height = 10;
+static float depth = 3;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0.25f; i < 2; i+=.05f) {
-		for (float j = 1; j < 3; j+=.05f) {
-			for (float k = 0.25f; k < 2; k+=.05f) {
+	for (float i = 0.75f; i < 1.75f; i+=.05f) {
+		for (float j = 1; j < 2; j+=.05f) {
+			for (float k = 0.75f; k < 1.75f; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
 	}
 
-	spray.reserve(100000);
-	bubbles.reserve(100000);
 	foam.reserve(100000);
 	fluidPositions.reserve(particles.capacity());
 
-	//srand((unsigned int)time(0));
+	srand((unsigned int)time(0));
 }
 
 ParticleSystem::~ParticleSystem() {}
@@ -79,8 +77,6 @@ void ParticleSystem::update() {
 			}
 		}
 	}
-
-	updatePositions();
 
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
 		//set lambda
@@ -117,6 +113,8 @@ void ParticleSystem::update() {
 		//apply XSPH viscosity
 		p.velocity += xsphViscosity(p) * deltaT;
 
+		imposeConstraints(p);
+
 		//update position xi = x*i
 		p.oldPos = p.newPos;
 	}
@@ -124,73 +122,48 @@ void ParticleSystem::update() {
 	//----------------FOAM-----------------
 	
 	//Update velocities
-	/*for (int i = 0; i < spray.size(); i++) {
-		FoamParticle &p = spray.at(i);
-		int numNeighbors = 0;
-		for (auto &c : grid.cells[int(p.pos.x)][int(p.pos.y)][int(p.pos.z)].neighbors) {
-			for (auto &n : c->particles) {
-				if (glm::distance(p.pos, n->newPos) <= H) {
-					numNeighbors++;
-				}
-			}
-		}
-
-		if (numNeighbors > 6) {
-			FoamParticle pp = p;
-			foam.push_back(pp);
-			//spray.erase(spray.begin() + i);
-		} else {
-			p.velocity += GRAVITY * deltaT;
-			p.pos += p.velocity * deltaT;
-		}
-	}
-
-	for (int i = 0; i < bubbles.size(); i++) {
-		FoamParticle &p = bubbles.at(i);
-		int numNeighbors = 0;
-		glm::vec3 vfk = glm::vec3(0.0f);
-		glm::vec3 k = glm::vec3(0.0f);
-		for (auto &c : grid.cells[int(p.pos.x)][int(p.pos.y)][int(p.pos.z)].neighbors) {
-			for (auto &n : c->particles) {
-				if (glm::distance(p.pos, n->newPos) <= H) {
-					numNeighbors++;
-					float cs = WPoly6(p.pos, n->newPos);
-					vfk += n->velocity * cs;
-					k += cs;
-				}
-			}
-		}
-
-		if (numNeighbors <= 20 && numNeighbors >= 6) {
-			FoamParticle pp = p;
-			foam.push_back(pp);
-			//bubbles.erase(bubbles.begin() + i);
-		} else {
-			p.velocity += deltaT * (-0.5 * GRAVITY + 0.5 * (vfk / k));
-		}
-	}
-
 	for (int i = 0; i < foam.size(); i++) {
 		FoamParticle &p = foam.at(i);
-		foam.at(i).lifetime -= deltaT;
-		if (foam.at(i).lifetime <= 0) {
-			//foam.erase(foam.begin() + i);
-			continue;
-		}
-		glm::vec3 vfk = glm::vec3(0.0f);
-		glm::vec3 k = glm::vec3(0.0f);
-		for (auto &c : grid.cells[int(p.pos.x)][int(p.pos.y)][int(p.pos.z)].neighbors) {
+
+		glm::ivec3 pos = p.pos * 10;
+		glm::vec3 vfSum = glm::vec3(0.0f);
+		float kSum = 0;
+		int numNeighbors = 0;
+		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
 			for (auto &n : c->particles) {
-				if (glm::distance(p.pos, n->newPos) < H) {
-					float cs = WPoly6(p.pos, n->newPos);
-					vfk += n->velocity * cs;
-					k += cs;
+				if (glm::distance(p.pos, n->newPos) <= H) {
+					numNeighbors++;
+					float k = WPoly6(p.pos, n->newPos);
+					vfSum += n->velocity * k;
+					kSum += k;
 				}
 			}
 		}
 
-		p.velocity = vfk / k;
-		p.pos += p.velocity * deltaT;
+		if (numNeighbors < 6) p.type = 0;
+		else if (numNeighbors > 20) p.type = 1;
+		else p.type = 2;
+
+		if (p.type == 0) {
+			//Spray
+			p.velocity += GRAVITY * deltaT;
+			p.pos += p.velocity * deltaT;
+		} else if (p.type == 1) {
+			//Bubbles
+			p.velocity += (-0.5 * GRAVITY + ((0.5 * (vfSum / kSum) - p.velocity) / deltaT));
+			p.pos += p.velocity * deltaT;
+		} else if (p.type == 2) {
+			//Foam
+			p.lifetime -= deltaT;
+			if (p.lifetime <= 0) {
+				foam.erase(foam.begin() + i);
+				i--;
+			} else {
+				p.pos += (vfSum / kSum) * deltaT;
+			}
+		}
+
+		imposeConstraints(p);
 	}
 
 
@@ -236,18 +209,11 @@ void ParticleSystem::update() {
 			glm::vec3 xd = p.newPos + (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + (distH * glm::normalize(p.velocity));
 			glm::vec3 vd = (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + p.velocity;
 
-			FoamParticle fp(xd, p.velocity, 120);
-
-			if (p.neighbors.size() + 1 > 20) {
-				bubbles.push_back(fp);
-			}
-			else if (p.neighbors.size() + 1 < 6) {
-				spray.push_back(fp);
-			} else {
-				foam.push_back(fp);
-			}
+			foam.push_back(FoamParticle(xd, p.velocity, 120, 0));
 		}
-	}*/
+	}
+
+	updatePositions();
 }
 
 //Poly6 Kernel
@@ -406,6 +372,24 @@ void ParticleSystem::imposeConstraints(Particle &p) {
 	p.newPos.z = clampedConstraint(p.newPos.z, depth);
 }
 
+void ParticleSystem::imposeConstraints(FoamParticle &p) {
+	if (outOfRange(p.pos.x, 0, width)) {
+		p.velocity.x = 0;
+	}
+
+	if (outOfRange(p.pos.y, 0, height)) {
+		p.velocity.y = 0;
+	}
+
+	if (outOfRange(p.pos.z, 0, depth)) {
+		p.velocity.z = 0;
+	}
+
+	p.pos.x = clampedConstraint(p.pos.x, width);
+	p.pos.y = clampedConstraint(p.pos.y, height);
+	p.pos.z = clampedConstraint(p.pos.z, depth);
+}
+
 float ParticleSystem::clampedConstraint(float x, float max) {
 	if (x <= 0.0f) {
 		return 0.0f;
@@ -423,8 +407,8 @@ bool ParticleSystem::outOfRange(float x, float min, float max) {
 void ParticleSystem::updatePositions() {
 	fluidPositions.clear();
 	sprayPositions.clear();
-	foamPositions.clear();
 	bubblePositions.clear();
+	foamPositions.clear();
 
 	for (auto &p : particles) {
 		p.sumWeight = 0.0f;
@@ -432,9 +416,20 @@ void ParticleSystem::updatePositions() {
 	}
 
 	for (auto &p : particles) fluidPositions.push_back(getWeightedPosition(p));
-	for (auto &p : spray) sprayPositions.push_back(p.pos);
-//	for (auto &p : foam) foamPositions.push_back(p.pos);
-//	for (auto &p : bubbles) bubblePositions.push_back(p.pos);
+
+	for (auto &p : foam) {
+		switch (p.type) {
+		case 0:
+			sprayPositions.push_back(p.pos);
+			break;
+		case 1:
+			bubblePositions.push_back(p.pos);
+			break;
+		case 2:
+			foamPositions.push_back(p.pos);
+			break;
+		}
+	}
 }
 
 vector<glm::vec3>& ParticleSystem::getFluidPositions() {
@@ -445,12 +440,12 @@ vector<glm::vec3>& ParticleSystem::getSprayPositions() {
 	return sprayPositions;
 }
 
-vector<glm::vec3>& ParticleSystem::getFoamPositions() {
-	return foamPositions;
-}
-
 vector<glm::vec3>& ParticleSystem::getBubblePositions() {
 	return bubblePositions;
+}
+
+vector<glm::vec3>& ParticleSystem::getFoamPositions() {
+	return foamPositions;
 }
 
 glm::vec3 ParticleSystem::getWeightedPosition(Particle &p) {

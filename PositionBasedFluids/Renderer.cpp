@@ -11,7 +11,7 @@ static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
-static const glm::vec4 color = glm::vec4(0.1f, 0.7f, 0.9f, 0.9f);
+static const glm::vec4 color = glm::vec4(.5f, 0.9f, 0.95f, 0.9f);
 static float filterRadius = 5;
 static const float radius = 0.1f;
 
@@ -32,17 +32,17 @@ Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 4; i++) {
 			system.update();
 		}
 	}
 
 	//Get particle positions
 	fluidPositions = system.getFluidPositions();
-	//sprayPositions = system.getSprayPositions();
-	//cout << fluidPositions.size() << endl;
-	//foamPositions = system.getFoamPositions();
-	//bubblePositions = system.getBubblePositions();
+	sprayPositions = system.getSprayPositions();
+	foamPositions = system.getFoamPositions();
+	bubblePositions = system.getBubblePositions();
+	cout << foamPositions.size() << endl;
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
@@ -199,16 +199,16 @@ void Renderer::run(Camera &cam) {
 	glDisable(GL_DEPTH_TEST);
 
 	//--------------------Foam-------------------------
-	/*glUseProgram(foam.program);
+	glUseProgram(foam.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, foam.fbo);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foam.shaderVAOPoints(sprayPositions);
+	foam.shaderVAOPoints(foamPositions);
 
 	setMatrix(foam, projection, "projection");
 	setMatrix(foam, mView, "mView");
-	setFloat(foam, radius / 2.0f, "pointRadius");
+	setFloat(foam, radius / 4, "pointRadius");
 	setFloat(foam, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
 	glEnable(GL_DEPTH_TEST);
@@ -217,10 +217,10 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(foam.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)sprayPositions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);*/
+	glDisable(GL_POINT_SPRITE);
 
 	//--------------------Final-------------------------
 	glUseProgram(finalFS.program);
@@ -235,10 +235,10 @@ void Renderer::run(Camera &cam) {
 	GLint fluidMap = glGetUniformLocation(finalFS.program, "fluidMap");
 	glUniform1i(fluidMap, 0);
 
-	/*glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, foam.tex);
 	GLint foamMap = glGetUniformLocation(finalFS.program, "foamMap");
-	glUniform1i(foamMap, 1);*/
+	glUniform1i(foamMap, 1);
 
 	glBindVertexArray(finalFS.vao);
 

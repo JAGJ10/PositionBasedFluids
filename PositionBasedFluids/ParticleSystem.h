@@ -14,18 +14,16 @@ public:
 	void update();
 	std::vector<glm::vec3>& getFluidPositions();
 	std::vector<glm::vec3>& getSprayPositions();
-	std::vector<glm::vec3>& getFoamPositions();
 	std::vector<glm::vec3>& getBubblePositions();
+	std::vector<glm::vec3>& getFoamPositions();
 
 private:
 	std::vector<Particle> particles;
-	std::vector<FoamParticle> spray;
 	std::vector<FoamParticle> foam;
-	std::vector<FoamParticle> bubbles;
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec3> sprayPositions;
-	std::vector<glm::vec3> foamPositions;
 	std::vector<glm::vec3> bubblePositions;
+	std::vector<glm::vec3> foamPositions;
 	CellGrid grid;
 
 	void applyGravity(Particle &p);
@@ -39,6 +37,7 @@ private:
 	glm::vec3 eta(Particle &p, float &vorticityMag);
 	glm::vec3 vorticityForce(Particle &p);
 	void imposeConstraints(Particle &p);
+	void imposeConstraints(FoamParticle &p);
 	float clampedConstraint(float x, float max);
 	float sCorrCalc(Particle &pi, Particle* &pj);
 	glm::vec3 xsphViscosity(Particle &p);
