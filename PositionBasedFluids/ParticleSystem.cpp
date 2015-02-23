@@ -27,14 +27,14 @@ static const int kmax = 50;
 static const int kta = 500;
 static const int kwc = 500;
 
-static float width = 3;
+static float width = 2;
 static float height = 10;
-static float depth = 3;
+static float depth = 2;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0.75f; i < 1.75f; i+=.05f) {
+	for (float i = 0.1f; i < 1; i+=.05f) {
 		for (float j = 1; j < 2; j+=.05f) {
-			for (float k = 0.75f; k < 1.75f; k+=.05f) {
+			for (float k = 0.1f; k < 1; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
@@ -124,6 +124,7 @@ void ParticleSystem::update() {
 	//Update velocities
 	for (int i = 0; i < foam.size(); i++) {
 		FoamParticle &p = foam.at(i);
+		imposeConstraints(p);
 
 		glm::ivec3 pos = p.pos * 10;
 		glm::vec3 vfSum = glm::vec3(0.0f);
@@ -162,8 +163,6 @@ void ParticleSystem::update() {
 				p.pos += (vfSum / kSum) * deltaT;
 			}
 		}
-
-		imposeConstraints(p);
 	}
 
 
@@ -209,7 +208,7 @@ void ParticleSystem::update() {
 			glm::vec3 xd = p.newPos + (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + (distH * glm::normalize(p.velocity));
 			glm::vec3 vd = (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + p.velocity;
 
-			foam.push_back(FoamParticle(xd, p.velocity, 120, 0));
+			foam.push_back(FoamParticle(p.newPos + xr, p.velocity, 60, 0));
 		}
 	}
 
