@@ -15,7 +15,10 @@ public:
 	void run(Camera &cam);
 
 	ParticleSystem system;
-	std::vector<glm::vec3> positions;
+	std::vector<glm::vec3> fluidPositions;
+	std::vector<glm::vec3> sprayPositions;
+	std::vector<glm::vec3> foamPositions;
+	std::vector<glm::vec3> bubblePositions;
 
 	bool running;
 
@@ -23,6 +26,8 @@ public:
 	BlurShader blur;
 	Shader thickness;
 	Shader composite;
+	Shader foam;
+	Shader finalFS;
 
 private:
 	void initFramebuffers();

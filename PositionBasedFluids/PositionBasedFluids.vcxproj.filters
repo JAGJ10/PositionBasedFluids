@@ -42,6 +42,9 @@
     <Filter Include="shaders\water\thickness">
       <UniqueIdentifier>{45060a6c-f3fd-43e5-bf02-1611640ccb4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\foam">
+      <UniqueIdentifier>{258e541e-20a1-4ece-96d0-c08d02dbf07e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -107,6 +110,18 @@
     </None>
     <None Include="composite.frag">
       <Filter>shaders\water\composite</Filter>
+    </None>
+    <None Include="foam.vert">
+      <Filter>shaders\foam</Filter>
+    </None>
+    <None Include="foam.frag">
+      <Filter>shaders\foam</Filter>
+    </None>
+    <None Include="final.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="final.vert">
+      <Filter>shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

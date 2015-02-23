@@ -3,7 +3,7 @@
 using namespace std;
 
 CellGrid::CellGrid(int width, int height, int depth) : w{ width }, h{ height },	d{ depth },
-	cells(width, std::vector<std::vector<Cell>>(height, std::vector<Cell>(depth, Cell()))) {
+	cells(width, vector<vector<Cell>>(height, vector<Cell>(depth, Cell()))) {
 
 	for (auto &&row : cells) {
 		for (auto &&col : row) {

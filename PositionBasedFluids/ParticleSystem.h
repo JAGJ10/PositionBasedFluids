@@ -12,14 +12,20 @@ public:
 	~ParticleSystem();
 
 	void update();
-	std::vector<glm::vec3>& getPositions();
+	std::vector<glm::vec3>& getFluidPositions();
+	std::vector<glm::vec3>& getSprayPositions();
+	std::vector<glm::vec3>& getFoamPositions();
+	std::vector<glm::vec3>& getBubblePositions();
 
 private:
 	std::vector<Particle> particles;
 	std::vector<FoamParticle> spray;
 	std::vector<FoamParticle> foam;
 	std::vector<FoamParticle> bubbles;
-	std::vector<glm::vec3> positions;
+	std::vector<glm::vec3> fluidPositions;
+	std::vector<glm::vec3> sprayPositions;
+	std::vector<glm::vec3> foamPositions;
+	std::vector<glm::vec3> bubblePositions;
 	CellGrid grid;
 
 	void applyGravity(Particle &p);
@@ -41,7 +47,6 @@ private:
 	glm::vec3 getWeightedPosition(Particle &p);
 	void calcNormals();
 	float foamPotential(float i, int rmin, int rmax);
-	glm::vec3 cubicSpline(glm::vec3 &pi, glm::vec3 &pj);
 };
 
 #endif

@@ -5,8 +5,8 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 450;
-static const float zNear = 100.0f;
+static const float zFar = 100.0f;
+static const float zNear = 10.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
@@ -21,6 +21,8 @@ Renderer::Renderer() :
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
 	composite(Shader("composite.vert", "composite.frag")),
+	foam(Shader("foam.vert", "foam.frag")),
+	finalFS(Shader("final.vert", "final.frag")),
 	system(ParticleSystem())
 {
 	initFramebuffers();
@@ -34,8 +36,13 @@ void Renderer::run(Camera &cam) {
 			system.update();
 		}
 	}
+
 	//Get particle positions
-	positions = system.getPositions();
+	fluidPositions = system.getFluidPositions();
+	sprayPositions = system.getSprayPositions();
+	cout << sprayPositions.size() << endl;
+	//foamPositions = system.getFoamPositions();
+	//bubblePositions = system.getBubblePositions();
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
@@ -53,7 +60,7 @@ void Renderer::run(Camera &cam) {
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	depth.shaderVAOPoints(positions);
+	depth.shaderVAOPoints(fluidPositions);
 
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
@@ -67,7 +74,7 @@ void Renderer::run(Camera &cam) {
 		
 	glBindVertexArray(depth.vao);
 		
-	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)fluidPositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
@@ -135,7 +142,7 @@ void Renderer::run(Camera &cam) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	thickness.shaderVAOPoints(positions);
+	thickness.shaderVAOPoints(fluidPositions);
 
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
@@ -152,7 +159,7 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(thickness.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)positions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)fluidPositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
@@ -161,7 +168,7 @@ void Renderer::run(Camera &cam) {
 
 	//--------------------Particle Composite-------------------------
 	glUseProgram(composite.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, composite.fbo);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -190,6 +197,52 @@ void Renderer::run(Camera &cam) {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	glDisable(GL_DEPTH_TEST);
+
+	//--------------------Foam-------------------------
+	/*glUseProgram(foam.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, foam.fbo);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	foam.shaderVAOPoints(sprayPositions);
+
+	setMatrix(foam, projection, "projection");
+	setMatrix(foam, mView, "mView");
+	setFloat(foam, radius / 2.0f, "pointRadius");
+	setFloat(foam, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
+
+	glBindVertexArray(foam.vao);
+
+	glDrawArrays(GL_POINTS, 0, (GLsizei)sprayPositions.size());
+
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);*/
+
+	//--------------------Final-------------------------
+	glUseProgram(finalFS.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	finalFS.shaderVAOQuad();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, composite.tex);
+	GLint fluidMap = glGetUniformLocation(finalFS.program, "fluidMap");
+	glUniform1i(fluidMap, 0);
+
+	/*glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, foam.tex);
+	GLint foamMap = glGetUniformLocation(finalFS.program, "foamMap");
+	glUniform1i(foamMap, 1);*/
+
+	glBindVertexArray(finalFS.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void Renderer::initFramebuffers() {
@@ -221,6 +274,18 @@ void Renderer::initFramebuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, composite.fbo);
 	composite.initTexture(width, height, GL_RGBA, GL_RGBA32F, composite.tex);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, composite.tex, 0);
+
+	// Foam buffer
+	foam.initFBO(foam.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, foam.fbo);
+	foam.initTexture(width, height, GL_RGBA, GL_RGBA32F, foam.tex);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, foam.tex, 0);
+
+	// Final buffer
+	finalFS.initFBO(finalFS.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, finalFS.fbo);
+	finalFS.initTexture(width, height, GL_RGBA, GL_RGBA32F, finalFS.tex);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, finalFS.tex, 0);
 }
 
 void Renderer::setInt(Shader &shader, const int &x, const GLchar* name) {
