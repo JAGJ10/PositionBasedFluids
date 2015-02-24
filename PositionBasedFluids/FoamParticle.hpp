@@ -7,7 +7,6 @@ public:
 	glm::vec3 velocity;
 	float lifetime;
 	int type;
-	std::vector<Particle*> fluidNeighbors;
 
 	FoamParticle(glm::vec3 pos, glm::vec3 velocity, float lifetime, int type) {
 		this->pos = pos;

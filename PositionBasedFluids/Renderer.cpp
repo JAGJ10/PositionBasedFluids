@@ -42,7 +42,7 @@ void Renderer::run(Camera &cam) {
 	sprayPositions = system.getSprayPositions();
 	foamPositions = system.getFoamPositions();
 	bubblePositions = system.getBubblePositions();
-	cout << foamPositions.size() << endl;
+	//cout << sprayPositions.size() << endl;
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
@@ -204,7 +204,7 @@ void Renderer::run(Camera &cam) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foam.shaderVAOPoints(bubblePositions);
+	foam.shaderVAOPoints(foamPositions);
 
 	setMatrix(foam, projection, "projection");
 	setMatrix(foam, mView, "mView");
@@ -217,7 +217,7 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(foam.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)bubblePositions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
