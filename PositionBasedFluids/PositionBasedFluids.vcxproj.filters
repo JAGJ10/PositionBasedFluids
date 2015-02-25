@@ -48,6 +48,9 @@
     <Filter Include="shaders\foam\thickness">
       <UniqueIdentifier>{17c76408-13d9-4570-bd97-bba79159a1f6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\foam\depth">
+      <UniqueIdentifier>{d87a845e-2b17-452d-b603-1951da679968}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -131,6 +134,12 @@
     </None>
     <None Include="foamThickness.vert">
       <Filter>shaders\foam\thickness</Filter>
+    </None>
+    <None Include="foamDepth.vert">
+      <Filter>shaders\foam\depth</Filter>
+    </None>
+    <None Include="foamDepth.frag">
+      <Filter>shaders\foam\depth</Filter>
     </None>
   </ItemGroup>
 </Project>

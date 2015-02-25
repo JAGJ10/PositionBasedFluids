@@ -27,14 +27,14 @@ static const int kmax = 50;
 static const int kta = 1000;
 static const int kwc = 1000;
 
-static float width = 3;
-static float height = 5;
-static float depth = 3;
+static float width = 6;
+static float height = 8;
+static float depth = 6;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 1; i+=.05f) {
-		for (float j = 0; j < 2; j+=.05f) {
-			for (float k = 2; k < 3; k+=.05f) {
+	for (float i = 0; i < 2.5f; i+=.05f) {
+		for (float j = 0; j < 2.5f; j+=.05f) {
+			for (float k = 3.5f; k < 6; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
@@ -50,7 +50,6 @@ ParticleSystem::~ParticleSystem() {}
 
 void ParticleSystem::update() {
 	//cout << foam.size() << endl;
-	updatePositions();
 	for (auto &p : particles) {
 		//update velocity vi = vi + deltaT * fExt
 		p.velocity += GRAVITY * deltaT;
@@ -80,6 +79,9 @@ void ParticleSystem::update() {
 		}
 	}
 
+	//Needs to be after neighbor finding for weighted positions
+	updatePositions();
+
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
 		//set lambda
 		for (auto &p : particles) {
@@ -92,7 +94,6 @@ void ParticleSystem::update() {
 			for (auto &n : p.neighbors) {
 				float lambdaSum = p.lambda + n->lambda;
 				float sCorr = sCorrCalc(p, n);
-				//sCorr = 0;
 				deltaP += WSpiky(p.newPos, n->newPos) * (lambdaSum + sCorr);
 			}
 
@@ -106,6 +107,8 @@ void ParticleSystem::update() {
 	}
 
 	for (auto &p : particles) {
+		imposeConstraints(p);
+
 		//set new velocity vi = (x*i - xi) / deltaT
 		p.velocity = (p.newPos - p.oldPos) / deltaT;
 
@@ -115,8 +118,6 @@ void ParticleSystem::update() {
 		//apply XSPH viscosity
 		p.velocity += xsphViscosity(p) * deltaT;
 
-		//imposeConstraints(p);
-
 		//update position xi = x*i
 		p.oldPos = p.newPos;
 	}
@@ -124,7 +125,7 @@ void ParticleSystem::update() {
 	//----------------FOAM-----------------
 	
 	//Update velocities
-	for (int i = 0; i < foam.size(); i++) {
+	/*for (int i = 0; i < foam.size(); i++) {
 		FoamParticle &p = foam.at(i);
 		imposeConstraints(p);
 
@@ -224,7 +225,7 @@ void ParticleSystem::update() {
 			
 			imposeConstraints(foam.back());
 		}
-	}
+	}*/
 }
 
 //Poly6 Kernel
@@ -334,7 +335,7 @@ glm::vec3 ParticleSystem::vorticityForce(Particle &p) {
 	}
 
 	glm::vec3 etaVal = eta(p, omegaLength);
-	if (etaVal == glm::vec3(0.0f) || glm::isinf(etaVal.x) || glm::isinf(etaVal.y) || glm::isinf(etaVal.z)) {
+	if (etaVal == glm::vec3(0.0f)) {
 		//Particle is isolated or net force is 0
 		return glm::vec3(0.0f);
 	}
@@ -412,7 +413,7 @@ float ParticleSystem::clampedConstraint(float x, float max) {
 }
 
 bool ParticleSystem::outOfRange(float x, float min, float max) {
-	return x < min || x > max;
+	return x <= min || x >= max;
 }
 
 void ParticleSystem::updatePositions() {
@@ -427,6 +428,7 @@ void ParticleSystem::updatePositions() {
 	}
 
 	for (auto &p : particles) fluidPositions.push_back(getWeightedPosition(p));
+	//for (auto &p : particles) fluidPositions.push_back(p.oldPos);
 
 	for (auto &p : foam) {
 		switch (p.type) {
@@ -461,17 +463,17 @@ vector<glm::vec3>& ParticleSystem::getFoamPositions() {
 
 glm::vec3 ParticleSystem::getWeightedPosition(Particle &p) {
 	for (auto &n : p.neighbors) {
-		float weight = 1 - (glm::distance(p.newPos, n->newPos) / H);
+		float weight = 1 - (glm::distance(p.oldPos, n->oldPos) / H);
 
 		p.sumWeight += weight;
 
-		p.weightedPos += n->newPos * weight;
+		p.weightedPos += n->oldPos * weight;
 	}
 
 	if (p.sumWeight != 0.0f) {
 		p.weightedPos /= p.sumWeight;
 	} else {
-		p.weightedPos = p.newPos;
+		p.weightedPos = p.oldPos;
 	}
 
 	return p.weightedPos;
