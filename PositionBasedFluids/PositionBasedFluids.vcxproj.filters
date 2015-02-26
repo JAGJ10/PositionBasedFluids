@@ -36,9 +36,6 @@
     <Filter Include="shaders\water\blur">
       <UniqueIdentifier>{ff5c310d-81c3-4859-a835-e32b6716c456}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\water\composite">
-      <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\water\thickness">
       <UniqueIdentifier>{45060a6c-f3fd-43e5-bf02-1611640ccb4f}</UniqueIdentifier>
     </Filter>
@@ -50,6 +47,12 @@
     </Filter>
     <Filter Include="shaders\foam\depth">
       <UniqueIdentifier>{d87a845e-2b17-452d-b603-1951da679968}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\foam\intensity">
+      <UniqueIdentifier>{4b7d11b9-a450-42f3-b391-80f7629822b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\water\fluidFinal">
+      <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -111,12 +114,6 @@
     <None Include="thickness.frag">
       <Filter>shaders\water\thickness</Filter>
     </None>
-    <None Include="composite.vert">
-      <Filter>shaders\water\composite</Filter>
-    </None>
-    <None Include="composite.frag">
-      <Filter>shaders\water\composite</Filter>
-    </None>
     <None Include="foam.vert">
       <Filter>shaders\foam</Filter>
     </None>
@@ -140,6 +137,18 @@
     </None>
     <None Include="foamDepth.frag">
       <Filter>shaders\foam\depth</Filter>
+    </None>
+    <None Include="fluidFinal.frag">
+      <Filter>shaders\water\fluidFinal</Filter>
+    </None>
+    <None Include="fluidFinal.vert">
+      <Filter>shaders\water\fluidFinal</Filter>
+    </None>
+    <None Include="foamIntensity.frag">
+      <Filter>shaders\foam\intensity</Filter>
+    </None>
+    <None Include="foamIntensity.vert">
+      <Filter>shaders\foam\intensity</Filter>
     </None>
   </ItemGroup>
 </Project>

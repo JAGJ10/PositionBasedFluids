@@ -16,20 +16,32 @@ public:
 
 	ParticleSystem system;
 	std::vector<glm::vec3> fluidPositions;
-	std::vector<glm::vec3> sprayPositions;
-	std::vector<glm::vec3> foamPositions;
-	std::vector<glm::vec3> bubblePositions;
+	std::vector<glm::vec4> sprayPositions;
+	std::vector<glm::vec4> foamPositions;
+	std::vector<glm::vec4> bubblePositions;
 
 	bool running;
 
 	Shader depth;
 	BlurShader blur;
 	Shader thickness;
-	Shader composite;
-	Shader foam;
+	Shader fluidFinal;
+	Shader foamDepth;
+	Shader foamThickness;
+	Shader foamIntensity;
+	//Shader foamRadiance;
+	Shader sprayDepth;
+	Shader sprayThickness;
+	Shader sprayIntensity;
+	Shader bubbleDepth;
+	Shader bubbleThickness;
+	Shader bubbleIntensity;
 	Shader finalFS;
 
 private:
+	void renderSpray(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
+	void renderBubbles(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
+	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
 	void initFramebuffers();
 	void setInt(Shader &shader, const int &x, const GLchar* name);
 	void setFloat(Shader &shader, const float &x, const GLchar* name);

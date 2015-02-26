@@ -1,12 +1,13 @@
 #version 400 core
 
 in vec3 pos;
+in float hfrag;
 
 uniform mat4 mView;
 uniform mat4 projection;
 uniform float pointRadius;
 
-out vec3 fragColor;
+out vec4 hn;
 
 void main() {
 	//calculate normal
@@ -24,6 +25,7 @@ void main() {
 	vec4 pixelPos = vec4(pos + normal * pointRadius, 1.0);
 	vec4 clipSpacePos = projection * pixelPos;
 
-	vec4()
+	hn = vec4(normal, hfrag);
+
 	gl_FragDepth = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
 }

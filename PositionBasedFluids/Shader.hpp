@@ -10,7 +10,7 @@
 
 class Shader {
 public:
-	GLuint program, tex, fbo, vao, vbo, ebo;
+	GLuint program, tex, tex2, fbo, vao, vbo, ebo;
 
 	Shader(const GLchar* vertexPath, const GLchar* fragmentPath) {
 		std::string vertexCode;
@@ -73,7 +73,7 @@ public:
 
 		if (!success) {
 			glGetProgramInfoLog(this->program, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog <<  std::endl;
 		}
 		
 		// Delete the shaders as they're linked into our program now and no longer necessery
@@ -107,6 +107,21 @@ public:
 			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), &points[0], GL_STATIC_DRAW);
 		}
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	void shaderVAOPointsFoam(std::vector<glm::vec4> &points) {
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		if (points.size() > 0) {
+			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * points.size(), &points[0], GL_STATIC_DRAW);
+		}
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

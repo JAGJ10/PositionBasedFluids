@@ -3,19 +3,23 @@
 in vec2 coord;
 
 uniform sampler2D fluidMap;
+uniform sampler2D sprayMap;
+uniform sampler2D bubbleMap;
 uniform sampler2D foamMap;
 
 out vec4 fragColor;
 
 void main() {
-	vec3 foam = texture(foamMap, coord).xyz;
+	float spray = texture(sprayMap, coord).x;
+	float bubbles = texture(bubbleMap, coord).x;
+	float foam = texture(foamMap, coord).x;
 
 	vec4 fluid = texture(fluidMap, coord).xyzw;
 
-	if (foam.y == 0) {
-		fragColor = vec4(foam, 1);
+	if (foam >= 0.4) {
+		fragColor = vec4(foam);
 		return;
 	}
 
-	fragColor = fluid;
+	fragColor = vec4(fluid);
 }

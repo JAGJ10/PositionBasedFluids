@@ -170,8 +170,8 @@
   <ItemGroup>
     <None Include="blur.frag" />
     <None Include="blur.vert" />
-    <None Include="composite.frag" />
-    <None Include="composite.vert" />
+    <None Include="fluidFinal.frag" />
+    <None Include="fluidFinal.vert" />
     <None Include="depth.frag" />
     <None Include="depth.vert" />
     <None Include="final.frag" />
@@ -180,6 +180,8 @@
     <None Include="foam.vert" />
     <None Include="foamDepth.frag" />
     <None Include="foamDepth.vert" />
+    <None Include="foamIntensity.frag" />
+    <None Include="foamIntensity.vert" />
     <None Include="foamThickness.frag" />
     <None Include="foamThickness.vert" />
     <None Include="thickness.frag" />

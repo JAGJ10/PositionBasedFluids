@@ -66,7 +66,7 @@ int main() {
 		ILuint imageID = ilGenImage();
 		ilBindImage(imageID);
 		ilutGLScreen();
-		//ilEnable(IL_FILE_OVERWRITE);
+		ilEnable(IL_FILE_OVERWRITE);
 		std::string str = std::to_string(w) + ".png";
 		const char * c = str.c_str();
 		std::cout << c << std::endl;

@@ -6,9 +6,11 @@ public:
 	glm::vec3 oldPos;
 	glm::vec3 newPos;
 	glm::vec3 velocity;
+	glm::vec3 newVelocity;
 	glm::vec3 deltaP;
 	glm::vec3 normal;
 	float lambda;
+	float rho;
 	std::vector<Particle*> neighbors;
 	std::vector<Particle*> renderNeighbors;
 

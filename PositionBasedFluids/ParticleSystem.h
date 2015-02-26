@@ -13,17 +13,17 @@ public:
 
 	void update();
 	std::vector<glm::vec3>& getFluidPositions();
-	std::vector<glm::vec3>& getSprayPositions();
-	std::vector<glm::vec3>& getBubblePositions();
-	std::vector<glm::vec3>& getFoamPositions();
+	std::vector<glm::vec4>& getSprayPositions();
+	std::vector<glm::vec4>& getBubblePositions();
+	std::vector<glm::vec4>& getFoamPositions();
 
 private:
 	std::vector<Particle> particles;
 	std::vector<FoamParticle> foam;
 	std::vector<glm::vec3> fluidPositions;
-	std::vector<glm::vec3> sprayPositions;
-	std::vector<glm::vec3> bubblePositions;
-	std::vector<glm::vec3> foamPositions;
+	std::vector<glm::vec4> sprayPositions;
+	std::vector<glm::vec4> bubblePositions;
+	std::vector<glm::vec4> foamPositions;
 	CellGrid grid;
 
 	void applyGravity(Particle &p);
@@ -44,6 +44,7 @@ private:
 	bool outOfRange(float x, float y, float z);
 	void updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
+	void calcDensities();
 	void calcNormals();
 	float foamPotential(float i, int rmin, int rmax);
 };
