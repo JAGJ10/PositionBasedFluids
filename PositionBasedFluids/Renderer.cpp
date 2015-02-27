@@ -5,8 +5,8 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 30.0f;
-static const float zNear = 3.0f;
+static const float zFar = 20.0f;
+static const float zNear = 2.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
@@ -411,6 +411,16 @@ void Renderer::renderSpray(glm::mat4 &projection, glm::mat4 &mView, Camera &cam)
 
 	sprayThickness.shaderVAOPointsFoam(sprayPositions);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sprayDepth.tex);
+	GLint sprayDepth = glGetUniformLocation(sprayThickness.program, "foamDepthMap");
+	glUniform1i(sprayDepth, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depth.tex);
+	GLint fluidDepth = glGetUniformLocation(sprayThickness.program, "fluidDepthMap");
+	glUniform1i(fluidDepth, 1);
+
 	setMatrix(sprayThickness, projection, "projection");
 	setMatrix(sprayThickness, mView, "mView");
 	setFloat(sprayThickness, foamRadius, "pointRadius");
@@ -483,6 +493,16 @@ void Renderer::renderBubbles(glm::mat4 &projection, glm::mat4 &mView, Camera &ca
 
 	bubbleThickness.shaderVAOPointsFoam(bubblePositions);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, bubbleDepth.tex);
+	GLint bubbleDepth = glGetUniformLocation(bubbleThickness.program, "foamDepthMap");
+	glUniform1i(bubbleDepth, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depth.tex);
+	GLint fluidDepth = glGetUniformLocation(bubbleThickness.program, "fluidDepthMap");
+	glUniform1i(fluidDepth, 1);
+
 	setMatrix(bubbleThickness, projection, "projection");
 	setMatrix(bubbleThickness, mView, "mView");
 	setFloat(bubbleThickness, foamRadius / 2, "pointRadius");
@@ -554,6 +574,16 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	foamThickness.shaderVAOPointsFoam(foamPositions);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, foamDepth.tex);
+	GLint foamDepth = glGetUniformLocation(foamThickness.program, "foamDepthMap");
+	glUniform1i(foamDepth, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depth.tex);
+	GLint fluidDepth = glGetUniformLocation(foamThickness.program, "fluidDepthMap");
+	glUniform1i(fluidDepth, 1);
 
 	setMatrix(foamThickness, projection, "projection");
 	setMatrix(foamThickness, mView, "mView");

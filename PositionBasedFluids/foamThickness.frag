@@ -1,15 +1,19 @@
 #version 400 core
 
-in vec3 pos;
+in vec4 pos;
 in float lifetime;
 
-//uniform sampler2D fluidDepth;
-//uniform sampler2D foamDepth;
+uniform sampler2D foamDepthMap;
+uniform sampler2D fluidDepthMap;
 uniform mat4 mView;
 uniform mat4 projection;
 uniform int type;
 
 out float fThickness;
+
+float linearizeDepth(float depth) {
+	return (2.0 * 2) / (20 + 2 - depth * (20 - 2));
+}
 
 void main() {
 	//calculate normal
@@ -38,5 +42,19 @@ void main() {
 
 	fThickness *= pow(1 - pow(lifetime, 2), 0.4);
 
-	//float zFluid = texture(fluidDepth, )
+	vec4 coord = pos;
+	coord = projection * coord;
+	//coord.xyz /= coord.w;
+	coord = coord * 0.5f + 0.5f;
+
+	float zFluid = texture(fluidDepthMap, coord.xy).x;
+	zFluid = linearizeDepth(zFluid);
+	float zFoam = texture(foamDepthMap, coord.xy).x;
+	zFoam = linearizeDepth(zFoam);
+
+	//if (((zFoam - zFluid) / 1) == 0) {
+		//fThickness *= pow(1 - pow(zFoam - zFluid, 1), 4);
+	//} else {
+		//fThickness = 0;
+	//}
 }

@@ -5,8 +5,9 @@ using namespace std;
 static const float deltaT = 0.0083f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
-static const int PRESSURE_ITERATIONS = 4;
+static const int PRESSURE_ITERATIONS = 6;
 static const float H = 0.1f;
+static const float FH = H;
 static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float REST_DENSITY = 6378.0f;
@@ -25,8 +26,8 @@ static const int tamax = 20;
 static const int kmin = 5;
 static const int kmax = 50;
 
-static const int kta = 5000;
-static const int kwc = 5000;
+static const int kta = 14000;
+static const int kwc = 24000;
 
 static float width = 5;
 static float height = 8;
@@ -35,7 +36,7 @@ static float depth = 4;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 0; i < 2; i+=.05f) {
-		for (float j = 1; j < 3; j+=.05f) {
+		for (float j = 0; j < 2; j+=.05f) {
 			for (float k = 1; k < 3; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
@@ -64,7 +65,7 @@ void ParticleSystem::update() {
 		int numNeighbors = 0;
 		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
 			for (auto &n : c->particles) {
-				if (glm::distance(p.pos, n->newPos) <= H) {
+				if (glm::distance(p.pos, n->newPos) <= FH) {
 					numNeighbors++;
 					float k = WPoly6(p.pos, n->newPos);
 					glm::vec3 vf = ((n->newPos + n->velocity * deltaT) - n->newPos) / deltaT;
@@ -74,7 +75,7 @@ void ParticleSystem::update() {
 			}
 		}
 
-		if (numNeighbors >= 6 && numNeighbors <= 25) p.type = 2;
+		if (numNeighbors >= 6 && numNeighbors <= 20) p.type = 2;
 		if (numNeighbors == 0 && p.type != 0) {
 			foam.erase(foam.begin() + i);
 			i--;
@@ -119,7 +120,7 @@ void ParticleSystem::update() {
 
 		float ita = foamPotential(velocityDiff, tamin, tamax);
 
-		int deltaVN = (glm::dot(glm::normalize(p.velocity), p.normal) < 0.6f) ? 0 : 1;
+		int deltaVN = glm::dot(glm::normalize(p.velocity), p.normal) < 0.6f ? 0 : 1;
 		float iwc = foamPotential(curvature * deltaVN, wcmin, wcmax);
 
 		float ek = 0.5f * glm::length2(p.velocity);
@@ -127,9 +128,10 @@ void ParticleSystem::update() {
 
 		int nd = int(ik * (kta * ita + kwc * iwc) * deltaT);
 
-		glm::vec3 predict = p.newPos + (p.velocity + (GRAVITY * deltaT)) * deltaT;
-		predict -= p.newPos;
-		predict = glm::abs(predict);
+		//glm::vec3 predict = p.newPos + (p.velocity + (GRAVITY * deltaT)) * deltaT;
+		//predict -= p.newPos;
+		//predict = glm::abs(predict
+		glm::vec3 predict = p.velocity;
 		glm::vec3 e1 = glm::cross(glm::vec3(-predict.y, predict.x, 0), predict);
 		e1 = glm::normalize(e1);
 		glm::vec3 e2 = glm::cross(e1, predict);
@@ -147,9 +149,19 @@ void ParticleSystem::update() {
 			glm::vec3 xd = p.newPos + (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + (distH * glm::normalize(p.velocity));
 			glm::vec3 vd = (r * glm::cos(theta) * e1) + (r * glm::sin(theta) * e2) + p.velocity;
 
+			glm::ivec3 pos = p.newPos * 10;
 			int type;
-			if (p.neighbors.size() + 1 < 6) type = 0;
-			else if (p.neighbors.size() + 1 > 25) type = 1;
+			int numNeighbors = 0;
+			for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
+				for (auto &n : c->particles) {
+					if (glm::distance(xd, n->newPos) <= FH) {
+						numNeighbors++;
+					}
+				}
+			}
+
+			if (numNeighbors < 6) type = 0;
+			else if (numNeighbors > 20) type = 1;
 			else type = 2;
 
 			foam.push_back(FoamParticle(xd, vd, lifetime, type));
@@ -254,10 +266,10 @@ glm::vec3 ParticleSystem::gradWPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 		return glm::vec3(0.0f);
 	}
 
-	float coeff = (H - rLen) * (H - rLen);
-	coeff *= 6 * KPOLY;
+	float coeff = glm::pow((H * H) - (rLen * rLen), 2);
+	coeff *= -6 * KPOLY;
 	coeff /= rLen;
-	return r * -coeff * glm::pow(H * H - glm::length2(r), 2);
+	return r * coeff;
 }
 
 //Spiky Kernel
@@ -438,17 +450,18 @@ void ParticleSystem::updatePositions() {
 	//for (auto &p : particles) fluidPositions.push_back(getWeightedPosition(p));
 	for (auto &p : particles) fluidPositions.push_back(p.oldPos);
 	
-	for (auto &p : foam) {
+	for (int i = 0; i < foam.size(); i++) {
+		FoamParticle &p = foam.at(i);
 		int r = rand() % foam.size();
 		switch (p.type) {
 		case 0:
-			sprayPositions.push_back(glm::vec4(p.pos, abs(p.lifetime - lifetime) / lifetime));
+			sprayPositions.push_back(glm::vec4(p.pos, float(i) + abs(p.lifetime - lifetime) / lifetime));
 			break;
 		case 1:
-			bubblePositions.push_back(glm::vec4(p.pos, abs(p.lifetime - lifetime) / lifetime));
+			bubblePositions.push_back(glm::vec4(p.pos, float(i) + abs(p.lifetime - lifetime) / lifetime));
 			break;
 		case 2:
-			foamPositions.push_back(glm::vec4(p.pos, abs(p.lifetime - lifetime) / lifetime));
+			foamPositions.push_back(glm::vec4(p.pos, float(i) + abs(p.lifetime - lifetime) / lifetime));
 			break;
 		}
 	}

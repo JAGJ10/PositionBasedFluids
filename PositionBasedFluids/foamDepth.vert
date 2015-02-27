@@ -15,7 +15,7 @@ void main() {
 	vec4 viewPos = mView * vec4(vertexPos.xyz, 1.0);
     gl_Position = projection * viewPos;
 	pos = viewPos.xyz;
-	float ri = (pointScale / (((int(vertexPos.x * 1000)) % 5) + 1));
-	gl_PointSize = pointScale * (pointRadius / gl_Position.w);
+	float ri = pointRadius / ((int(vertexPos.w) % 5) + 1);
+	gl_PointSize = pointScale * (ri / gl_Position.w);
 	hfrag = ri / (fov * abs(gl_Position.w));
 }
