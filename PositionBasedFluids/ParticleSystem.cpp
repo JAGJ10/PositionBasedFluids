@@ -268,7 +268,6 @@ glm::vec3 ParticleSystem::gradWPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 
 	float coeff = glm::pow((H * H) - (rLen * rLen), 2);
 	coeff *= -6 * KPOLY;
-	coeff /= rLen;
 	return r * coeff;
 }
 
