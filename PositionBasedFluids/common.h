@@ -9,6 +9,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/ext.hpp>
 #include <vector>
+#include <omp.h>
 #include <Windows.h>
 
 #endif
