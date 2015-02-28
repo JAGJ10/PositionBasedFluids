@@ -7,7 +7,7 @@ static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
 static const int PRESSURE_ITERATIONS = 6;
 static const float H = 0.1f;
-static const float FH = H;
+static const float FH = H * 2 / 3;
 static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float REST_DENSITY = 6378.0f;
@@ -55,7 +55,7 @@ void ParticleSystem::update() {
 	//Kill dead foam
 	for (int i = 0; i < foam.size(); i++) {
 		FoamParticle &p = foam.at(i);
-		if (p.type == 2) {
+		if (p.type == 3) {
 			p.lifetime -= deltaT;
 			if (p.lifetime <= 0) {
 				foam.erase(foam.begin() + i);
@@ -86,18 +86,18 @@ void ParticleSystem::update() {
 			}
 		}
 
-		if (numNeighbors >= 6 && numNeighbors <= 20) p.type = 2;
-		if (numNeighbors == 0 && p.type != 0) p.type = 0;
+		if (numNeighbors >= 6 && numNeighbors <= 20) p.type = 3;
+		if (numNeighbors == 0 && p.type != 0) p.type = 1;
 
-		if (p.type == 0) {
+		if (p.type == 1) {
 			//Spray
 			p.velocity += GRAVITY * deltaT;
 			p.pos += p.velocity * deltaT;
-		} else if (p.type == 1) {
-			//Bubbles
-			p.velocity += ((-0.5 * GRAVITY) + ((0.5 * ((vfSum / kSum) - p.velocity)) / deltaT)) * deltaT;
-			p.pos += p.velocity * deltaT;
 		} else if (p.type == 2) {
+			//Bubbles
+			p.velocity += ((-1.0 * GRAVITY) + ((0.5 * ((vfSum / kSum) - p.velocity)) / deltaT)) * deltaT;
+			p.pos += p.velocity * deltaT;
+		} else if (p.type == 3) {
 			//Foam
 			p.pos += (vfSum / kSum) * deltaT;
 		}
@@ -158,9 +158,9 @@ void ParticleSystem::update() {
 				}
 			}
 
-			if (numNeighbors < 6) type = 0;
-			else if (numNeighbors > 20) type = 1;
-			else type = 2;
+			if (numNeighbors < 6) type = 1;
+			else if (numNeighbors > 20) type = 2;
+			else type = 3;
 
 			foam.push_back(FoamParticle(xd, vd, lifetime, type));
 
@@ -181,7 +181,6 @@ void ParticleSystem::update() {
 
 		imposeConstraints(p);
 	}
-
 
 	//get neighbors
 	grid.updateCells(particles);
@@ -204,7 +203,6 @@ void ParticleSystem::update() {
 		}
 	}
 
-
 	//Needs to be after neighbor finding for weighted positions
 	updatePositions();
 
@@ -215,7 +213,6 @@ void ParticleSystem::update() {
 			Particle &p = particles.at(i);
 			p.lambda = lambda(p, p.neighbors);
 		}
-
 
 		//calculate deltaP
 		#pragma omp parallel for num_threads(8)
@@ -239,7 +236,6 @@ void ParticleSystem::update() {
 		}
 	}
 
-
 	#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
@@ -258,13 +254,11 @@ void ParticleSystem::update() {
 		p.oldPos = p.newPos;
 	}
 
-
 	#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		p.velocity += p.newVelocity * deltaT;
 	}
-
 }
 
 //Poly6 Kernel
@@ -387,7 +381,7 @@ glm::vec3 ParticleSystem::vorticityForce(Particle &p) {
 }
 
 float ParticleSystem::sCorrCalc(Particle &pi, Particle* &pj) {
-	// Get Density from WPoly6 and divide by constant from paper
+	//Get Density from WPoly6
 	float corr = WPoly6(pi.newPos, pj->newPos) / wQH;
 	corr *= corr * corr * corr;
 	return -K * corr;
@@ -456,8 +450,6 @@ bool ParticleSystem::outOfRange(float x, float min, float max) {
 
 void ParticleSystem::updatePositions() {
 	fluidPositions.clear();
-	sprayPositions.clear();
-	bubblePositions.clear();
 	foamPositions.clear();
 
 	#pragma omp parallel for num_threads(8)
@@ -473,30 +465,12 @@ void ParticleSystem::updatePositions() {
 	for (int i = 0; i < foam.size(); i++) {
 		FoamParticle &p = foam.at(i);
 		int r = rand() % foam.size();
-		switch (p.type) {
-		case 0:
-			sprayPositions.push_back(glm::vec4(p.pos, float(i) + abs(p.lifetime - lifetime) / lifetime));
-			break;
-		case 1:
-			bubblePositions.push_back(glm::vec4(p.pos, float(i) + abs(p.lifetime - lifetime) / lifetime));
-			break;
-		case 2:
-			foamPositions.push_back(glm::vec4(p.pos, float(i) + abs(p.lifetime - lifetime) / lifetime));
-			break;
-		}
+		foamPositions.push_back(glm::vec4(p.pos.x, p.pos.y, p.pos.z, (p.type * 1000) + float(i) + abs(p.lifetime - lifetime) / lifetime));
 	}
 }
 
 vector<glm::vec3>& ParticleSystem::getFluidPositions() {
 	return fluidPositions;
-}
-
-vector<glm::vec4>& ParticleSystem::getSprayPositions() {
-	return sprayPositions;
-}
-
-vector<glm::vec4>& ParticleSystem::getBubblePositions() {
-	return bubblePositions;
 }
 
 vector<glm::vec4>& ParticleSystem::getFoamPositions() {

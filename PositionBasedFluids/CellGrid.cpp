@@ -35,7 +35,7 @@ CellGrid::~CellGrid() {}
 
 void CellGrid::updateCells(vector<Particle> &particles) {
 	clearCells();
-	#pragma omp parallel for num_threads(8)
+	//#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		glm::ivec3 pos = p.newPos * 10;

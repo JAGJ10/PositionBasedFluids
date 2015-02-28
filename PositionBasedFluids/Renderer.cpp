@@ -25,12 +25,6 @@ Renderer::Renderer() :
 	foamDepth(Shader("foamDepth.vert", "foamDepth.frag")),
 	foamThickness(Shader("foamThickness.vert", "foamThickness.frag")),
 	foamIntensity(Shader("foamIntensity.vert", "foamIntensity.frag")),
-	sprayDepth(Shader("foamDepth.vert", "foamDepth.frag")),
-	sprayThickness(Shader("foamThickness.vert", "foamThickness.frag")),
-	sprayIntensity(Shader("foamIntensity.vert", "foamIntensity.frag")),
-	bubbleDepth(Shader("foamDepth.vert", "foamDepth.frag")),
-	bubbleThickness(Shader("foamThickness.vert", "foamThickness.frag")),
-	bubbleIntensity(Shader("foamIntensity.vert", "foamIntensity.frag")),
 	finalFS(Shader("final.vert", "final.frag")),
 	system(ParticleSystem())
 {
@@ -48,12 +42,8 @@ void Renderer::run(Camera &cam) {
 
 	//Get particle positions
 	fluidPositions = system.getFluidPositions();
-	sprayPositions = system.getSprayPositions();
 	foamPositions = system.getFoamPositions();
-	bubblePositions = system.getBubblePositions();
-	cout << "Spray: " << sprayPositions.size() << endl;
-	cout << "Bubbles: " << bubblePositions.size() << endl;
-	cout << "Foam: " << foamPositions.size() << endl << endl << endl;
+	cout << "Foam: " << foamPositions.size() << endl;
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
@@ -210,8 +200,6 @@ void Renderer::run(Camera &cam) {
 	glDisable(GL_DEPTH_TEST);
 
 	//--------------------FOAM--------------------------
-	renderSpray(projection, mView, cam);
-	renderBubbles(projection, mView, cam);
 	renderFoam(projection, mView, cam);
 
 	//--------------------Final-------------------------
@@ -228,19 +216,9 @@ void Renderer::run(Camera &cam) {
 	glUniform1i(fluidMap, 0);
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, sprayIntensity.tex);
-	GLint sprayMap = glGetUniformLocation(finalFS.program, "sprayMap");
-	glUniform1i(sprayMap, 1);
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, bubbleIntensity.tex);
-	GLint bubbleMap = glGetUniformLocation(finalFS.program, "bubbleMap");
-	glUniform1i(bubbleMap, 2);
-
-	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, foamIntensity.tex);
 	GLint foamMap = glGetUniformLocation(finalFS.program, "foamMap");
-	glUniform1i(foamMap, 3);
+	glUniform1i(foamMap, 1);
 
 	glBindVertexArray(finalFS.vao);
 
@@ -279,46 +257,6 @@ void Renderer::initFramebuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, fluidFinal.fbo);
 	fluidFinal.initTexture(width, height, GL_RGBA, GL_RGBA32F, fluidFinal.tex);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fluidFinal.tex, 0);
-
-	//Spray Depth buffer
-	sprayDepth.initFBO(sprayDepth.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, sprayDepth.fbo);
-	sprayDepth.initTexture(width, height, GL_RGBA, GL_RGBA32F, sprayDepth.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sprayDepth.tex, 0);
-	sprayDepth.initTexture(width, height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, sprayDepth.tex2);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sprayDepth.tex2, 0);
-
-	//Spray Thickness buffer
-	sprayThickness.initFBO(sprayThickness.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, sprayThickness.fbo);
-	sprayThickness.initTexture(width, height, GL_RGBA, GL_RGBA32F, sprayThickness.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sprayThickness.tex, 0);
-
-	//Spray Intensity
-	sprayIntensity.initFBO(sprayIntensity.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, sprayIntensity.fbo);
-	sprayIntensity.initTexture(width, height, GL_RGBA, GL_RGBA32F, sprayIntensity.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sprayIntensity.tex, 0);
-
-	//Bubble Depth buffer
-	bubbleDepth.initFBO(bubbleDepth.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, bubbleDepth.fbo);
-	bubbleDepth.initTexture(width, height, GL_RGBA, GL_RGBA32F, bubbleDepth.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bubbleDepth.tex, 0);
-	bubbleDepth.initTexture(width, height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, bubbleDepth.tex2);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, bubbleDepth.tex2, 0);
-
-	//Bubble Thickness buffer
-	bubbleThickness.initFBO(bubbleThickness.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, bubbleThickness.fbo);
-	bubbleThickness.initTexture(width, height, GL_RGBA, GL_RGBA32F, bubbleThickness.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bubbleThickness.tex, 0);
-
-	//Bubble Intensity
-	bubbleIntensity.initFBO(bubbleIntensity.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, bubbleIntensity.fbo);
-	bubbleIntensity.initTexture(width, height, GL_RGBA, GL_RGBA32F, bubbleIntensity.tex);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bubbleIntensity.tex, 0);
 
 	//Foam Depth buffer
 	foamDepth.initFBO(foamDepth.fbo);
@@ -377,170 +315,6 @@ void Renderer::setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name)
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m));
 }
 
-void Renderer::renderSpray(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) {
-	//--------------------Spray Depth-------------------------
-	glUseProgram(sprayDepth.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, sprayDepth.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	sprayDepth.shaderVAOPointsFoam(sprayPositions);
-
-	setMatrix(sprayDepth, projection, "projection");
-	setMatrix(sprayDepth, mView, "mView");
-	setFloat(sprayDepth, foamRadius, "pointRadius");
-	setFloat(sprayDepth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-	setFloat(sprayDepth, tanf(cam.zoom / 2), "fov");
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
-
-	glBindVertexArray(sprayDepth.vao);
-
-	glDrawArrays(GL_POINTS, 0, (GLsizei)sprayPositions.size());
-
-	glDisable(GL_DEPTH_TEST);
-
-	//--------------------Spray Thickness----------------------
-	glUseProgram(sprayThickness.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, sprayThickness.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	sprayThickness.shaderVAOPointsFoam(sprayPositions);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, sprayDepth.tex);
-	GLint sprayDepth = glGetUniformLocation(sprayThickness.program, "foamDepthMap");
-	glUniform1i(sprayDepth, 0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, depth.tex);
-	GLint fluidDepth = glGetUniformLocation(sprayThickness.program, "fluidDepthMap");
-	glUniform1i(fluidDepth, 1);
-
-	setMatrix(sprayThickness, projection, "projection");
-	setMatrix(sprayThickness, mView, "mView");
-	setFloat(sprayThickness, foamRadius, "pointRadius");
-	setFloat(sprayThickness, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-	setFloat(sprayThickness, tanf(cam.zoom / 2), "fov");
-	setInt(sprayThickness, 0, "type");
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glBlendEquation(GL_FUNC_ADD);
-	glDepthMask(GL_FALSE);
-
-	glBindVertexArray(sprayThickness.vao);
-
-	glDrawArrays(GL_POINTS, 0, (GLsizei)sprayPositions.size());
-
-	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
-	glDisable(GL_BLEND);
-
-	//--------------------Spray Intensity----------------------
-	glUseProgram(sprayIntensity.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, sprayIntensity.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	sprayIntensity.shaderVAOQuad();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, sprayThickness.tex);
-	GLint thickness = glGetUniformLocation(sprayIntensity.program, "thickness");
-	glUniform1i(thickness, 0);
-
-	glBindVertexArray(sprayIntensity.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-}
-
-void Renderer::renderBubbles(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) {
-	//--------------------Bubble Depth-------------------------
-	glUseProgram(bubbleDepth.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, bubbleDepth.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	bubbleDepth.shaderVAOPointsFoam(bubblePositions);
-
-	setMatrix(bubbleDepth, projection, "projection");
-	setMatrix(bubbleDepth, mView, "mView");
-	setFloat(bubbleDepth, foamRadius, "pointRadius");
-	setFloat(bubbleDepth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-	setFloat(bubbleDepth, tanf(cam.zoom / 2), "fov");
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
-
-	glBindVertexArray(bubbleDepth.vao);
-
-	glDrawArrays(GL_POINTS, 0, (GLsizei)bubblePositions.size());
-
-	glDisable(GL_DEPTH_TEST);
-
-	//--------------------Bubble Thickness----------------------
-	glUseProgram(bubbleThickness.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, bubbleThickness.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	bubbleThickness.shaderVAOPointsFoam(bubblePositions);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, bubbleDepth.tex);
-	GLint bubbleDepth = glGetUniformLocation(bubbleThickness.program, "foamDepthMap");
-	glUniform1i(bubbleDepth, 0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, depth.tex);
-	GLint fluidDepth = glGetUniformLocation(bubbleThickness.program, "fluidDepthMap");
-	glUniform1i(fluidDepth, 1);
-
-	setMatrix(bubbleThickness, projection, "projection");
-	setMatrix(bubbleThickness, mView, "mView");
-	setFloat(bubbleThickness, foamRadius / 2, "pointRadius");
-	setFloat(bubbleThickness, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-	setFloat(bubbleThickness, tanf(cam.zoom / 2), "fov");
-	setInt(bubbleThickness, 1, "type");
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glBlendEquation(GL_FUNC_ADD);
-	glDepthMask(GL_FALSE);
-
-	glBindVertexArray(bubbleThickness.vao);
-
-	glDrawArrays(GL_POINTS, 0, (GLsizei)bubblePositions.size());
-
-	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
-	glDisable(GL_BLEND);
-
-	//--------------------Bubble Intensity----------------------
-	glUseProgram(bubbleIntensity.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, bubbleIntensity.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	bubbleIntensity.shaderVAOQuad();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, bubbleThickness.tex);
-	GLint thickness = glGetUniformLocation(bubbleIntensity.program, "thickness");
-	glUniform1i(thickness, 0);
-
-	glBindVertexArray(bubbleIntensity.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-}
-
 void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) {
 	//--------------------Foam Depth-------------------------
 	glUseProgram(foamDepth.program);
@@ -576,7 +350,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	foamThickness.shaderVAOPointsFoam(foamPositions);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, foamDepth.tex);
+	glBindTexture(GL_TEXTURE_2D, foamDepth.tex2);
 	GLint foamDepth = glGetUniformLocation(foamThickness.program, "foamDepthMap");
 	glUniform1i(foamDepth, 0);
 
@@ -590,7 +364,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	setFloat(foamThickness, foamRadius, "pointRadius");
 	setFloat(foamThickness, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 	setFloat(foamThickness, tanf(cam.zoom / 2), "fov");
-	setInt(foamThickness, 2, "type");
+	setVec2(foamThickness, screenSize, "screenSize");
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);

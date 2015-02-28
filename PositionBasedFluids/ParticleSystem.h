@@ -13,16 +13,12 @@ public:
 
 	void update();
 	std::vector<glm::vec3>& getFluidPositions();
-	std::vector<glm::vec4>& getSprayPositions();
-	std::vector<glm::vec4>& getBubblePositions();
 	std::vector<glm::vec4>& getFoamPositions();
 
 private:
 	std::vector<Particle> particles;
 	std::vector<FoamParticle> foam;
 	std::vector<glm::vec3> fluidPositions;
-	std::vector<glm::vec4> sprayPositions;
-	std::vector<glm::vec4> bubblePositions;
 	std::vector<glm::vec4> foamPositions;
 	CellGrid grid;
 
