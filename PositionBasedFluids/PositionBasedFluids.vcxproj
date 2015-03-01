@@ -186,6 +186,8 @@
     <None Include="foamIntensity.vert" />
     <None Include="foamThickness.frag" />
     <None Include="foamThickness.vert" />
+    <None Include="radiance.frag" />
+    <None Include="radiance.vert" />
     <None Include="thickness.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

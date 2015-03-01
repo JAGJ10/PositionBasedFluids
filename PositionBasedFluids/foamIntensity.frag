@@ -9,6 +9,11 @@ out float intensity;
 void main() {
 	float p = texture(thickness, coord).x;
 
+	if (p == 0) {
+		intensity = 0;
+		return;
+	}
+
 	float pexp = pow(p, 1.25);
-	intensity = pexp / (3 + pexp);
+	intensity = pexp / (2 + pexp);
 }

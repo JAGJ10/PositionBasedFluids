@@ -3,19 +3,19 @@
 in vec2 coord;
 
 uniform sampler2D fluidMap;
-uniform sampler2D foamMap;
+uniform sampler2D foamIntensityMap;
+uniform sampler2D foamRadianceMap;
 
 out vec4 fragColor;
 
 void main() {
-	float foam = texture(foamMap, coord).x;
-
+	float foamIntensity = texture(foamIntensityMap, coord).x;
+	float foamRadiance = texture(foamRadianceMap, coord).x;
 	vec4 fluid = texture(fluidMap, coord).xyzw;
 
-	if (foam >= 0.4) {
-		fragColor = vec4(foam);
-		return;
-	}
+	float squiggly = clamp(foamRadiance * (vec3(1, 1, 1) - vec3(0, 0, 0.2)), 0, 1);
 
-	fragColor = vec4(fluid);
+	//float ifinal = clamp(foamIntensity, 0, 1);
+
+	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (-squiggly));
 }

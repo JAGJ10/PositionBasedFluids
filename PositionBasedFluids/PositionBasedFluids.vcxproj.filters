@@ -54,6 +54,9 @@
     <Filter Include="shaders\water\fluidFinal">
       <UniqueIdentifier>{2f71a3b6-01a4-4008-9a78-86fef7081d5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\foam\radiance">
+      <UniqueIdentifier>{ed66c811-3f5b-462c-beea-6ef221105850}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -149,6 +152,12 @@
     </None>
     <None Include="foamIntensity.vert">
       <Filter>shaders\foam\intensity</Filter>
+    </None>
+    <None Include="radiance.frag">
+      <Filter>shaders\foam\radiance</Filter>
+    </None>
+    <None Include="radiance.vert">
+      <Filter>shaders\foam\radiance</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -5,17 +5,17 @@ using namespace std;
 static const float deltaT = 0.0083f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
-static const int PRESSURE_ITERATIONS = 6;
+static const int PRESSURE_ITERATIONS = 4;
 static const float H = 0.1f;
-static const float FH = H * 2 / 3;
+static const float FH = H;
 static const float KPOLY = 315 / (64 * PI * glm::pow(H, 9));
 static const float SPIKY = 45 / (PI * glm::pow(H, 6));
 static const float REST_DENSITY = 6378.0f;
 static const float EPSILON_LAMBDA = 600.0f;
 static const float EPSILON_VORTICITY = 0.0001f;
 static const float C = 0.01f;
-static const float K = 0.00001f;
-static const float deltaQMag = 0.3f * H;
+static const float K = 0.000001f;
+static const float deltaQMag = 0.0f; //0.3f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
 static const float lifetime = 1.0f;
 
@@ -26,12 +26,14 @@ static const int tamax = 20;
 static const int kmin = 5;
 static const int kmax = 50;
 
-static const int kta = 14000;
-static const int kwc = 24000;
+static const int kta = 1200;
+static const int kwc = 3600;
 
-static float width = 5;
+static float width = 7;
 static float height = 8;
 static float depth = 4;
+
+int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 0; i < 2; i+=.05f) {
@@ -51,6 +53,11 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 ParticleSystem::~ParticleSystem() {}
 
 void ParticleSystem::update() {
+	//Move wall
+	frameCounter++;
+	if (frameCounter >= 400)
+		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 2)  * 0.5f * PI)) * 3) + 6;
+
 	//----------------FOAM-----------------
 	//Kill dead foam
 	for (int i = 0; i < foam.size(); i++) {
@@ -191,14 +198,14 @@ void ParticleSystem::update() {
 		glm::ivec3 pos = p.newPos * 10;
 		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
 			for (auto &n : c->particles) {
-				if (p.newPos != n->newPos) {
+				//if (p.newPos != n->newPos) {
 					//if (glm::distance(p.newPos, n->newPos) <= 2 * H) {
 					//p.renderNeighbors.push_back(n);
 					if (glm::distance(p.newPos, n->newPos) <= H) {
 						p.neighbors.push_back(n);
 					}
 					//}
-				}
+				//}
 			}
 		}
 	}

@@ -12,8 +12,8 @@ static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.5f, 0.9f, 0.95f, 0.9f);
-static float filterRadius = 5;
-static const float radius = 0.1f;
+static float filterRadius = 3;
+static const float radius = 0.05f;
 static const float foamRadius = 0.01f;
 
 Renderer::Renderer() :
@@ -25,6 +25,7 @@ Renderer::Renderer() :
 	foamDepth(Shader("foamDepth.vert", "foamDepth.frag")),
 	foamThickness(Shader("foamThickness.vert", "foamThickness.frag")),
 	foamIntensity(Shader("foamIntensity.vert", "foamIntensity.frag")),
+	foamRadiance(Shader("radiance.vert", "radiance.frag")),
 	finalFS(Shader("final.vert", "final.frag")),
 	system(ParticleSystem())
 {
@@ -217,8 +218,13 @@ void Renderer::run(Camera &cam) {
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, foamIntensity.tex);
-	GLint foamMap = glGetUniformLocation(finalFS.program, "foamMap");
-	glUniform1i(foamMap, 1);
+	GLint foamIntensityMap = glGetUniformLocation(finalFS.program, "foamIntensityMap");
+	glUniform1i(foamIntensityMap, 1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, foamRadiance.tex);
+	GLint foamRadianceMap = glGetUniformLocation(finalFS.program, "foamRadianceMap");
+	glUniform1i(foamRadianceMap, 2);
 
 	glBindVertexArray(finalFS.vao);
 
@@ -277,6 +283,12 @@ void Renderer::initFramebuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, foamIntensity.fbo);
 	foamIntensity.initTexture(width, height, GL_RGBA, GL_RGBA32F, foamIntensity.tex);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, foamIntensity.tex, 0);
+
+	//Foam Radiance
+	foamRadiance.initFBO(foamRadiance.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, foamRadiance.fbo);
+	foamRadiance.initTexture(width, height, GL_RGBA, GL_RGBA32F, foamRadiance.tex);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, foamRadiance.tex, 0);
 
 	//Final buffer
 	finalFS.initFBO(finalFS.fbo);
@@ -351,8 +363,8 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, foamDepth.tex2);
-	GLint foamDepth = glGetUniformLocation(foamThickness.program, "foamDepthMap");
-	glUniform1i(foamDepth, 0);
+	GLint foamD = glGetUniformLocation(foamThickness.program, "foamDepthMap");
+	glUniform1i(foamD, 0);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, depth.tex);
@@ -393,6 +405,33 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	glUniform1i(thickness, 0);
 
 	glBindVertexArray(foamIntensity.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	//--------------------Foam Radiance----------------------
+	glUseProgram(foamRadiance.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, foamRadiance.fbo);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	foamRadiance.shaderVAOQuad();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, foamDepth.tex2);
+	foamD = glGetUniformLocation(foamRadiance.program, "foamDepthMap");
+	glUniform1i(foamD, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depth.tex);
+	fluidDepth = glGetUniformLocation(foamRadiance.program, "fluidDepthMap");
+	glUniform1i(fluidDepth, 1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, foamDepth.tex);
+	GLint foamNormalH = glGetUniformLocation(foamRadiance.program, "foamNormalHMap");
+	glUniform1i(foamNormalH, 2);
+
+	glBindVertexArray(foamRadiance.vao);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }

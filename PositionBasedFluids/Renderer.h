@@ -27,7 +27,7 @@ public:
 	Shader foamDepth;
 	Shader foamThickness;
 	Shader foamIntensity;
-	//Shader foamRadiance;
+	Shader foamRadiance;
 	Shader finalFS;
 
 private:
