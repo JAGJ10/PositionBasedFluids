@@ -17,5 +17,5 @@ void main() {
 
 	//float ifinal = clamp(foamIntensity, 0, 1);
 
-	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (-squiggly));
+	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (1 - squiggly));
 }

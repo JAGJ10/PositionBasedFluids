@@ -50,9 +50,11 @@ void main() {
 	float zFoam = texture(foamDepthMap, coord).x;
 	zFoam = linearizeDepth(zFoam);
 
-	if ((zFoam - zFluid) / .05 <= 1) {
-		fThickness *= pow(1 - pow(zFoam - zFluid, 1), 4);
-	} else {
-		fThickness = 0;
+	if (zFoam > zFluid) {
+		if ((zFoam - zFluid) / .01 <= 1) {
+			fThickness *= pow(1 - pow((zFoam - zFluid) / .01, 1), 4);
+		} else {
+			fThickness = 0;
+		}
 	}
 }

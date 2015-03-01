@@ -26,19 +26,19 @@ static const int tamax = 20;
 static const int kmin = 5;
 static const int kmax = 50;
 
-static const int kta = 1200;
-static const int kwc = 3600;
+static const int kta = 1000;
+static const int kwc = 2000;
 
 static float width = 7;
 static float height = 8;
-static float depth = 4;
+static float depth = 5;
 
 int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 2; i+=.05f) {
-		for (float j = 0; j < 2; j+=.05f) {
-			for (float k = 1; k < 3; k+=.05f) {
+	for (float i = 0; i < 2.5f; i+=.05f) {
+		for (float j = 0; j < 2.5f; j+=.05f) {
+			for (float k = 1.25; k < 3.75f; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
@@ -56,7 +56,7 @@ void ParticleSystem::update() {
 	//Move wall
 	frameCounter++;
 	if (frameCounter >= 400)
-		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 2)  * 0.5f * PI)) * 3) + 6;
+		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 3)  * 0.5f * PI)) * 3) + 6;
 
 	//----------------FOAM-----------------
 	//Kill dead foam
@@ -165,7 +165,10 @@ void ParticleSystem::update() {
 				}
 			}
 
-			if (numNeighbors < 6) type = 1;
+			if (numNeighbors < 6) {
+				type = 1;
+				vd /= 3;
+			}
 			else if (numNeighbors > 20) type = 2;
 			else type = 3;
 
