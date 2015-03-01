@@ -15,7 +15,7 @@ static const float EPSILON_LAMBDA = 600.0f;
 static const float EPSILON_VORTICITY = 0.0001f;
 static const float C = 0.01f;
 static const float K = 0.000001f;
-static const float deltaQMag = 0.0f; //0.3f * H;
+static const float deltaQMag = 0.3f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
 static const float lifetime = 1.0f;
 
@@ -26,8 +26,8 @@ static const int tamax = 20;
 static const int kmin = 5;
 static const int kmax = 50;
 
-static const int kta = 1000;
-static const int kwc = 2000;
+static const int kta = 800;
+static const int kwc = 1800;
 
 static float width = 7;
 static float height = 8;
@@ -56,7 +56,7 @@ void ParticleSystem::update() {
 	//Move wall
 	frameCounter++;
 	if (frameCounter >= 400)
-		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 3)  * 0.5f * PI)) * 3) + 6;
+		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 2)  * 0.5f * PI)) * 2.5f) + 6;
 
 	//----------------FOAM-----------------
 	//Kill dead foam

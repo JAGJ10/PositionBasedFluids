@@ -74,8 +74,8 @@ void main() {
 
 	//float thickness = max(texture(thicknessMap, refractCoord).x, 0.3);
 	float thickness = max(texture(thicknessMap, coord).x, 0.3);
-	vec3 transmission = exp(-(vec3(1.0)-color.xyz)*thickness);
-	//vec3 transmission = (1.0-(1.0-color.xyz)*thickness*0.8)*color.w;
+	//vec3 transmission = exp(-(vec3(1.0)-color.xyz)*thickness);
+	vec3 transmission = (1.0-(1.0-color.xyz)*thickness*0.8)*color.w;
     
 	vec3 lVec = normalize(worldPos.xyz-lightPos);
 	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(lVec, -lightDir))), 0.05);
