@@ -14,7 +14,7 @@ static const float REST_DENSITY = 6378.0f;
 static const float EPSILON_LAMBDA = 600.0f;
 static const float EPSILON_VORTICITY = 0.0001f;
 static const float C = 0.01f;
-static const float K = 0.000001f;
+static const float K = 0.00001f;
 static const float deltaQMag = 0.3f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
 static const float lifetime = 1.0f;
@@ -29,22 +29,23 @@ static const int kmax = 50;
 static const int kta = 800;
 static const int kwc = 1800;
 
-static float width = 7;
+static float width = 5;
 static float height = 8;
-static float depth = 5;
+static float depth = 4;
 
 int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
-	for (float i = 0; i < 2.5f; i+=.05f) {
-		for (float j = 0; j < 2.5f; j+=.05f) {
-			for (float k = 1.25; k < 3.75f; k+=.05f) {
+	for (float i = 0; i < 2; i+=.05f) {
+		for (float j = 0; j < 2; j+=.05f) {
+			for (float k = 1; k < 3; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
 	}
 
-	foam.reserve(100000);
+	foam.reserve(2000000);
+	foamPositions.reserve(2000000);
 	fluidPositions.reserve(particles.capacity());
 
 	srand((unsigned int)time(0));
@@ -56,7 +57,7 @@ void ParticleSystem::update() {
 	//Move wall
 	frameCounter++;
 	if (frameCounter >= 400)
-		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 2)  * 0.5f * PI)) * 2.5f) + 6;
+		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1.5f) + 4;
 
 	//----------------FOAM-----------------
 	//Kill dead foam
@@ -78,6 +79,13 @@ void ParticleSystem::update() {
 		imposeConstraints(p);
 
 		glm::ivec3 pos = p.pos * 10;
+		if (pos.x > width * 10 || pos.x < 0 || pos.y > height * 10 || pos.y < 0 || pos.z > depth * 10 || pos.z < 0) {
+			cout << "shouldn't be possible" << endl;
+			cout << pos.x << endl;
+			cout << pos.y << endl;
+			cout << pos.z << endl;
+		}
+
 		glm::vec3 vfSum = glm::vec3(0.0f);
 		float kSum = 0;
 		int numNeighbors = 0;
@@ -94,7 +102,7 @@ void ParticleSystem::update() {
 		}
 
 		if (numNeighbors >= 6 && numNeighbors <= 20) p.type = 3;
-		if (numNeighbors == 0 && p.type != 0) p.type = 1;
+		if (numNeighbors == 0) p.type = 1;
 
 		if (p.type == 1) {
 			//Spray
@@ -446,9 +454,9 @@ void ParticleSystem::imposeConstraints(FoamParticle &p) {
 
 float ParticleSystem::clampedConstraint(float x, float max) {
 	if (x < 0.0f) {
-		return 0.01f;
+		return 0.001f;
 	} else if (x > max) {
-		return max - 0.01f;
+		return max - 0.001f;
 	} else {
 		return x;
 	}

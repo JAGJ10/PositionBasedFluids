@@ -51,8 +51,8 @@ void main() {
 	zFoam = linearizeDepth(zFoam);
 
 	if (zFoam > zFluid) {
-		if ((zFoam - zFluid) / .01 <= 1) {
-			fThickness *= pow(1 - pow((zFoam - zFluid) / .01, 1), 4);
+		if ((zFoam - zFluid) / .02 <= 1) {
+			fThickness *= pow(1 - pow((zFoam - zFluid) / .02, 1), 4);
 		} else {
 			fThickness = 0;
 		}
