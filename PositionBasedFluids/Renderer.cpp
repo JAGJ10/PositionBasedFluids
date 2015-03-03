@@ -431,6 +431,8 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	GLint foamNormalH = glGetUniformLocation(foamRadiance.program, "foamNormalHMap");
 	glUniform1i(foamNormalH, 2);
 
+	setMatrix(foamThickness, mView, "mView");
+
 	glBindVertexArray(foamRadiance.vao);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
