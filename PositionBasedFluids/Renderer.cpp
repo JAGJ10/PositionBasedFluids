@@ -431,7 +431,12 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	GLint foamNormalH = glGetUniformLocation(foamRadiance.program, "foamNormalHMap");
 	glUniform1i(foamNormalH, 2);
 
-	setMatrix(foamThickness, mView, "mView");
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, foamIntensity.tex);
+	GLint foamIntensity = glGetUniformLocation(foamRadiance.program, "foamIntensityMap");
+	glUniform1i(foamIntensity, 3);
+
+	setMatrix(foamRadiance, mView, "mView");
 
 	glBindVertexArray(foamRadiance.vao);
 

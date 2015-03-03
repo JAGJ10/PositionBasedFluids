@@ -6,6 +6,7 @@ uniform vec4 mView;
 uniform sampler2D foamDepthMap;
 uniform sampler2D fluidDepthMap;
 uniform sampler2D foamNormalHMap;
+uniform sampler2D foamIntensityMap;
 
 out vec3 squiggly;
 
