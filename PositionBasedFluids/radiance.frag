@@ -42,22 +42,17 @@ void main() {
 			s.x /= 1024;
 			s.y /= 512;
 			
-			float sampleDepth = texture(foamDepthMap, coord + s*hpass).x;
+			float sampleFoamDepth = texture(foamDepthMap, coord + s*hpass).x;
+			float sampleFluidDepth = texture(fluidDepthMap, coord + s*hpass).x;
+			float sampleIntensity = texture(foamIntensityMap, coord + s*hpass).x;
 
 			float lambda = pow(1 - length(s), 2);
 			float delta = pow(max(1 - (abs(foamDepth - sampleDepth) / 5), 0), 2);
 
-			float k = ((sampleDepth > foamDepth || sampleDepth > fluidDepth) && (delta > 0.0 && delta < 1.0)) ? 1.0 : 0.0;
+			float k = ((sampleFoamDepth > foamDepth || sampleFluidDepth > fluidDepth) && (delta > 0.0 && delta < 1.0)) ? 1.0 : 0.0;
 	
-			omega += lambda * delta * k;
+			omega += lambda * delta * k * sampleIntensity;
 			omegaBottom += lambda;
-
-			if (p == 0) {
-				vec3 nSample = texture(foamNormalHMap, s*hpass).xyz;
-				float Pint = clamp(pow(dot(nSample, l), 1), 0, 1);
-				irr += Pint * clamp(dot(nSample, nfrag), 1, 1);
-				irrBottom = v;
-			}
 		}
 	}
 
