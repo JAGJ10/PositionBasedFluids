@@ -362,19 +362,6 @@ glm::vec3 ParticleSystem::getWeightedPosition(Particle &p) {
 	return glm::vec3(0);
 }
 
-void ParticleSystem::calcDensities() {
-	#pragma omp parallel for num_threads(8)
-	for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		float rhoSum = 0;
-		for (auto &n : p.neighbors) {
-			rhoSum += WPoly6(p.newPos, n->newPos);
-		}
-
-		buffer1[i].x = rhoSum;
-	}
-}
-
 void ParticleSystem::setNeighbors() {
 	#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
@@ -391,6 +378,19 @@ void ParticleSystem::setNeighbors() {
 				//}
 			}
 		}
+	}
+}
+
+void ParticleSystem::calcDensities() {
+#pragma omp parallel for num_threads(8)
+	for (int i = 0; i < particles.size(); i++) {
+		Particle &p = particles.at(i);
+		float rhoSum = 0;
+		for (auto &n : p.neighbors) {
+			rhoSum += WPoly6(p.newPos, n->newPos);
+		}
+
+		buffer1[i].x = rhoSum;
 	}
 }
 

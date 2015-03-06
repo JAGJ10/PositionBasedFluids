@@ -38,8 +38,8 @@ private:
 	glm::vec3 xsphViscosity(Particle &p);
 	void updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
-	void calcDensities();
 	void setNeighbors();
+	void calcDensities();
 	void updateFoam();
 	void generateFoam();
 };
