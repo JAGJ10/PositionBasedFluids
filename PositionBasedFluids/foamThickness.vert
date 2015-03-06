@@ -22,11 +22,7 @@ void main() {
 		type = 1;
 	} else if (trl < 2500) {
 		trl -= 2000;
-		ri /= 2;
 		type = 2;
-	} else {
-		trl -= 3000;
-		type = 3;
 	}
 
 	ri /= ((int(trl) % 5) + 1);

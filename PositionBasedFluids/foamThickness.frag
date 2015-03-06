@@ -33,8 +33,6 @@ void main() {
 	if (r <= 1) {
 		if (type == 1) {
 			fThickness = 1 - pow(r, 1.5);
-		} else if (type == 2) {
-			fThickness = 1 - (1 - pow(r, 2));
 		} else {
 			fThickness = 1 - pow(r, 2.25);
 		}

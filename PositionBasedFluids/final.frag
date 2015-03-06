@@ -29,5 +29,5 @@ void main() {
 	}
 
 	float squiggly = clamp(sum * (vec3(1, 1, 1) - vec3(0, 0.2, 0.6)), 0, 1);
-	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (0.4 - squiggly));
+	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (1 - squiggly));
 }

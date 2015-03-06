@@ -41,8 +41,6 @@ private:
 	void updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
 	void calcDensities();
-	void calcNormals();
-	float foamPotential(float i, int rmin, int rmax);
 };
 
 #endif
