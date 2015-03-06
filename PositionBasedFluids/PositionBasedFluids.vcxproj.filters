@@ -123,12 +123,6 @@
     <None Include="thickness.frag">
       <Filter>shaders\water\thickness</Filter>
     </None>
-    <None Include="foam.vert">
-      <Filter>shaders\foam</Filter>
-    </None>
-    <None Include="foam.frag">
-      <Filter>shaders\foam</Filter>
-    </None>
     <None Include="final.frag">
       <Filter>shaders</Filter>
     </None>

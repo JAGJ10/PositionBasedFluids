@@ -180,8 +180,6 @@
     <None Include="depth.vert" />
     <None Include="final.frag" />
     <None Include="final.vert" />
-    <None Include="foam.frag" />
-    <None Include="foam.vert" />
     <None Include="foamDepth.frag" />
     <None Include="foamDepth.vert" />
     <None Include="foamIntensity.frag" />
