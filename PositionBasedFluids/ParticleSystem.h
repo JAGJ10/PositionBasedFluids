@@ -41,6 +41,7 @@ private:
 	void updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
 	void calcDensities();
+	void setNeighbors();
 };
 
 #endif

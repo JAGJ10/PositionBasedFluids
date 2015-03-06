@@ -6,26 +6,21 @@ public:
 	glm::vec3 oldPos;
 	glm::vec3 newPos;
 	glm::vec3 velocity;
-	glm::vec3 newVelocity;
-	glm::vec3 deltaP;
-	glm::vec3 normal;
-	float lambda;
-	float rho;
 	std::vector<Particle*> neighbors;
-	std::vector<Particle*> renderNeighbors;
+	float invMass;
+	int index;
 
-	Particle(glm::vec3 pos) {
+	Particle(glm::vec3 pos, float invMass, int index) {
 		this->oldPos = pos;
 		this->newPos = pos;
+		this->invMass = invMass;
+		this->index = index;
 		velocity = glm::vec3(0, 0, 0);
-		deltaP = glm::vec3(0, 0, 0);
-		normal = glm::vec3(0, 0, 0);
-		lambda = 0;
 	}
 
 public:
-	glm::vec3 weightedPos;
-	float sumWeight;
+	//glm::vec3 weightedPos;
+	//float sumWeight;
 };
 
 #endif
