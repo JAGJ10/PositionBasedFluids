@@ -443,8 +443,7 @@ void ParticleSystem::updateFoam() {
 			p.velocity.z *= 0.8f;
 			p.velocity += GRAVITY * deltaT;
 			p.pos += p.velocity * deltaT;
-		}
-		else if (p.type == 2) {
+		} else if (p.type == 2) {
 			//Foam
 			p.pos += (1.0f * (vfSum / kSum)) * deltaT;
 		}
