@@ -9,11 +9,13 @@ uniform sampler2D fluidDepthMap;
 uniform mat4 mView;
 uniform mat4 projection;
 uniform vec2 screenSize;
+uniform float zNear;
+uniform float zFar;
 
 out float fThickness;
 
 float linearizeDepth(float depth) {
-	return (2.0 * 2) / (20 + 2 - depth * (20 - 2));
+	return (2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear));
 }
 
 void main() {
@@ -51,8 +53,8 @@ void main() {
 	zFoam = linearizeDepth(zFoam);
 
 	if (zFoam > zFluid) {
-		if ((zFoam - zFluid) / .02 <= 1) {
-			fThickness *= pow(1 - pow((zFoam - zFluid) / .02, 1), 4);
+		if ((zFoam - zFluid) / .05 <= 1) {
+			fThickness *= pow(1 - pow((zFoam - zFluid) / .05, 2), 4);
 		} else {
 			fThickness = 0;
 		}

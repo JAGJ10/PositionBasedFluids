@@ -5,7 +5,7 @@ using namespace std;
 static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 20.0f;
+static const float zFar = 200.0f;
 static const float zNear = 2.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
@@ -14,10 +14,11 @@ static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static float filterRadius = 3;
 static const float radius = 0.05f;
-static const float foamRadius = 0.005f;
+static const float foamRadius = 0.02f;
 
 Renderer::Renderer() :
 	running(true),
+	plane(Shader("plane.vert", "plane.frag")),
 	depth(Shader("depth.vert", "depth.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
@@ -48,11 +49,28 @@ void Renderer::run(Camera &cam) {
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
+	glm::mat4 normalMatrix = glm::inverseTranspose(mView);
 	glm::mat4 projection = glm::perspective(cam.zoom, aspectRatio, zNear, zFar);
+	//glm::mat4 projection = glm::infinitePerspective(cam.zoom, aspectRatio, zNear);
 
 	//Clear buffer
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//----------------------Infinite Plane---------------------
+	glUseProgram(plane.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, plane.fbo);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	plane.shaderVAOInfinitePlane();
+
+	setMatrix(plane, mView, "mView");
+	setMatrix(plane, projection, "projection");
+
+	glBindVertexArray(plane.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//----------------------Particle Depth----------------------
 	glUseProgram(depth.program);
@@ -186,6 +204,11 @@ void Renderer::run(Camera &cam) {
 	GLint thicknessMap = glGetUniformLocation(fluidFinal.program, "thicknessMap");
 	glUniform1i(thicknessMap, 1);
 
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, plane.tex);
+	GLint sceneMap = glGetUniformLocation(fluidFinal.program, "sceneMap");
+	glUniform1i(sceneMap, 2);
+
 	setMatrix(fluidFinal, projection, "projection");
 	setMatrix(fluidFinal, mView, "mView");
 	setVec4(fluidFinal, color, "color");
@@ -226,6 +249,8 @@ void Renderer::run(Camera &cam) {
 	GLint foamRadianceMap = glGetUniformLocation(finalFS.program, "foamRadianceMap");
 	glUniform1i(foamRadianceMap, 2);
 
+	setVec2(foamRadiance, screenSize, "screenSize");
+
 	glBindVertexArray(finalFS.vao);
 
 	glEnable(GL_DEPTH_TEST);
@@ -235,6 +260,12 @@ void Renderer::run(Camera &cam) {
 }
 
 void Renderer::initFramebuffers() {
+	//Infinite Plane buffer
+	plane.initFBO(plane.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, plane.fbo);
+	plane.initTexture(width, height, GL_RGBA, GL_RGBA32F, plane.tex);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, plane.tex, 0);
+
 	//Depth buffer
 	depth.initFBO(depth.fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
@@ -377,6 +408,8 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	setFloat(foamThickness, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 	setFloat(foamThickness, tanf(cam.zoom / 2), "fov");
 	setVec2(foamThickness, screenSize, "screenSize");
+	setFloat(foamThickness, zNear, "zNear");
+	setFloat(foamThickness, zFar, "zFar");
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
@@ -437,6 +470,9 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 	glUniform1i(foamIntensity, 3);
 
 	setMatrix(foamRadiance, mView, "mView");
+	setMatrix(foamRadiance, projection, "projection");
+	setFloat(foamRadiance, zNear, "zNear");
+	setFloat(foamRadiance, zFar, "zFar");
 
 	glBindVertexArray(foamRadiance.vao);
 

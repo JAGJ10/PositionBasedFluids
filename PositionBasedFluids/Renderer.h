@@ -20,6 +20,7 @@ public:
 
 	bool running;
 
+	Shader plane;
 	Shader depth;
 	BlurShader blur;
 	Shader thickness;

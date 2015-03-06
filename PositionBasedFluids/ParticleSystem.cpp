@@ -27,18 +27,18 @@ static const int kmin = 5;
 static const int kmax = 50;
 
 static const int kta = 800;
-static const int kwc = 1800;
+static const int kwc = 2000;
 
-static float width = 5;
+static float width = 7;
 static float height = 8;
-static float depth = 4;
+static float depth = 3;
 
 int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 0; i < 2; i+=.05f) {
 		for (float j = 0; j < 2; j+=.05f) {
-			for (float k = 1; k < 3; k+=.05f) {
+			for (float k = 0.5f; k < 2.5f; k+=.05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k)));
 			}
 		}
@@ -57,7 +57,7 @@ void ParticleSystem::update() {
 	//Move wall
 	frameCounter++;
 	if (frameCounter >= 400)
-		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1.5f) + 4;
+		width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 3) + 6;
 
 	//----------------FOAM-----------------
 	//Kill dead foam
@@ -79,13 +79,6 @@ void ParticleSystem::update() {
 		imposeConstraints(p);
 
 		glm::ivec3 pos = p.pos * 10;
-		if (pos.x > width * 10 || pos.x < 0 || pos.y > height * 10 || pos.y < 0 || pos.z > depth * 10 || pos.z < 0) {
-			cout << "shouldn't be possible" << endl;
-			cout << pos.x << endl;
-			cout << pos.y << endl;
-			cout << pos.z << endl;
-		}
-
 		glm::vec3 vfSum = glm::vec3(0.0f);
 		float kSum = 0;
 		int numNeighbors = 0;
@@ -101,7 +94,7 @@ void ParticleSystem::update() {
 			}
 		}
 
-		if (numNeighbors >= 6 && numNeighbors <= 20) p.type = 3;
+		if (numNeighbors >= 6 && p.type == 1) p.type = 3;
 		if (numNeighbors == 0) p.type = 1;
 
 		if (p.type == 1) {
@@ -110,7 +103,7 @@ void ParticleSystem::update() {
 			p.pos += p.velocity * deltaT;
 		} else if (p.type == 2) {
 			//Bubbles
-			p.velocity += ((-1.0 * GRAVITY) + ((0.5 * ((vfSum / kSum) - p.velocity)) / deltaT)) * deltaT;
+			p.velocity += ((-GRAVITY) + ((0.2 * ((vfSum / kSum) - p.velocity)) / deltaT)) * deltaT;
 			p.pos += p.velocity * deltaT;
 		} else if (p.type == 3) {
 			//Foam
@@ -175,7 +168,7 @@ void ParticleSystem::update() {
 
 			if (numNeighbors < 6) {
 				type = 1;
-				vd /= 3;
+				//vd /= 3;
 			}
 			else if (numNeighbors > 20) type = 2;
 			else type = 3;

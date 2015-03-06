@@ -5,6 +5,7 @@ in vec2 coord;
 uniform vec4 color;
 uniform sampler2D depthMap;
 uniform sampler2D thicknessMap;
+uniform sampler2D sceneMap;
 uniform mat4 projection;
 uniform mat4 mView;
 uniform vec2 invTexScale;
@@ -26,6 +27,7 @@ vec3 uvToEye(vec2 p, float z) {
 }
 
 void main() {
+	vec4 scene = texture(sceneMap, coord);
     float depth = texture(depthMap, coord).x;
 
 	if (depth == 0.0f) {
@@ -34,7 +36,7 @@ void main() {
 	}
 
 	if (depth == 1.0) {
-		fragColor = vec4(0);
+		fragColor = scene;
 		return;
 	}
 
@@ -76,6 +78,8 @@ void main() {
 	float thickness = max(texture(thicknessMap, coord).x, 0.3);
 	vec3 transmission = exp(-(vec3(1.0)-color.xyz)*thickness);
 	//vec3 transmission = (1.0-(1.0-color.xyz)*thickness*0.8)*color.w;
+
+	vec3 refract = texture(sceneMap, refractCoord).xyz*transmission;
     
 	vec3 lVec = normalize(worldPos.xyz-lightPos);
 	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(lVec, -lightDir))), 0.05);
@@ -98,10 +102,11 @@ void main() {
 	vec3 reflect = vec3(1.0) + mix(groundColor, skyColor, smoothstep(0.15, 0.25, rWorld.y));
     
     //Compositing everything
-    vec3 finalColor = diffuse + (mix(transmission, reflect, fresnel) + specular) * color.w;
+    vec3 finalColor = diffuse + (mix(refract, reflect, fresnel) + specular) * color.w;
 
 	fragColor = vec4(finalColor, 1.0);
 	//fragColor = vec4(diffuse, 1);
+	//fragColor = scene;
 
 	gl_FragDepth = depth;
 }

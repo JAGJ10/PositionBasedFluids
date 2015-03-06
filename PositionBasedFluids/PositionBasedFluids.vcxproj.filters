@@ -57,6 +57,12 @@
     <Filter Include="shaders\foam\radiance">
       <UniqueIdentifier>{ed66c811-3f5b-462c-beea-6ef221105850}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{1f64b718-df0f-4235-918c-a1a841c12f5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\general">
+      <UniqueIdentifier>{645086ed-259e-4ee8-adcd-3982bd34807d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -159,5 +165,37 @@
     <None Include="radiance.vert">
       <Filter>shaders\foam\radiance</Filter>
     </None>
+    <None Include="cubemap.frag">
+      <Filter>shaders\general</Filter>
+    </None>
+    <None Include="cubemap.vert">
+      <Filter>shaders\general</Filter>
+    </None>
+    <None Include="plane.vert">
+      <Filter>shaders\general</Filter>
+    </None>
+    <None Include="plane.frag">
+      <Filter>shaders\general</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="right.jpg">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="bottom.jpg">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="left.jpg">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="front.jpg">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="top.jpg">
+      <Filter>resources</Filter>
+    </Image>
+    <Image Include="back.jpg">
+      <Filter>resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>

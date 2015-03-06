@@ -1,12 +1,13 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#include <GL/glew.h>
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
-#include <GL/glew.h>
+#include "common.h"
+#include <SOIL.h>
 
 class Shader {
 public:
@@ -95,6 +96,22 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, NULL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void initCubeMap(int width, int height, std::vector<const GLchar*> faces, GLuint &tex) {
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+		for (GLuint i = 0; i < faces.size(); i++) {
+			unsigned char* image = SOIL_load_image(faces[i], &width, &height, 0, SOIL_LOAD_RGB);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		}
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
 
 	void shaderVAOPoints(std::vector<glm::vec3> &points) {
@@ -151,6 +168,35 @@ public:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindVertexArray(0);
+	}
+
+	void shaderVAOInfinitePlane() {
+		GLfloat vertices[] = {
+			100.0f, 0.0f, 100.0f,
+			100.0f, 0.0f, -100.0f,
+			-100.0f, 0.0f, -100.0f,
+			-100.0f, 0.0f, 100.0f
+		};
+		GLuint indices[] = {
+			0, 1, 3,
+			1, 2, 3
+		};
+
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
 		glBindVertexArray(0);
