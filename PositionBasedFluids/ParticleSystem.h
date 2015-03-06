@@ -32,12 +32,10 @@ private:
 	float calcDensityConstraint(Particle &p, std::vector<Particle*> &neighbors);
 	glm::vec3 eta(Particle &p, float &vorticityMag);
 	glm::vec3 vorticityForce(Particle &p);
-	void imposeConstraints(Particle &p);
-	void imposeConstraints(FoamParticle &p);
-	float clampedConstraint(float x, float max);
+	void confineToBox(Particle &p);
+	void confineToBox(FoamParticle &p);
 	float sCorrCalc(Particle &pi, Particle* &pj);
 	glm::vec3 xsphViscosity(Particle &p);
-	bool outOfRange(float x, float y, float z);
 	void updatePositions();
 	glm::vec3 getWeightedPosition(Particle &p);
 	void calcDensities();

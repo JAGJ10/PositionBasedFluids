@@ -68,7 +68,7 @@ void ParticleSystem::update() {
 		//predict position x* = xi + deltaT * vi
 		p.newPos += p.velocity * deltaT;
 
-		imposeConstraints(p);
+		confineToBox(p);
 	}
 
 	//Update neighbors
@@ -111,7 +111,7 @@ void ParticleSystem::update() {
 	#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
-		imposeConstraints(p);
+		confineToBox(p);
 
 		//set new velocity vi = (x*i - xi) / deltaT
 		p.velocity = (p.newPos - p.oldPos) / deltaT;
@@ -139,7 +139,6 @@ void ParticleSystem::update() {
 	generateFoam();
 }
 
-//Poly6 Kernel
 float ParticleSystem::WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
@@ -162,7 +161,6 @@ glm::vec3 ParticleSystem::gradWPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 	return r * coeff;
 }
 
-//Spiky Kernel
 glm::vec3 ParticleSystem::WSpiky(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
@@ -276,54 +274,44 @@ glm::vec3 ParticleSystem::xsphViscosity(Particle &p) {
 	return visc * C;
 }
 
-void ParticleSystem::imposeConstraints(Particle &p) {
-	if (outOfRange(p.newPos.x, 0, width)) {
+void ParticleSystem::confineToBox(Particle &p) {
+	if (p.newPos.x < 0 || p.newPos.x > width) {
 		p.velocity.x = 0;
+		if (p.newPos.x < 0) p.newPos.x = 0;
+		else p.newPos.x = width;
 	}
 
-	if (outOfRange(p.newPos.y, 0, height)) {
+	if (p.newPos.y < 0 || p.newPos.y > height) {
 		p.velocity.y = 0;
+		if (p.newPos.y < 0) p.newPos.y = 0;
+		else p.newPos.y = width;
 	}
 
-	if (outOfRange(p.newPos.z, 0, depth)) {
+	if (p.newPos.z < 0 || p.newPos.z > depth) {
 		p.velocity.z = 0;
+		if (p.newPos.z < 0) p.newPos.z = 0;
+		else p.newPos.z = width;
 	}
-
-	p.newPos.x = clampedConstraint(p.newPos.x, width);
-	p.newPos.y = clampedConstraint(p.newPos.y, height);
-	p.newPos.z = clampedConstraint(p.newPos.z, depth);
 }
 
-void ParticleSystem::imposeConstraints(FoamParticle &p) {
-	if (outOfRange(p.pos.x, 0, width)) {
+void ParticleSystem::confineToBox(FoamParticle &p) {
+	if (p.pos.x < 0 || p.pos.x > width) {
 		p.velocity.x = 0;
+		if (p.pos.x < 0) p.pos.x = 0;
+		else p.pos.x = width;
 	}
 
-	if (outOfRange(p.pos.y, 0, height)) {
+	if (p.pos.y < 0 || p.pos.y > height) {
 		p.velocity.y = 0;
+		if (p.pos.y < 0) p.pos.y = 0;
+		else p.pos.y = width;
 	}
 
-	if (outOfRange(p.pos.z, 0, depth)) {
+	if (p.pos.z < 0 || p.pos.z > depth) {
 		p.velocity.z = 0;
+		if (p.pos.z < 0) p.pos.z = 0;
+		else p.pos.z = width;
 	}
-
-	p.pos.x = clampedConstraint(p.pos.x, width);
-	p.pos.y = clampedConstraint(p.pos.y, height);
-	p.pos.z = clampedConstraint(p.pos.z, depth);
-}
-
-float ParticleSystem::clampedConstraint(float x, float max) {
-	if (x < 0.0f) {
-		return 0.001f;
-	} else if (x > max) {
-		return max - 0.001f;
-	} else {
-		return x;
-	}
-}
-
-bool ParticleSystem::outOfRange(float x, float min, float max) {
-	return x <= min || x >= max;
 }
 
 void ParticleSystem::updatePositions() {
@@ -423,7 +411,7 @@ void ParticleSystem::updateFoam() {
 	#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < foam.size(); i++) {
 		FoamParticle &p = foam.at(i);
-		imposeConstraints(p);
+		confineToBox(p);
 
 		glm::ivec3 pos = p.pos * 10;
 		glm::vec3 vfSum = glm::vec3(0.0f);
@@ -509,7 +497,7 @@ void ParticleSystem::generateFoam() {
 
 			foam.push_back(FoamParticle(xd, vd, lifetime, type));
 
-			imposeConstraints(foam.back());
+			confineToBox(foam.back());
 		}
 	}
 }
