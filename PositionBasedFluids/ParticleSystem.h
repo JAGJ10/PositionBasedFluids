@@ -42,6 +42,7 @@ private:
 	void calcDensities();
 	void updateFoam();
 	void generateFoam();
+	float easeInOutQuad(float t, float b, float c, float d);
 };
 
 #endif
