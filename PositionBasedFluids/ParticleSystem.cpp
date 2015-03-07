@@ -616,7 +616,7 @@ void ParticleSystem::clothUpdate() {
 			glm::vec3 dir = c.p1->newPos - c.p2->newPos;
 			float length = glm::length(dir);
 			float invMass = c.p1->invMass + c.p2->invMass;
-			glm::vec3 deltaP = (1 / invMass) * (length - c.restLength) * (dir / length) * c.k;
+			glm::vec3 deltaP = (1 / invMass) * (length - c.restLength) * (dir / length) * kLin;
 
 			if (c.p1->invMass > 0) c.p1->newPos -= deltaP * c.p1->invMass;
 			if (c.p2->invMass > 0) c.p2->newPos += deltaP * c.p2->invMass;
@@ -630,9 +630,9 @@ void ParticleSystem::clothUpdate() {
 			float diff = 1.0f - ((globalK + c.restLength) / d);
 			glm::vec3 force = dir * diff;
 
-			glm::vec3 b0 = c.k * ((2.0f * c.p1->invMass) / c.w) * force;
-			glm::vec3 b1 = c.k * ((2.0f * c.p2->invMass) / c.w) * force;
-			glm::vec3 delV = c.k * ((-4.0f * c.p3->invMass) / c.w) * force;
+			glm::vec3 b0 = kLin * ((2.0f * c.p1->invMass) / c.w) * force;
+			glm::vec3 b1 = kLin * ((2.0f * c.p2->invMass) / c.w) * force;
+			glm::vec3 delV = kLin * ((-4.0f * c.p3->invMass) / c.w) * force;
 
 			if (c.p1->invMass > 0) c.p1->newPos += b0;
 			if (c.p2->invMass > 0) c.p2->newPos += b1;
