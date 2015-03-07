@@ -584,7 +584,7 @@ void ParticleSystem::clothUpdate() {
 			glm::vec3 deltaP = (1 / invMass) * (length - c.restLength) * (dir / length) * c.k;
 
 			if (c.p1->invMass > 0) c.p1->newPos -= deltaP * c.p1->invMass;
-			if (c.p2->invMass > 0) c.p2->newPos -= deltaP * c.p2->invMass;
+			if (c.p2->invMass > 0) c.p2->newPos += deltaP * c.p2->invMass;
 		}
 
 		//Bending constraints
