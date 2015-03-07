@@ -19,6 +19,8 @@ static const float K = 0.00001f;
 static const float deltaQMag = 0.3f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
 static const float lifetime = 1.0f;
+static const float offset = 0.05f;
+static const float cols = 1.0f / offset;
 
 static float width = 8;
 static float height = 8;
@@ -29,14 +31,18 @@ static const int SOLVER_ITERATIONS = 2;
 static const float kBend = 0.5f;
 static const float kStretch = 0.25f;
 static const float kDamp = 0.00125f;
+static const float kLin = 1.0f - glm::pow(1.0f - kStretch, 1.0f / SOLVER_ITERATIONS);
 static const float globalK = 10.0f;
 
 static vector<glm::vec3> buffer1;
 static vector<float> buffer2;
 
-float t = 0.0f;
-int flag = 1;
-int frameCounter = 0;
+static vector<DistanceConstraint> dConstraints;
+static vector<BendingConstraint> bConstraints;
+
+static float t = 0.0f;
+static int flag = 1;
+static int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	//Initialize fluid particles
@@ -62,7 +68,23 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	}
 
 	//ADD CLOTH CONSTRAINTS TO CONSTRAINT VECTORS
+	//Distance constraints
+	for (float i = 1; i < 2; i += offset) {
+		for (float j = 1; j < 2; j += offset) {
+			if (i < cols - offset)
+				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i+offset, j)));
 
+			if (j < cols - offset) 
+				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i, j + offset)));
+		}
+	}
+
+	//Bending constraints
+	for (float i = 1; i < 2; i += offset) {
+		for (float j = 1; j < 2 - (2 * offset); j += offset) {
+			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i, j + 1), &getIndex(i, j + 2)));
+		}
+	}
 
 	foam.reserve(2000000);
 	foamPositions.reserve(2000000);
@@ -617,4 +639,11 @@ void ParticleSystem::clothUpdate() {
 			if (c.p3->invMass > 0) c.p3->newPos += delV;
 		}
 	}
+}
+
+Particle& ParticleSystem::getIndex(float i, float j) {
+	i /= offset;
+	j /= offset;
+
+	return clothParticles.at(j * cols + i);
 }

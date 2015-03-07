@@ -9,9 +9,8 @@ public:
 	Particle *p1;
 	Particle *p2;
 	float restLength;
-	float k;
 
-	DistanceConstraint(Particle *p1, Particle *p2, float k) : p1(p1), p2(p2), k(k) {
+	DistanceConstraint(Particle *p1, Particle *p2) : p1(p1), p2(p2) {
 		restLength = glm::length(p1->oldPos - p2->oldPos);
 	}
 };

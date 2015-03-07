@@ -22,9 +22,6 @@ private:
 	std::vector<Particle> clothParticles;
 	std::vector<FoamParticle> foam;
 
-	std::vector<DistanceConstraint> dConstraints;
-	std::vector<BendingConstraint> bConstraints;
-
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
 
@@ -53,6 +50,7 @@ private:
 	float easeInOutQuad(float t, float b, float c, float d);
 
 	void clothUpdate();
+	Particle& getIndex(float i, float j);
 };
 
 #endif
