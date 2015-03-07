@@ -72,7 +72,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 1; i < 2; i += offset) {
 		for (float j = 1; j < 2; j += offset) {
 			if (i < cols - offset)
-				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i+offset, j)));
+				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i + offset, j)));
 
 			if (j < cols - offset) 
 				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i, j + offset)));
@@ -82,7 +82,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	//Bending constraints
 	for (float i = 1; i < 2; i += offset) {
 		for (float j = 1; j < 2 - (2 * offset); j += offset) {
-			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i, j + 1), &getIndex(i, j + 2)));
+			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i, j + offset), &getIndex(i, j + (2*offset))));
 		}
 	}
 
