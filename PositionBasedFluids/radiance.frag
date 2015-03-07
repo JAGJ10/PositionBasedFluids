@@ -68,5 +68,4 @@ void main() {
 	squiggly.x = clamp(pow(omega * 1, 1.5) + -0.05, 0, 1);
 	squiggly.y = hpass;
 	squiggly.z = irr;
-	
 }

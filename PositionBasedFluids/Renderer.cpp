@@ -14,7 +14,7 @@ static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static float filterRadius = 3;
 static const float radius = 0.05f;
-static const float foamRadius = 0.02f;
+static const float foamRadius = 0.01f;
 
 Renderer::Renderer() :
 	running(true),
