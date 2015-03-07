@@ -3,6 +3,7 @@
 
 using namespace std;
 
+//---------------------Fluid Constants----------------------
 static const float deltaT = 0.0083f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
@@ -23,6 +24,12 @@ static float width = 6;
 static float height = 8;
 static float depth = 2;
 
+//---------------------Cloth Constants----------------------
+static const int SOLVER_ITERATIONS = 2;
+static const float kBend = 0.5f;
+static const float kStretch = 0.25f;
+static const float kDamp = 0.00125f;
+
 static vector<glm::vec3> buffer1;
 static vector<float> buffer2;
 
@@ -35,7 +42,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 0; i < 3; i+=.05f) {
 		for (float j = 0; j < 3; j+=.05f) {
 			for (float k = 1; k < 2; k+=.05f) {
-				particles.push_back(Particle(glm::vec3(i, j, k), 1.0f, count));
+				particles.push_back(Particle(glm::vec3(i, j, k), 1.0f, count, 0));
 				count++;
 			}
 		}
@@ -74,10 +81,10 @@ void ParticleSystem::update() {
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 
-		//update velocity vi = vi + deltaT * fExt
+		//update velocity vi = vi + dt * fExt
 		p.velocity += GRAVITY * deltaT;
 
-		//predict position x* = xi + deltaT * vi
+		//predict position x* = xi + dt * vi
 		p.newPos += p.velocity * deltaT;
 
 		confineToBox(p);
@@ -90,7 +97,7 @@ void ParticleSystem::update() {
 	//Needs to be after neighbor finding for weighted positions
 	updatePositions();
 
-	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
+	for (int pi = 0; pi < PRESSURE_ITERATIONS; pi++) {
 		//set lambda
 		#pragma omp parallel for num_threads(8)
 		for (int i = 0; i < particles.size(); i++) {
@@ -125,7 +132,7 @@ void ParticleSystem::update() {
 		Particle &p = particles.at(i);
 		confineToBox(p);
 
-		//set new velocity vi = (x*i - xi) / deltaT
+		//set new velocity vi = (x*i - xi) / dt
 		p.velocity = (p.newPos - p.oldPos) / deltaT;
 
 		//apply vorticity confinement
@@ -506,3 +513,67 @@ float ParticleSystem::easeInOutQuad(float t, float b, float c, float d) {
 	t--;
 	return -c / 2 * (t*(t - 2) - 1) + b;
 };
+
+void ParticleSystem::clothUpdate() {
+	for (auto &p : clothParticles) {
+		//update velocity vi = vi + dt * wi * fext
+		p.velocity += deltaT * p.invMass * GRAVITY;
+	}
+
+	//Dampening
+	glm::vec3 xcm = glm::vec3(0.0f);
+	glm::vec3 vcm = glm::vec3(0.0f);
+	float sumM = 0.0f;
+	for (auto &p : clothParticles) {
+		xcm += p.oldPos * (1 / p.invMass);
+		vcm += p.velocity * (1 / p.invMass);
+		sumM += (1 / p.invMass);
+	}
+
+	xcm /= sumM;
+	vcm /= sumM;
+	glm::mat3 I = glm::mat3(1.0f);
+	glm::vec3 L = glm::vec3(0.0f);
+	glm::vec3 w = glm::vec3(0.0f);
+
+	for (int i = 0; i < clothParticles.size(); i++) {
+		Particle &p = clothParticles.at(i);
+		buffer1[i] = p.oldPos - xcm;
+		L += glm::cross(buffer1[i], (1 / p.invMass) * p.velocity);
+		glm::mat3 temp = glm::mat3(0, -buffer1[i].z, buffer1[i].y,
+								   buffer1[i].z, 0, -buffer1[i].x,
+								   -buffer1[i].y, buffer1[i].x, 0);
+		I += (temp*glm::transpose(temp)) * (1 / p.invMass);
+	}
+
+	w = glm::inverse(I) * L;
+
+	for (int i = 0; i < clothParticles.size(); i++) {
+		Particle &p = clothParticles.at(i);
+		glm::vec3 deltaVi = vcm + glm::cross(w, buffer1[i] - p.velocity);
+		p.velocity += kDamp * deltaVi;
+	}
+
+	//Predict new positions -> pi = xi + dt * vi
+	for (int i = 0; i < clothParticles.size(); i++) {
+		Particle &p = clothParticles.at(i);
+		if (p.invMass == 0) {
+			p.newPos = p.oldPos;
+		} else {
+			p.newPos = p.oldPos + (p.velocity * deltaT);
+		}
+	}
+
+	//Collision with ground
+	for (int i = 0; i < clothParticles.size(); i++) {
+		Particle &p = clothParticles.at(i);
+		if (p.newPos.y < 0) {
+			p.newPos.y = 0;
+		}
+	}
+
+	for (int si = 0; si < SOLVER_ITERATIONS; si++) {
+		//Stretching constraint
+
+	}
+}

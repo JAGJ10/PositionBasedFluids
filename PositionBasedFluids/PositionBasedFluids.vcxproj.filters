@@ -63,6 +63,9 @@
     <Filter Include="shaders\general">
       <UniqueIdentifier>{645086ed-259e-4ee8-adcd-3982bd34807d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\cloth">
+      <UniqueIdentifier>{de8c9e82-8541-40c5-b852-cdcd390eb022}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -105,6 +108,9 @@
     </ClInclude>
     <ClInclude Include="FoamParticle.hpp">
       <Filter>Header Files\foam</Filter>
+    </ClInclude>
+    <ClInclude Include="Constaint.hpp">
+      <Filter>Header Files\cloth</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

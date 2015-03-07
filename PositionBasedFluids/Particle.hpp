@@ -9,12 +9,14 @@ public:
 	std::vector<Particle*> neighbors;
 	float invMass;
 	int index;
+	int phase;
 
-	Particle(glm::vec3 pos, float invMass, int index) {
+	Particle(glm::vec3 pos, float invMass, int index, int phase) {
 		this->oldPos = pos;
 		this->newPos = pos;
 		this->invMass = invMass;
 		this->index = index;
+		this->phase = phase;
 		velocity = glm::vec3(0, 0, 0);
 	}
 

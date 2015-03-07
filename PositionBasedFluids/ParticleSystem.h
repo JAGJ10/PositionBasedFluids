@@ -17,6 +17,7 @@ public:
 
 private:
 	std::vector<Particle> particles;
+	std::vector<Particle> clothParticles;
 	std::vector<FoamParticle> foam;
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
@@ -43,6 +44,8 @@ private:
 	void updateFoam();
 	void generateFoam();
 	float easeInOutQuad(float t, float b, float c, float d);
+
+	void clothUpdate();
 };
 
 #endif
