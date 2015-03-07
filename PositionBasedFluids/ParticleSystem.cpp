@@ -20,9 +20,9 @@ static const float deltaQMag = 0.3f * H;
 static const float wQH = KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3);
 static const float lifetime = 1.0f;
 
-static float width = 6;
+static float width = 8;
 static float height = 8;
-static float depth = 2;
+static float depth = 7;
 
 //---------------------Cloth Constants----------------------
 static const int SOLVER_ITERATIONS = 2;
@@ -39,17 +39,30 @@ int flag = 1;
 int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
+	//Initialize fluid particles
 	int count = 0;
-	for (float i = 0; i < 3; i+=.05f) {
-		for (float j = 0; j < 3; j+=.05f) {
-			for (float k = 1; k < 2; k+=.05f) {
+	for (float i = 0; i < 3; i += .05f) {
+		for (float j = 0; j < 3; j += .05f) {
+			for (float k = 1; k < 4; k += .05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1.0f, count, 0));
 				count++;
 			}
 		}
 	}
 
+	//Initialize cloth particles
+	count = 0;
+	for (float i = 1; i < 2; i += .05f) {
+		for (float j = 1; j < 2; j += .05f) {
+			clothParticles.push_back(Particle(glm::vec3(i, 4, j), 1, count, 1));
+			if (j == 1 && i == 1) clothParticles.back().invMass = 0;
+			if (i == 1.95f && j == 1) clothParticles.back().invMass = 0;
+			count++;
+		}
+	}
+
 	//ADD CLOTH CONSTRAINTS TO CONSTRAINT VECTORS
+
 
 	foam.reserve(2000000);
 	foamPositions.reserve(2000000);
@@ -64,9 +77,9 @@ ParticleSystem::~ParticleSystem() {}
 
 void ParticleSystem::update() {
 	//Move wall
-	if (frameCounter >= 300) {
+	if (frameCounter >= 500) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
-		t += flag * deltaT / 1.25f;
+		t += flag * deltaT / 1.5f;
 		if (t >= 1) {
 			t = 1;
 			flag *= -1;
@@ -75,7 +88,7 @@ void ParticleSystem::update() {
 			flag *= -1;
 		}
 		
-		width = easeInOutQuad(t, 6, -2.0f, 1.25f);
+		width = easeInOutQuad(t, 8, -3.0f, 1.5f);
 	}
 	frameCounter++;
 
@@ -484,7 +497,7 @@ void ParticleSystem::generateFoam() {
 		float potential = velocityDiff * ek * glm::max(1.0f - (1.0f * buffer2[i] / REST_DENSITY), 0.0f);
 
 		int nd = 0;
-		if (potential > 0.7f) nd = 15 + (rand() % 35);
+		if (potential > 0.7f) nd = 5 + (rand() % 30);
 
 		for (int i = 0; i < nd; i++) {
 			float rx = (0.05f + static_cast <float> (rand()) / static_cast <float> (RAND_MAX / 0.9f)) * H;

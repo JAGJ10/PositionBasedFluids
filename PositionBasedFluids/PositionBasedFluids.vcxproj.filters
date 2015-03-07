@@ -66,6 +66,9 @@
     <Filter Include="Header Files\cloth">
       <UniqueIdentifier>{de8c9e82-8541-40c5-b852-cdcd390eb022}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\cloth">
+      <UniqueIdentifier>{eaed2a84-dfa6-4721-b098-b164b9a15053}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -179,6 +182,12 @@
     </None>
     <None Include="plane.frag">
       <Filter>shaders\general</Filter>
+    </None>
+    <None Include="cloth.frag">
+      <Filter>shaders\cloth</Filter>
+    </None>
+    <None Include="cloth.vert">
+      <Filter>shaders\cloth</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
