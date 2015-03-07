@@ -109,7 +109,10 @@
     <ClInclude Include="FoamParticle.hpp">
       <Filter>Header Files\foam</Filter>
     </ClInclude>
-    <ClInclude Include="Constaint.hpp">
+    <ClInclude Include="DistanceConstaint.hpp">
+      <Filter>Header Files\cloth</Filter>
+    </ClInclude>
+    <ClInclude Include="BendingConstraint.hpp">
       <Filter>Header Files\cloth</Filter>
     </ClInclude>
   </ItemGroup>

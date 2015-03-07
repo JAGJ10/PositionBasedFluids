@@ -29,6 +29,7 @@ static const int SOLVER_ITERATIONS = 2;
 static const float kBend = 0.5f;
 static const float kStretch = 0.25f;
 static const float kDamp = 0.00125f;
+static const float globalK = 10.0f;
 
 static vector<glm::vec3> buffer1;
 static vector<float> buffer2;
@@ -48,6 +49,8 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 		}
 	}
 
+	//ADD CLOTH CONSTRAINTS TO CONSTRAINT VECTORS
+
 	foam.reserve(2000000);
 	foamPositions.reserve(2000000);
 	fluidPositions.reserve(particles.capacity());
@@ -63,7 +66,7 @@ void ParticleSystem::update() {
 	//Move wall
 	if (frameCounter >= 300) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
-		t += flag * deltaT / 2;
+		t += flag * deltaT / 1.25f;
 		if (t >= 1) {
 			t = 1;
 			flag *= -1;
@@ -72,7 +75,7 @@ void ParticleSystem::update() {
 			flag *= -1;
 		}
 		
-		width = easeInOutQuad(t, 6, -2, 2.0f);
+		width = easeInOutQuad(t, 6, -2.0f, 1.25f);
 	}
 	frameCounter++;
 
@@ -573,7 +576,32 @@ void ParticleSystem::clothUpdate() {
 	}
 
 	for (int si = 0; si < SOLVER_ITERATIONS; si++) {
-		//Stretching constraint
+		//Stretching/Distance constraints
+		for (auto &c : dConstraints) {
+			glm::vec3 dir = c.p1->newPos - c.p2->newPos;
+			float length = glm::length(dir);
+			float invMass = c.p1->invMass + c.p2->invMass;
+			glm::vec3 deltaP = (1 / invMass) * (length - c.restLength) * (dir / length) * c.k;
 
+			if (c.p1->invMass > 0) c.p1->newPos -= deltaP * c.p1->invMass;
+			if (c.p2->invMass > 0) c.p2->newPos -= deltaP * c.p2->invMass;
+		}
+
+		//Bending constraints
+		for (auto &c : bConstraints) {
+			glm::vec3 center = (1 / 3) * (c.p1->newPos + c.p2->newPos + c.p3->newPos);
+			glm::vec3 dir = c.p3->newPos - center;
+			float d = glm::length(dir);
+			float diff = 1.0f - ((globalK + c.restLength) / d);
+			glm::vec3 force = dir * diff;
+
+			glm::vec3 b0 = c.k * ((2.0f * c.p1->invMass) / c.w) * force;
+			glm::vec3 b1 = c.k * ((2.0f * c.p2->invMass) / c.w) * force;
+			glm::vec3 delV = c.k * ((-4.0f * c.p3->invMass) / c.w) * force;
+
+			if (c.p1->invMass > 0) c.p1->newPos += b0;
+			if (c.p2->invMass > 0) c.p2->newPos += b1;
+			if (c.p3->invMass > 0) c.p3->newPos += delV;
+		}
 	}
 }

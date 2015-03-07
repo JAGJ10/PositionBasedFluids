@@ -5,6 +5,8 @@
 #include "Cell.hpp"
 #include "CellGrid.h"
 #include "FoamParticle.hpp"
+#include "DistanceConstaint.hpp"
+#include "BendingConstraint.hpp"
 
 class ParticleSystem {
 public:
@@ -19,8 +21,13 @@ private:
 	std::vector<Particle> particles;
 	std::vector<Particle> clothParticles;
 	std::vector<FoamParticle> foam;
+
+	std::vector<DistanceConstraint> dConstraints;
+	std::vector<BendingConstraint> bConstraints;
+
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
+
 	CellGrid grid;
 
 	void applyGravity(Particle &p);

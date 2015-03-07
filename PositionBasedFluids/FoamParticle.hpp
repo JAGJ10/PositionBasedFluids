@@ -8,12 +8,8 @@ public:
 	float lifetime;
 	int type;
 
-	FoamParticle(glm::vec3 pos, glm::vec3 velocity, float lifetime, int type) {
-		this->pos = pos;
-		this->velocity = velocity;
-		this->lifetime = lifetime;
-		this->type = type;
-	}
+	FoamParticle(glm::vec3 pos, glm::vec3 velocity, float lifetime, int type) : pos(pos), 
+		velocity(velocity), lifetime(lifetime), type(type) {}
 };
 
 #endif

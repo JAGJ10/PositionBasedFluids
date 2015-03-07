@@ -105,8 +105,6 @@ void main() {
     vec3 finalColor = diffuse + (mix(refract, reflect, fresnel) + specular) * color.w;
 
 	fragColor = vec4(finalColor, 1.0);
-	//fragColor = vec4(diffuse, 1);
-	//fragColor = scene;
 
 	gl_FragDepth = depth;
 }
