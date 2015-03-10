@@ -14,6 +14,8 @@ public:
 	~ParticleSystem();
 
 	void update();
+	void clothUpdate();
+	std::vector<glm::vec3>& getClothPositions();
 	std::vector<glm::vec3>& getFluidPositions();
 	std::vector<glm::vec4>& getFoamPositions();
 
@@ -22,8 +24,12 @@ private:
 	std::vector<Particle> clothParticles;
 	std::vector<FoamParticle> foam;
 
+	std::vector<glm::vec3> clothPositions;
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
+
+	std::vector<DistanceConstraint> dConstraints;
+	std::vector<BendingConstraint> bConstraints;
 
 	CellGrid grid;
 
@@ -42,6 +48,7 @@ private:
 	float sCorrCalc(Particle &pi, Particle* &pj);
 	glm::vec3 xsphViscosity(Particle &p);
 	void updatePositions();
+	void updateClothPositions();
 	glm::vec3 getWeightedPosition(Particle &p);
 	void setNeighbors();
 	void calcDensities();
@@ -49,7 +56,7 @@ private:
 	void generateFoam();
 	float easeInOutQuad(float t, float b, float c, float d);
 
-	void clothUpdate();
+	//Cloth
 	Particle& getIndex(float i, float j);
 };
 

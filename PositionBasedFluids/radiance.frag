@@ -44,6 +44,7 @@ void main() {
 		
 		for (float i = 0; i < v; i+=1) {
 			vec3 s = vec3(rand(vec2(10 * v, 10 * v)), rand(vec2(20 * v, 20 * v)), rand(vec2(30 * v, 30 * v)));
+			
 			if (length(s) > 1) continue;
 			float lambda = pow(1 - length(s), 2);
 			s *= hpass;

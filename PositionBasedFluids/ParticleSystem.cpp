@@ -28,17 +28,14 @@ static float depth = 7;
 
 //---------------------Cloth Constants----------------------
 static const int SOLVER_ITERATIONS = 2;
-static const float kBend = 0.5f;
-static const float kStretch = 0.25f;
-static const float kDamp = 0.00125f;
+static const float kBend = 0.5f; //unused
+static const float kStretch = 1.0f;
+static const float kDamp = 0.1f;
 static const float kLin = 1.0f - glm::pow(1.0f - kStretch, 1.0f / SOLVER_ITERATIONS);
-static const float globalK = 10.0f;
+static const float globalK = 0.0f; //0 means you aren't forcing it into a shape (like a plant)
 
 static vector<glm::vec3> buffer1;
 static vector<float> buffer2;
-
-static vector<DistanceConstraint> dConstraints;
-static vector<BendingConstraint> bConstraints;
 
 static float t = 0.0f;
 static int flag = 1;
@@ -47,50 +44,57 @@ static int frameCounter = 0;
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	//Initialize fluid particles
 	int count = 0;
-	for (float i = 0; i < 3; i += .05f) {
+	/*for (float i = 0; i < 3; i += .05f) {
 		for (float j = 0; j < 3; j += .05f) {
 			for (float k = 1; k < 4; k += .05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1.0f, count, 0));
 				count++;
 			}
 		}
-	}
+	}*/
 
 	//Initialize cloth particles
 	count = 0;
-	for (float i = 1; i < 2; i += .05f) {
-		for (float j = 1; j < 2; j += .05f) {
-			clothParticles.push_back(Particle(glm::vec3(i, 4, j), 1, count, 1));
-			if (j == 1 && i == 1) clothParticles.back().invMass = 0;
-			if (i == 1.95f && j == 1) clothParticles.back().invMass = 0;
+	for (float i = 0; i < cols; i++) {
+		for (float j = 0; j < cols; j++) {
+			clothParticles.push_back(Particle(glm::vec3(i / cols, 4, j / cols), 1, count, 1));
+			if (j == 1.0f && i == 1.0f) clothParticles.back().invMass = 0;
+			if (i == cols - 1 && j == 1.0f) clothParticles.back().invMass = 0;
+			if (j == cols - 1 && i == cols - 1) clothParticles.back().invMass = 0;
+			if (i == 1 && j == cols - 1) clothParticles.back().invMass = 0;
 			count++;
 		}
 	}
-
-	//ADD CLOTH CONSTRAINTS TO CONSTRAINT VECTORS
+	
 	//Distance constraints
-	for (float i = 1; i < 2; i += offset) {
-		for (float j = 1; j < 2; j += offset) {
-			if (i < cols - offset)
-				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i + offset, j)));
-
-			if (j < cols - offset) 
-				dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i, j + offset)));
+	for (float i = 0; i < cols; i++) {
+		for (float j = 0; j < cols; j++) {
+			if (j > 0) dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i, j - 1)));
+			if (i > 0) dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i - 1, j)));
 		}
 	}
+
+	//Need shearing constraint?
 
 	//Bending constraints
-	for (float i = 1; i < 2; i += offset) {
-		for (float j = 1; j < 2 - (2 * offset); j += offset) {
-			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i, j + offset), &getIndex(i, j + (2*offset))));
+	for (float i = 0; i < cols; i++) {
+		for (float j = 0; j < cols - 2; j++) {
+			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i, j + 1), &getIndex(i, j + 2)));
 		}
 	}
 
-	foam.reserve(2000000);
-	foamPositions.reserve(2000000);
-	fluidPositions.reserve(particles.capacity());
-	buffer1.reserve(particles.capacity());
-	buffer2.reserve(particles.capacity());
+	for (float i = 0; i < cols - 2; i++) {
+		for (float j = 0; j < cols; j++) {
+			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i + 1, j), &getIndex(i + 2, j)));
+		}
+	}
+
+	//foam.reserve(2000000);
+	//foamPositions.reserve(2000000);
+	//fluidPositions.reserve(particles.capacity());
+	//buffer1.resize(particles.capacity());
+	buffer1.resize(clothParticles.capacity());
+	//buffer2.resize(particles.capacity());
 
 	srand((unsigned int)time(0));
 }
@@ -375,12 +379,12 @@ void ParticleSystem::updatePositions() {
 	fluidPositions.clear();
 	foamPositions.clear();
 
-	#pragma omp parallel for num_threads(8)
+	/*#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		//p.sumWeight = 0.0f;
 		//p.weightedPos = glm::vec3(0.0f);
-	}
+	}*/
 
 	//for (auto &p : particles) fluidPositions.push_back(getWeightedPosition(p));
 	for (auto &p : particles) fluidPositions.push_back(p.oldPos);
@@ -390,6 +394,15 @@ void ParticleSystem::updatePositions() {
 		int r = rand() % foam.size();
 		foamPositions.push_back(glm::vec4(p.pos.x, p.pos.y, p.pos.z, (p.type * 1000) + float(i) + abs(p.lifetime - lifetime) / lifetime));
 	}
+}
+
+void ParticleSystem::updateClothPositions() {
+	clothPositions.clear();
+	for (auto &p : clothParticles) clothPositions.push_back(p.oldPos);
+}
+
+vector<glm::vec3>& ParticleSystem::getClothPositions() {
+	return clothPositions;
 }
 
 vector<glm::vec3>& ParticleSystem::getFluidPositions() {
@@ -553,6 +566,7 @@ float ParticleSystem::easeInOutQuad(float t, float b, float c, float d) {
 };
 
 void ParticleSystem::clothUpdate() {
+	updateClothPositions();
 	for (auto &p : clothParticles) {
 		//update velocity vi = vi + dt * wi * fext
 		p.velocity += deltaT * p.invMass * GRAVITY;
@@ -563,33 +577,41 @@ void ParticleSystem::clothUpdate() {
 	glm::vec3 vcm = glm::vec3(0.0f);
 	float sumM = 0.0f;
 	for (auto &p : clothParticles) {
-		xcm += p.oldPos * (1 / p.invMass);
-		vcm += p.velocity * (1 / p.invMass);
-		sumM += (1 / p.invMass);
+		if (p.invMass != 0) {
+			xcm += p.oldPos * (1 / p.invMass);
+			vcm += p.velocity * (1 / p.invMass);
+			sumM += (1 / p.invMass);
+		}
 	}
 
 	xcm /= sumM;
 	vcm /= sumM;
 	glm::mat3 I = glm::mat3(1.0f);
 	glm::vec3 L = glm::vec3(0.0f);
-	glm::vec3 w = glm::vec3(0.0f);
+	glm::vec3 omega = glm::vec3(0.0f);
 
 	for (int i = 0; i < clothParticles.size(); i++) {
 		Particle &p = clothParticles.at(i);
-		buffer1[i] = p.oldPos - xcm;
-		L += glm::cross(buffer1[i], (1 / p.invMass) * p.velocity);
-		glm::mat3 temp = glm::mat3(0, -buffer1[i].z, buffer1[i].y,
-								   buffer1[i].z, 0, -buffer1[i].x,
-								   -buffer1[i].y, buffer1[i].x, 0);
-		I += (temp*glm::transpose(temp)) * (1 / p.invMass);
+		if (p.invMass > 0) {
+			buffer1[i] = p.oldPos - xcm; //ri
+			L += glm::cross(buffer1[i], (1 / p.invMass) * p.velocity);
+			glm::mat3 temp = glm::mat3(0, buffer1[i].z, -buffer1[i].y,
+									-buffer1[i].z, 0, buffer1[i].x,
+									buffer1[i].y, -buffer1[i].x, 0);
+			I += (temp*glm::transpose(temp)) * (1 / p.invMass);
+		}
 	}
 
-	w = glm::inverse(I) * L;
+	omega = glm::inverse(I) * L;
 
+	// deltaVi = vcm + (omega x ri) - vi
+	// vi <- vi + kDamp * deltaVi
 	for (int i = 0; i < clothParticles.size(); i++) {
 		Particle &p = clothParticles.at(i);
-		glm::vec3 deltaVi = vcm + glm::cross(w, buffer1[i] - p.velocity);
-		p.velocity += kDamp * deltaVi;
+		if (p.invMass > 0) {
+			glm::vec3 deltaVi = vcm + glm::cross(omega, buffer1[i]) - p.velocity;
+			p.velocity += kDamp * deltaVi;
+		}
 	}
 
 	//Predict new positions -> pi = xi + dt * vi
@@ -639,11 +661,15 @@ void ParticleSystem::clothUpdate() {
 			if (c.p3->invMass > 0) c.p3->newPos += delV;
 		}
 	}
+
+	for (auto &p : clothParticles) {
+		// vi <- (pi - xi) / dt
+		p.velocity = (p.newPos - p.oldPos) / deltaT;
+		// xi <- pi
+		p.oldPos = p.newPos;
+	}
 }
 
 Particle& ParticleSystem::getIndex(float i, float j) {
-	i /= offset;
-	j /= offset;
-
-	return clothParticles.at(j * cols + i);
+	return clothParticles.at(int(i * cols + j));
 }

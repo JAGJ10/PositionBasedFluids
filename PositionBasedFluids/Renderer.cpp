@@ -14,11 +14,13 @@ static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static float filterRadius = 3;
 static const float radius = 0.05f;
+static const float clothRadius = 0.01f;
 static const float foamRadius = 0.01f;
 
 Renderer::Renderer() :
 	running(true),
 	plane(Shader("plane.vert", "plane.frag")),
+	cloth(Shader("cloth.vert", "cloth.frag")),
 	depth(Shader("depth.vert", "depth.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
@@ -37,15 +39,17 @@ Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
-		for (int i = 0; i < 4; i++) {
-			system.update();
+		for (int i = 0; i < 1; i++) {
+			//system.update();
+			system.clothUpdate();
 		}
 	}
 
 	//Get particle positions
+	clothPositions = system.getClothPositions();
 	fluidPositions = system.getFluidPositions();
 	foamPositions = system.getFoamPositions();
-	cout << "Foam: " << foamPositions.size() << endl;
+	//cout << "Foam: " << foamPositions.size() << endl;
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
@@ -72,6 +76,31 @@ void Renderer::run(Camera &cam) {
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	//----------------------Cloth Simple-----------------------
+	glUseProgram(cloth.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	cloth.shaderVAOPoints(clothPositions);
+
+	setMatrix(cloth, mView, "mView");
+	setMatrix(cloth, projection, "projection");
+	setFloat(cloth, clothRadius, "pointRadius");
+	setFloat(cloth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
+
+	glBindVertexArray(cloth.vao);
+
+	glDrawArrays(GL_POINTS, 0, (GLsizei)clothPositions.size());
+
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
+	return;
 	//----------------------Particle Depth----------------------
 	glUseProgram(depth.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
@@ -228,7 +257,7 @@ void Renderer::run(Camera &cam) {
 
 	//--------------------Final-------------------------
 	glUseProgram(finalFS.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, finalFS.fbo);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
