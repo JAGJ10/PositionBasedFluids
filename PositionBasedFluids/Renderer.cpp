@@ -40,8 +40,8 @@ Renderer::~Renderer() {}
 void Renderer::run(Camera &cam) {
 	if (running) {
 		for (int i = 0; i < 1; i++) {
-			//system.update();
-			system.clothUpdate();
+			system.update();
+			//system.clothUpdate();
 		}
 	}
 
@@ -77,7 +77,7 @@ void Renderer::run(Camera &cam) {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//----------------------Cloth Simple-----------------------
-	glUseProgram(cloth.program);
+	/*glUseProgram(cloth.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -99,8 +99,8 @@ void Renderer::run(Camera &cam) {
 	glDrawArrays(GL_POINTS, 0, (GLsizei)clothPositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
-	return;
+	glDisable(GL_POINT_SPRITE);*/
+	//return;
 	//----------------------Particle Depth----------------------
 	glUseProgram(depth.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
@@ -253,11 +253,11 @@ void Renderer::run(Camera &cam) {
 	glDisable(GL_DEPTH_TEST);
 
 	//--------------------FOAM--------------------------
-	renderFoam(projection, mView, cam);
+	//renderFoam(projection, mView, cam);
 
 	//--------------------Final-------------------------
 	glUseProgram(finalFS.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, finalFS.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

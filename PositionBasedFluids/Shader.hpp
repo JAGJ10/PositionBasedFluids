@@ -7,7 +7,6 @@
 #include <iostream>
 #include <sstream>
 #include "common.h"
-#include <SOIL.h>
 
 class Shader {
 public:
@@ -97,21 +96,6 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, NULL);
 		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	void initCubeMap(int width, int height, std::vector<const GLchar*> faces, GLuint &tex) {
-		glGenTextures(1, &tex);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
-		for (GLuint i = 0; i < faces.size(); i++) {
-			unsigned char* image = SOIL_load_image(faces[i], &width, &height, 0, SOIL_LOAD_RGB);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-		}
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 	}
 
 	void shaderVAOPoints(std::vector<glm::vec3> &points) {

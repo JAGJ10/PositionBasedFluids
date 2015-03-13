@@ -44,14 +44,14 @@ static int frameCounter = 0;
 ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	//Initialize fluid particles
 	int count = 0;
-	/*for (float i = 0; i < 3; i += .05f) {
-		for (float j = 0; j < 3; j += .05f) {
-			for (float k = 1; k < 4; k += .05f) {
+	for (float i = 0; i < 1; i += .05f) {
+		for (float j = 0; j < 1; j += .05f) {
+			for (float k = 1; k < 2; k += .05f) {
 				particles.push_back(Particle(glm::vec3(i, j, k), 1.0f, count, 0));
 				count++;
 			}
 		}
-	}*/
+	}
 
 	//Initialize cloth particles
 	count = 0;
@@ -92,9 +92,9 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	//foam.reserve(2000000);
 	//foamPositions.reserve(2000000);
 	//fluidPositions.reserve(particles.capacity());
-	//buffer1.resize(particles.capacity());
-	buffer1.resize(clothParticles.capacity());
-	//buffer2.resize(particles.capacity());
+	buffer1.resize(particles.capacity());
+	//buffer1.resize(clothParticles.capacity());
+	buffer2.resize(particles.capacity());
 
 	srand((unsigned int)time(0));
 }
