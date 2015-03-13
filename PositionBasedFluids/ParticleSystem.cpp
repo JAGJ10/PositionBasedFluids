@@ -27,10 +27,10 @@ static float height = 8;
 static float depth = 7;
 
 //---------------------Cloth Constants----------------------
-static const int SOLVER_ITERATIONS = 2;
+static const int SOLVER_ITERATIONS = 16;
 static const float kBend = 0.5f; //unused
-static const float kStretch = 1.0f;
-static const float kDamp = 0.1f;
+static const float kStretch = 0.75f;
+static const float kDamp = 0.05f;
 static const float kLin = 1.0f - glm::pow(1.0f - kStretch, 1.0f / SOLVER_ITERATIONS);
 static const float globalK = 0.0f; //0 means you aren't forcing it into a shape (like a plant)
 
@@ -58,10 +58,10 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	for (float i = 0; i < cols; i++) {
 		for (float j = 0; j < cols; j++) {
 			clothParticles.push_back(Particle(glm::vec3(i / cols, 4, j / cols), 1, count, 1));
-			if (j == 1.0f && i == 1.0f) clothParticles.back().invMass = 0;
-			if (i == cols - 1 && j == 1.0f) clothParticles.back().invMass = 0;
-			if (j == cols - 1 && i == cols - 1) clothParticles.back().invMass = 0;
-			if (i == 1 && j == cols - 1) clothParticles.back().invMass = 0;
+			if (j == 0.0f && i == 0.0f) clothParticles.back().invMass = 0;
+			if (i == cols - 1 && j == 0.0f) clothParticles.back().invMass = 0;
+			//if (j == cols - 1 && i == cols - 1) clothParticles.back().invMass = 0;
+			//if (i == 0.0f && j == cols - 1) clothParticles.back().invMass = 0;
 			count++;
 		}
 	}
@@ -646,19 +646,21 @@ void ParticleSystem::clothUpdate() {
 
 		//Bending constraints
 		for (auto &c : bConstraints) {
-			glm::vec3 center = (1 / 3) * (c.p1->newPos + c.p2->newPos + c.p3->newPos);
-			glm::vec3 dir = c.p3->newPos - center;
+			glm::vec3 center = (1.0f / 3.0f) * (c.p1->newPos + c.p2->newPos + c.p3->newPos);
+			glm::vec3 dir = c.p2->newPos - center;
 			float d = glm::length(dir);
-			float diff = 1.0f - ((globalK + c.restLength) / d);
+			float diff;
+			if (d != 0.0f) diff = 1.0f - ((globalK + c.restLength) / d);
+			else diff = 0;
 			glm::vec3 force = dir * diff;
 
 			glm::vec3 b0 = kLin * ((2.0f * c.p1->invMass) / c.w) * force;
-			glm::vec3 b1 = kLin * ((2.0f * c.p2->invMass) / c.w) * force;
-			glm::vec3 delV = kLin * ((-4.0f * c.p3->invMass) / c.w) * force;
-
+			glm::vec3 b1 = kLin * ((2.0f * c.p3->invMass) / c.w) * force;
+			glm::vec3 delV = kLin * ((-4.0f * c.p2->invMass) / c.w) * force;
+			
 			if (c.p1->invMass > 0) c.p1->newPos += b0;
-			if (c.p2->invMass > 0) c.p2->newPos += b1;
-			if (c.p3->invMass > 0) c.p3->newPos += delV;
+			if (c.p2->invMass > 0) c.p2->newPos += delV;
+			if (c.p3->invMass > 0) c.p3->newPos += b1;
 		}
 	}
 
