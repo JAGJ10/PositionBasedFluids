@@ -15,14 +15,12 @@ public:
 	void run(Camera &cam);
 
 	ParticleSystem system;
-	std::vector<glm::vec3> clothPositions;
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
 
 	bool running;
 
 	Shader plane;
-	Shader cloth;
 	Shader depth;
 	BlurShader blur;
 	Shader thickness;
