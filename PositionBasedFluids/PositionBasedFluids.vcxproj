@@ -174,9 +174,9 @@
   <ItemGroup>
     <ClCompile Include="CellGrid.cpp" />
     <ClCompile Include="main.cpp" />
-    <CudaCompile Include="ParticleSystem.cu">
+    <ClCompile Include="ParticleSystem.cpp">
       <FileType>Document</FileType>
-    </CudaCompile>
+    </ClCompile>
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -184,9 +184,11 @@
     <ClInclude Include="CellGrid.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="Cell.hpp" />
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="FoamParticle.hpp" />
     <ClInclude Include="Particle.hpp" />
     <ClCompile Include="ParticleSystem.h" />
+    <None Include="ParticleSystem.cuh" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.hpp" />
   </ItemGroup>
@@ -220,6 +222,9 @@
     <Image Include="left.jpg" />
     <Image Include="right.jpg" />
     <Image Include="top.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="ParticleSystem.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

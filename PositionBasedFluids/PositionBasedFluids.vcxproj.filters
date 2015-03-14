@@ -77,6 +77,9 @@
     <ClCompile Include="ParticleSystem.h">
       <Filter>Header Files\water</Filter>
     </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp">
+      <Filter>Source Files\physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h">
@@ -102,6 +105,9 @@
     </ClInclude>
     <ClInclude Include="FoamParticle.hpp">
       <Filter>Header Files\foam</Filter>
+    </ClInclude>
+    <ClInclude Include="Constants.h">
+      <Filter>Header Files\water</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -167,6 +173,9 @@
     </None>
     <None Include="plane.frag">
       <Filter>shaders\general</Filter>
+    </None>
+    <None Include="ParticleSystem.cuh">
+      <Filter>Header Files\water</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

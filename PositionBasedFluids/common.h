@@ -1,9 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <cuda.h>
 #include <cuda_runtime.h>
-#define GLM_FORCE_CUDA
+//#define GLM_FORCE_CUDA
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>

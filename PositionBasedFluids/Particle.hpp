@@ -16,10 +16,6 @@ public:
 	{
 		velocity = glm::vec3(0, 0, 0);
 	}
-
-public:
-	//glm::vec3 weightedPos;
-	//float sumWeight;
 };
 
 #endif
