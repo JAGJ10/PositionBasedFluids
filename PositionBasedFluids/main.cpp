@@ -14,8 +14,8 @@ static const int width = 1024;
 static const int height = 512;
 static const GLfloat lastX = (width / 2);
 static const GLfloat lastY = (height / 2);
-double deltaTime = 0.0f;
-double lastFrame = 0.0f;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 void handleInput(GLFWwindow* window, Renderer &render, Camera &cam);
 
@@ -53,7 +53,7 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
-		double currentFrame = glfwGetTime();
+		float currentFrame = float(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
@@ -117,5 +117,5 @@ void handleInput(GLFWwindow* window, Renderer &render, Camera &cam) {
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		cam.mouseMovement((xpos - lastX), (lastY - ypos), deltaTime);
+		cam.mouseMovement((float(xpos) - lastX), (lastY - float(ypos)), deltaTime);
 }

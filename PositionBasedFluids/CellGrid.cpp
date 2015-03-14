@@ -38,7 +38,7 @@ void CellGrid::updateCells(vector<Particle> &particles) {
 	//#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
-		glm::ivec3 pos = p.newPos * 10;
+		glm::ivec3 pos = p.newPos;//* 10;
 		//assuming indices are always valid because the box keeps the particles contained
 		cells[pos.x][pos.y][pos.z].addParticle(p);
 	}

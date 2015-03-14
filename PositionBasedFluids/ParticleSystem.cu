@@ -4,7 +4,7 @@
 using namespace std;
 
 //---------------------Fluid Constants----------------------
-static const float deltaT = 0.0083f;
+__constant__ float deltaT = 0.0083f;
 static const float PI = 3.14159265358979323846f;
 static const glm::vec3 GRAVITY = glm::vec3(0, -9.8f, 0);
 static const int PRESSURE_ITERATIONS = 4;
@@ -51,7 +51,7 @@ ParticleSystem::ParticleSystem() : grid((int)width, (int)height, (int)depth) {
 	buffer1.resize(particles.capacity());
 	buffer2.resize(particles.capacity());
 
-	srand((unsigned int)time(0));
+	//srand((unsigned int)time(0));
 }
 
 ParticleSystem::~ParticleSystem() {}
@@ -383,7 +383,7 @@ void ParticleSystem::setNeighbors() {
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		p.neighbors.clear();
-		glm::ivec3 pos = p.newPos * 10;
+		glm::ivec3 pos = p.newPos; //* 10;
 		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
 			for (auto &n : c->particles) {
 				//if (glm::distance(p.newPos, n->newPos) <= 2 * H) {
@@ -429,7 +429,7 @@ void ParticleSystem::updateFoam() {
 		FoamParticle &p = foam.at(i);
 		confineToBox(p);
 
-		glm::ivec3 pos = p.pos * 10;
+		glm::ivec3 pos = p.pos; //* 10;
 		glm::vec3 vfSum = glm::vec3(0.0f);
 		float kSum = 0;
 		int numNeighbors = 0;
@@ -489,7 +489,7 @@ void ParticleSystem::generateFoam() {
 			glm::vec3 xd = p.newPos + glm::vec3(rx*rd, ry*rd, rz*rd);
 			glm::vec3 vd = p.velocity;     
 
-			glm::ivec3 pos = p.newPos * 10;
+			glm::ivec3 pos = p.newPos; //* 10;
 			int type;
 			int numNeighbors = int(p.neighbors.size()) + 1;
 

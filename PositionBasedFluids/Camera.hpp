@@ -23,8 +23,8 @@ public:
 	GLfloat yaw;
 	GLfloat pitch;
 
-	double speed;
-	double mouseSens;
+	float speed;
+	float mouseSens;
 	GLfloat zoom;
 
 	Camera() : eye(glm::vec3(4.0f, 2.0f, 10.0f)),
@@ -43,8 +43,8 @@ public:
 		//return glm::lookAt(eye, eye + front, up);
 	}
 
-	void wasdMovement(Movement dir, double deltaTime) {
-		double velocity = speed * deltaTime;
+	void wasdMovement(Movement dir, float deltaTime) {
+		float velocity = speed * deltaTime;
 		switch (dir) {
 		case FORWARD:
 			eye += front * velocity;
@@ -67,7 +67,7 @@ public:
 		}
 	}
 
-	void mouseMovement(double xoffset, double yoffset, double deltaTime) {
+	void mouseMovement(float xoffset, float yoffset, float deltaTime) {
 		yaw += (GLfloat)(mouseSens * deltaTime * xoffset);
 		pitch += (GLfloat)(mouseSens * deltaTime * yoffset);
 		

@@ -71,11 +71,11 @@
     <ClCompile Include="CellGrid.cpp">
       <Filter>Source Files\physics</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleSystem.cpp">
-      <Filter>Source Files\physics</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="ParticleSystem.h">
+      <Filter>Header Files\water</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,9 +83,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CellGrid.h">
-      <Filter>Header Files\water</Filter>
-    </ClInclude>
-    <ClInclude Include="ParticleSystem.h">
       <Filter>Header Files\water</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
@@ -191,5 +188,10 @@
     <Image Include="back.jpg">
       <Filter>resources</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="ParticleSystem.cu">
+      <Filter>Source Files\physics</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>
