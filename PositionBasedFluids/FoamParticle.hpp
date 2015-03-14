@@ -5,11 +5,11 @@ class FoamParticle {
 public:
 	glm::vec3 pos;
 	glm::vec3 velocity;
-	float lifetime;
+	//float lifetime;
 	int type;
 
-	FoamParticle(glm::vec3 pos, glm::vec3 velocity, float lifetime, int type) : pos(pos), 
-		velocity(velocity), lifetime(lifetime), type(type) {}
+	//FoamParticle(glm::vec3 pos, glm::vec3 velocity, float lifetime, int type) : pos(pos), 
+		//velocity(velocity), lifetime(lifetime), type(type) {}
 };
 
 #endif

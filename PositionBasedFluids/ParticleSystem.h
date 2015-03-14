@@ -2,21 +2,26 @@
 #define PARTICLE_SYSTEM_H
 
 #include "common.h"
+#include "Constants.h"
 #include "Cell.hpp"
 #include "CellGrid.h"
 #include "FoamParticle.hpp"
 
 class ParticleSystem {
 public:
+	Particle* particles;
+	int* neighbors;
+	int* numNeighbors;
+
 	ParticleSystem();
 	~ParticleSystem();
 
-	void update();
+	void updateWrapper();
 	std::vector<glm::vec3>& getFluidPositions();
 	std::vector<glm::vec4>& getFoamPositions();
 
 private:
-	std::vector<Particle> particles;
+	//std::vector<Particle> particles;
 	std::vector<FoamParticle> foam;
 
 	std::vector<glm::vec3> fluidPositions;

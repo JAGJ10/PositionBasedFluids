@@ -2,7 +2,6 @@
 
 using namespace std;
 
-static const float PI = 3.14159265358979323846f;
 static const int width = 1024;
 static const int height = 512;
 static const float zFar = 200.0f;
@@ -39,7 +38,7 @@ Renderer::~Renderer() {}
 void Renderer::run(Camera &cam) {
 	if (running) {
 		for (int i = 0; i < 1; i++) {
-			system.update();
+			system.updateWrapper();
 			//system.clothUpdate();
 		}
 	}

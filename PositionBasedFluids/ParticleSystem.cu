@@ -228,4 +228,50 @@ __global__ void updateXSPHVelocities() {
 	}*/
 }
 
+void update() {
+	//Move wall
+	/*if (frameCounter >= 500) {
+	//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
+	t += flag * deltaT / 1.5f;
+	if (t >= 1) {
+	t = 1;
+	flag *= -1;
+	} else if (t <= 0) {
+	t = 0;
+	flag *= -1;
+	}
+
+	width = easeInOutQuad(t, 8, -3.0f, 1.5f);
+	}
+	frameCounter++;*/
+
+	//------------------WATER-----------------
+	//Predict positions and update velocity
+	predictPositions<<<threads, blockSize>>>();
+
+	//Update neighbors
+	//grid.updateCells(particles);
+	//setNeighbors();
+
+	//Needs to be after neighbor finding for weighted positions
+	updatePositions<<<threads, blockSize>>>();
+
+	for (int pi = 0; pi < PRESSURE_ITERATIONS; pi++) {
+		//set lambda
+		calcLambda<<<threads, blockSize>>>();
+
+		//calculate deltaP
+		calcDeltaP<<<threads, blockSize>>>();
+
+		//update position x*i = x*i + deltaPi
+		updatePositions<<<threads, blockSize>>>();
+	}
+
+	//Update velocity, apply vorticity confinement, apply xsph viscosity, update position
+	updateVelocities<<<threads, blockSize>>>();
+
+	//Set new velocity
+	updateXSPHVelocities<<<threads, blockSize>>>();
+}
+
 #endif

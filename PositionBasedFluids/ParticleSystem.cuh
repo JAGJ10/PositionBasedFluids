@@ -26,4 +26,6 @@ __global__ void updatePositions();
 __global__ void updateVelocities();
 __global__ void updateXSPHVelocities();
 
+void update();
+
 #endif
