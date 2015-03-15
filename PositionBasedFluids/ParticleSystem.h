@@ -18,6 +18,7 @@ public:
 	~ParticleSystem();
 
 	void updateWrapper();
+	void setVBOWrapper(float* vboPtr);
 	std::vector<glm::vec3>& getFluidPositions();
 	std::vector<glm::vec4>& getFoamPositions();
 

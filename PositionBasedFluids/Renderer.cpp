@@ -44,10 +44,14 @@ Renderer::~Renderer() {}
 void Renderer::run(Camera &cam) {
 	if (running) {
 		cudaGraphicsGLRegisterBuffer(&resource, fluidVBO, cudaGraphicsMapFlagsNone);
+		cudaGraphicsMapResources(1, &resource, NULL);
+		size_t size;
+		cudaGraphicsResourceGetMappedPointer((void**)&vboPtr, &size, resource);
 		for (int i = 0; i < 1; i++) {
 			system.updateWrapper();
 			//system.clothUpdate();
 		}
+		system.setVBOWrapper(vboPtr);
 		cudaGraphicsUnregisterResource(resource);
 	}
 
@@ -89,7 +93,8 @@ void Renderer::run(Camera &cam) {
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	depth.shaderVAOPoints(fluidPositions);
+	//depth.shaderVAOPoints(fluidPositions);
+	depth.shaderVAOCuda(fluidVBO);
 
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
@@ -103,7 +108,7 @@ void Renderer::run(Camera &cam) {
 		
 	glBindVertexArray(depth.vao);
 		
-	glDrawArrays(GL_POINTS, 0, (GLsizei)fluidPositions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
@@ -171,7 +176,8 @@ void Renderer::run(Camera &cam) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	thickness.shaderVAOPoints(fluidPositions);
+	//thickness.shaderVAOPoints(fluidPositions);
+	thickness.shaderVAOCuda(fluidVBO);
 
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
@@ -188,7 +194,7 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(thickness.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)fluidPositions.size());
+	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);

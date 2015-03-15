@@ -17,6 +17,7 @@ public:
 	ParticleSystem system;
 
 	cudaGraphicsResource *resource;
+	float* vboPtr;
 	GLuint fluidVBO;
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;

@@ -251,6 +251,15 @@ __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
 	particles[index].velocity += buffer1[index] * deltaT;
 }
 
+__global__ void updateVBO(Particle* particles, float* vboPtr) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
+
+	vboPtr[3 * index + 0] = particles[index].oldPos.x;
+	vboPtr[3 * index + 1] = particles[index].oldPos.y;
+	vboPtr[3 * index + 2] = particles[index].oldPos.z;
+}
+
 void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	//------------------WATER-----------------
 	//Predict positions and update velocity
@@ -279,6 +288,10 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 
 	//Set new velocity
 	updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);
+}
+
+void setVBO(Particle* particles, float* vboPtr) {
+	updateVBO<<<dims, blockSize>>>(particles, vboPtr);
 }
 
 #endif
