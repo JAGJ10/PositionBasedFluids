@@ -5,9 +5,9 @@
 #include "Constants.h"
 #include "Particle.hpp"
 
-__constant__ float width = 1;
-__constant__ float height = 1;
-__constant__ float depth = 1;
+__constant__ float width = 8;
+__constant__ float height = 8;
+__constant__ float depth = 7;
 
 __device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
@@ -146,15 +146,16 @@ __device__ void confineToBox(Particle &p) {
 }
 
 __global__ void predictPositions(Particle* particles) {
-	int i = threadIdx.x + (blockIdx.x * blockDim.x);
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
 
 	//update velocity vi = vi + dt * fExt
-	particles[i].velocity += GRAVITY * deltaT;
+	particles[index].velocity += GRAVITY * deltaT;
 
 	//predict position x* = xi + dt * vi
-	particles[i].newPos += particles[i].velocity * deltaT;
+	particles[index].newPos += particles[index].velocity * deltaT;
 
-	confineToBox(particles[i]);
+	confineToBox(particles[index]);
 }
 
 __global__ void clearNeighbors(int* neighbors, int* numNeighbors) {
@@ -169,6 +170,7 @@ __global__ void clearNeighbors(int* neighbors, int* numNeighbors) {
 
 __global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNeighbors) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
 
 	//Naive method for now
 	for (int i = 0; i < NUM_PARTICLES_C; i++) {
@@ -182,6 +184,7 @@ __global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNei
 
 __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
 
 	float densityConstraint = calcDensityConstraint(particles, neighbors, numNeighbors, index);
 	glm::vec3 gradientI = glm::vec3(0.0f);
@@ -202,6 +205,7 @@ __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbor
 
 __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
 
 	glm::vec3 deltaP = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
@@ -215,12 +219,14 @@ __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbor
 
 __global__ void updatePositions(Particle* particles, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
 
 	particles[index].newPos += buffer1[index];
 }
 
 __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
 
 	confineToBox(particles[index]);
 
@@ -240,7 +246,8 @@ __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNe
 
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	
+	if (index > NUM_PARTICLES_C) return;
+
 	particles[index].velocity += buffer1[index] * deltaT;
 }
 
@@ -256,7 +263,7 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 	//Needs to be after neighbor finding for weighted positions
 	//updatePositions<<<dims, blockSize>>>();
 
-	for (int pi = 0; pi < PRESSURE_ITERATIONS; pi++) {
+	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
 		//set lambda
 		calcLambda<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer2);
 
