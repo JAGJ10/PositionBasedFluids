@@ -28,6 +28,6 @@ __global__ void updatePositions(Particle* particles, glm::vec3* buffer1);
 __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors);
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1);
 
-void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2);
+void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2, cudaGraphicsResource *resource);
 
 #endif

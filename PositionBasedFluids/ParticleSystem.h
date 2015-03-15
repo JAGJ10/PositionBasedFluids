@@ -17,7 +17,7 @@ public:
 	ParticleSystem();
 	~ParticleSystem();
 
-	void updateWrapper();
+	void updateWrapper(cudaGraphicsResource *resource);
 	std::vector<glm::vec3>& getFluidPositions();
 	std::vector<glm::vec4>& getFoamPositions();
 

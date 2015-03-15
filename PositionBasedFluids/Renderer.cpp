@@ -45,9 +45,10 @@ void Renderer::run(Camera &cam) {
 	if (running) {
 		cudaGraphicsGLRegisterBuffer(&resource, fluidVBO, cudaGraphicsMapFlagsNone);
 		for (int i = 0; i < 1; i++) {
-			system.updateWrapper();
+			system.updateWrapper(resource);
 			//system.clothUpdate();
 		}
+		cudaGraphicsUnregisterResource(resource);
 	}
 
 	//Get particle positions
