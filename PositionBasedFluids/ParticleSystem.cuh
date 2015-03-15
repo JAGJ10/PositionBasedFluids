@@ -12,20 +12,20 @@ __device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj);
 __device__ glm::vec3 gradWPoly6(glm::vec3 &pi, glm::vec3 &pj);
 __device__ glm::vec3 WSpiky(glm::vec3 &pi, glm::vec3 &pj);
 __device__ float WAirPotential(glm::vec3 &pi, glm::vec3 &pj);
-__device__ float calcDensityConstraint(Particle &p, std::vector<Particle*> &neighbors);
+__device__ float calcDensityConstraint(Particle* particles, int* neighbors, int* numNeighbors, int index);
 __device__ glm::vec3 eta(Particle &p, float &vorticityMag);
 __device__ glm::vec3 vorticityForce(Particle &p);
 __device__ void confineToBox(Particle &p);
 __device__ float sCorrCalc(Particle &pi, Particle* &pj);
 __device__ glm::vec3 xsphViscosity(Particle &p);
 
-__global__ void predictPositions();
-__global__ void calcLambda();
-__global__ void calcDeltaP();
-__global__ void updatePositions();
-__global__ void updateVelocities();
-__global__ void updateXSPHVelocities();
+__global__ void predictPositions(Particle* particles);
+__global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2);
+__global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1);
+__global__ void updatePositions(Particle* particles, glm::vec3* buffer1);
+__global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors);
+__global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1);
 
-void update();
+void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2);
 
 #endif

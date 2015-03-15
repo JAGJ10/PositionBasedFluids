@@ -55,11 +55,11 @@ __device__ float WAirPotential(glm::vec3 &pi, glm::vec3 &pj) {
 }
 
 //Returns density constraint of a particle
-__device__ float calcDensityConstraint(Particle &p) {
+__device__ float calcDensityConstraint(Particle* particles, int* neighbors, int* numNeighbors, int index) {
 	float sum = 0.0f;
-	/*for (auto &n : neighbors) {
-		sum += WPoly6(p.newPos, n->newPos);
-	}*/
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		sum += WPoly6(particles[index].newPos, particles[neighbors[index + i]].newPos);
+	}
 
 	return (sum / REST_DENSITY) - 1;
 }
@@ -145,31 +145,27 @@ __device__ void confineToBox(Particle &p) {
 	}
 }
 
-__global__ void predictPositions() {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
+__global__ void predictPositions(Particle* particles) {
+	int i = threadIdx.x + (blockIdx.x * blockDim.x);
 
-		//update velocity vi = vi + dt * fExt
-		p.velocity += GRAVITY * deltaT;
+	//update velocity vi = vi + dt * fExt
+	particles[i].velocity += GRAVITY * deltaT;
 
-		//predict position x* = xi + dt * vi
-		p.newPos += p.velocity * deltaT;
+	//predict position x* = xi + dt * vi
+	particles[i].newPos += particles[i].velocity * deltaT;
 
-		confineToBox(p);
-	}*/
+	confineToBox(particles[i]);
 }
 
-__global__ void calcLambda() {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		buffer2[i] = lambda(p, p.neighbors);
-	}
-	float densityConstraint = calcDensityConstraint(p, neighbors);
+__global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+
+	float densityConstraint = calcDensityConstraint(particles, neighbors, numNeighbors, index);
 	glm::vec3 gradientI = glm::vec3(0.0f);
 	float sumGradients = 0.0f;
-	for (auto &n : neighbors) {
+	for (int i = 0; i < numNeighbors[index]; i++) {
 		//Calculate gradient with respect to j
-		glm::vec3 gradientJ = WSpiky(p.newPos, n->newPos) / REST_DENSITY;
+		glm::vec3 gradientJ = WSpiky(particles[index].newPos, particles[neighbors[index + i]].newPos) / REST_DENSITY;
 
 		//Add magnitude squared to sum
 		sumGradients += glm::length2(gradientJ);
@@ -178,10 +174,10 @@ __global__ void calcLambda() {
 
 	//Add the particle i gradient magnitude squared to sum
 	sumGradients += glm::length2(gradientI);
-	return ((-1) * densityConstraint) / (sumGradients + EPSILON_LAMBDA);*/
+	buffer2[index] = ((-1) * densityConstraint) / (sumGradients + EPSILON_LAMBDA);
 }
 
-__global__ void calcDeltaP() {
+__global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1) {
 	/*for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		glm::vec3 deltaP = glm::vec3(0.0f);
@@ -195,14 +191,14 @@ __global__ void calcDeltaP() {
 	}*/
 }
 
-__global__ void updatePositions() {
+__global__ void updatePositions(Particle* particles, glm::vec3* buffer1) {
 	/*for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		p.newPos += buffer1[i];
 	}*/
 }
 
-__global__ void updateVelocities() {
+__global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1) {
 	/*for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		confineToBox(p);
@@ -221,57 +217,41 @@ __global__ void updateVelocities() {
 	}*/
 }
 
-__global__ void updateXSPHVelocities() {
+__global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
 	/*for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
 		p.velocity += buffer1[i] * deltaT;
 	}*/
 }
 
-void update() {
-	//Move wall
-	/*if (frameCounter >= 500) {
-	//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
-	t += flag * deltaT / 1.5f;
-	if (t >= 1) {
-	t = 1;
-	flag *= -1;
-	} else if (t <= 0) {
-	t = 0;
-	flag *= -1;
-	}
-
-	width = easeInOutQuad(t, 8, -3.0f, 1.5f);
-	}
-	frameCounter++;*/
-
+void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	//------------------WATER-----------------
 	//Predict positions and update velocity
-	predictPositions<<<threads, blockSize>>>();
+	predictPositions<<<dims, blockSize>>>(particles);
 
 	//Update neighbors
 	//grid.updateCells(particles);
 	//setNeighbors();
 
 	//Needs to be after neighbor finding for weighted positions
-	updatePositions<<<threads, blockSize>>>();
+	//updatePositions<<<dims, blockSize>>>();
 
 	for (int pi = 0; pi < PRESSURE_ITERATIONS; pi++) {
 		//set lambda
-		calcLambda<<<threads, blockSize>>>();
+		calcLambda<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer2);
 
 		//calculate deltaP
-		calcDeltaP<<<threads, blockSize>>>();
+		calcDeltaP<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1);
 
 		//update position x*i = x*i + deltaPi
-		updatePositions<<<threads, blockSize>>>();
+		updatePositions<<<dims, blockSize>>>(particles, buffer1);
 	}
 
 	//Update velocity, apply vorticity confinement, apply xsph viscosity, update position
-	updateVelocities<<<threads, blockSize>>>();
+	updateVelocities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1);
 
 	//Set new velocity
-	updateXSPHVelocities<<<threads, blockSize>>>();
+	updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);
 }
 
 #endif

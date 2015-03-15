@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 //#define GLM_FORCE_CUDA
 #include <iostream>
 #include <glm/glm.hpp>

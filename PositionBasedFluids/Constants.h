@@ -8,7 +8,7 @@ static const int PRESSURE_ITERATIONS = 4;
 static const int numParticles = 8000;
 static const int MAX_NEIGHBORS = 50;
 static const int blockSize = 128;
-static const dim3 threads = numParticles / blockSize;
+static const dim3 dims = numParticles / blockSize;
 
 #define deltaT 0.0083f
 #define PI 3.14159265358979323846f

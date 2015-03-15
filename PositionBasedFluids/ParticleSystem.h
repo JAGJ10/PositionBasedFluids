@@ -12,6 +12,8 @@ public:
 	Particle* particles;
 	int* neighbors;
 	int* numNeighbors;
+	glm::vec3* buffer1;
+	float* buffer2;
 
 	ParticleSystem();
 	~ParticleSystem();
