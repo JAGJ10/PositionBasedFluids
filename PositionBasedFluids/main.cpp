@@ -1,6 +1,7 @@
 #define GLEW_DYNAMIC
 #include <GL/glew.h>
 #include "Renderer.h"
+#include <cuda_gl_interop.h>
 #include <GLFW/glfw3.h>
 
 #define _CRTDBG_MAP_ALLOC
@@ -22,6 +23,8 @@ void handleInput(GLFWwindow* window, Renderer &render, Camera &cam);
 int main() {
 	//Checks for memory leaks in debug mode
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+	cudaGLSetGLDevice(0);
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);

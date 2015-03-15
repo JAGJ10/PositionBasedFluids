@@ -187,7 +187,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="FoamParticle.hpp" />
     <ClInclude Include="Particle.hpp" />
-    <ClCompile Include="ParticleSystem.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <None Include="ParticleSystem.cuh" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.hpp" />

@@ -74,9 +74,6 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files\rendering</Filter>
     </ClCompile>
-    <ClCompile Include="ParticleSystem.h">
-      <Filter>Header Files\water</Filter>
-    </ClCompile>
     <ClCompile Include="ParticleSystem.cpp">
       <Filter>Source Files\physics</Filter>
     </ClCompile>
@@ -107,6 +104,9 @@
       <Filter>Header Files\foam</Filter>
     </ClInclude>
     <ClInclude Include="Constants.h">
+      <Filter>Header Files\water</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h">
       <Filter>Header Files\water</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,4 +1,6 @@
 #include "Renderer.h"
+#include "Constants.h"
+#include <cuda_gl_interop.h>
 
 using namespace std;
 
@@ -30,6 +32,10 @@ Renderer::Renderer() :
 	finalFS(Shader("final.vert", "final.frag")),
 	system(ParticleSystem())
 {
+
+	glGenBuffers(1, &fluidVBO);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fluidVBO);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, numParticles * 3, NULL, GL_STATIC_DRAW);
 	initFramebuffers();
 }
 
@@ -37,6 +43,7 @@ Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
+		cudaGraphicsGLRegisterBuffer(&resource, fluidVBO, cudaGraphicsMapFlagsNone);
 		for (int i = 0; i < 1; i++) {
 			system.updateWrapper();
 			//system.clothUpdate();
@@ -44,8 +51,8 @@ void Renderer::run(Camera &cam) {
 	}
 
 	//Get particle positions
-	fluidPositions = system.getFluidPositions();
-	foamPositions = system.getFoamPositions();
+	//fluidPositions = system.getFluidPositions();
+	//foamPositions = system.getFoamPositions();
 	//cout << "Foam: " << foamPositions.size() << endl;
 
 	//Set camera

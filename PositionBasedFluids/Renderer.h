@@ -15,6 +15,9 @@ public:
 	void run(Camera &cam);
 
 	ParticleSystem system;
+
+	cudaGraphicsResource *resource;
+	GLuint fluidVBO;
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
 
