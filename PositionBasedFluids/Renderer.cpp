@@ -49,6 +49,7 @@ void Renderer::run(Camera &cam) {
 		cudaGraphicsResourceGetMappedPointer((void**)&vboPtr, &size, resource);
 		for (int i = 0; i < 1; i++) {
 			system.updateWrapper();
+			cout << "lol?" << endl;
 			//system.clothUpdate();
 		}
 		system.setVBOWrapper(vboPtr);
