@@ -157,6 +157,28 @@ __global__ void predictPositions(Particle* particles) {
 	confineToBox(particles[i]);
 }
 
+__global__ void clearNeighbors(int* neighbors, int* numNeighbors) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index > NUM_PARTICLES_C) return;
+	/*for (int i = 0; i < numNeighbors[index]; i++) {
+		neighbors[index + i] = -1;
+	}*/
+
+	numNeighbors[index] = 0;
+}
+
+__global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNeighbors) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+
+	//Naive method for now
+	for (int i = 0; i < NUM_PARTICLES_C; i++) {
+		if (glm::distance(particles[index].newPos, particles[i].newPos) <= H) {
+			neighbors[numNeighbors[index]] = i;
+			numNeighbors[index]++;
+		}
+	}
+}
+
 __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 
@@ -227,8 +249,8 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 	predictPositions<<<dims, blockSize>>>(particles);
 
 	//Update neighbors
-	//grid.updateCells(particles);
-	//setNeighbors();
+	clearNeighbors<<<dims, blockSize>>>(neighbors, numNeighbors);
+	updateNeighbors<<<dims, blockSize>>>(particles, neighbors, numNeighbors);
 
 	//Needs to be after neighbor finding for weighted positions
 	//updatePositions<<<dims, blockSize>>>();

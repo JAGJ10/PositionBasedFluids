@@ -20,6 +20,8 @@ __device__ float sCorrCalc(Particle &pi, Particle &pj);
 __device__ glm::vec3 xsphViscosity(Particle* particles, int* neighbors, int* numNeighbors, int index);
 
 __global__ void predictPositions(Particle* particles);
+__global__ void clearNeighbors(int* neighbors, int* numNeighbors);
+__global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNeighbors);
 __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2);
 __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2);
 __global__ void updatePositions(Particle* particles, glm::vec3* buffer1);

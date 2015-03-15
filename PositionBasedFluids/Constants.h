@@ -10,6 +10,9 @@ static const int MAX_NEIGHBORS = 50;
 static const int blockSize = 128;
 static const dim3 dims = numParticles / blockSize;
 
+#define NUM_PARTICLES_C numParticles
+#define MAX_NEIGHBORS_C MAX_NEIGHBORS
+
 #define deltaT 0.0083f
 #define PI 3.14159265358979323846f
 #define GRAVITY glm::vec3(0, -9.8f, 0)
