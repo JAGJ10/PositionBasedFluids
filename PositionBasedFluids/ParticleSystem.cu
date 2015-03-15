@@ -287,7 +287,7 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 	updateVelocities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1);
 
 	//Set new velocity
-	updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);
+	//updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);
 }
 
 void setVBO(Particle* particles, float* vboPtr) {

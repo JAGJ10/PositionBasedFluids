@@ -8,7 +8,6 @@
 
 class ParticleSystem {
 public:
-	Particle tempParticles[numParticles * 2];
 	Particle* particles;
 	int* neighbors;
 	int* numNeighbors;

@@ -113,7 +113,7 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void shaderVAOCuda(GLuint cudaVBO) {
+	void shaderVAOCuda(GLuint &cudaVBO) {
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 
@@ -121,7 +121,7 @@ public:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void shaderVAOPointsFoam(std::vector<glm::vec4> &points) {

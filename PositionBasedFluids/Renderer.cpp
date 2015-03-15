@@ -34,8 +34,9 @@ Renderer::Renderer() :
 {
 
 	glGenBuffers(1, &fluidVBO);
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fluidVBO);
-	glBufferData(GL_PIXEL_UNPACK_BUFFER, numParticles * 3, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
+	glBufferData(GL_ARRAY_BUFFER, numParticles * 3 * sizeof(float), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	initFramebuffers();
 }
 
@@ -44,21 +45,18 @@ Renderer::~Renderer() {}
 void Renderer::run(Camera &cam) {
 	if (running) {
 		cudaGraphicsGLRegisterBuffer(&resource, fluidVBO, cudaGraphicsMapFlagsNone);
-		cudaGraphicsMapResources(1, &resource, NULL);
+		cudaGraphicsMapResources(1, &resource, 0);
 		size_t size;
 		cudaGraphicsResourceGetMappedPointer((void**)&vboPtr, &size, resource);
 		for (int i = 0; i < 1; i++) {
 			system.updateWrapper();
-			cout << "lol?" << endl;
 			//system.clothUpdate();
 		}
 		system.setVBOWrapper(vboPtr);
-		cudaGraphicsUnregisterResource(resource);
+		cudaGraphicsUnmapResources(1, &resource, 0);
+		//cudaGraphicsUnregisterResource(resource);
 	}
 
-	//Get particle positions
-	//fluidPositions = system.getFluidPositions();
-	//foamPositions = system.getFoamPositions();
 	//cout << "Foam: " << foamPositions.size() << endl;
 
 	//Set camera
