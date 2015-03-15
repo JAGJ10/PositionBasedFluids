@@ -263,7 +263,7 @@ __global__ void updateVBO(Particle* particles, float* vboPtr) {
 void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	//------------------WATER-----------------
 	//Predict positions and update velocity
-	predictPositions<<<dims, blockSize>>>(particles);
+	/*predictPositions<<<dims, blockSize>>>(particles);
 
 	//Update neighbors
 	clearNeighbors<<<dims, blockSize>>>(neighbors, numNeighbors);
@@ -287,7 +287,7 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 	updateVelocities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1);
 
 	//Set new velocity
-	//updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);
+	//updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);*/
 }
 
 void setVBO(Particle* particles, float* vboPtr) {

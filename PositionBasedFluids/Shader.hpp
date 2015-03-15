@@ -74,6 +74,8 @@ public:
 		if (!success) {
 			glGetProgramInfoLog(this->program, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog <<  std::endl;
+			std::cout << vertexPath << std::endl;
+			std::cout << fragmentPath << std::endl;
 		}
 		
 		// Delete the shaders as they're linked into our program now and no longer necessery

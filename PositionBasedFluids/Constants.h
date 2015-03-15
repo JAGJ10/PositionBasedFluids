@@ -7,7 +7,7 @@
 static const int PRESSURE_ITERATIONS = 4;
 static const int numParticles = 8000;
 static const int MAX_NEIGHBORS = 50;
-static const int blockSize = 128;
+static const int blockSize = 1;
 static const dim3 dims = numParticles / blockSize;
 
 #define NUM_PARTICLES_C numParticles
@@ -27,5 +27,15 @@ static const dim3 dims = numParticles / blockSize;
 #define deltaQMag 0.3f * H
 #define wQH (KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3))
 #define lifetime 1.0f
+
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
+{
+	if (code != cudaSuccess)
+	{
+		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		if (abort) exit(code);
+	}
+}
 
 #endif
