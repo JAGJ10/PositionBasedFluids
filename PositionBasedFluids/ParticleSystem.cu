@@ -65,27 +65,27 @@ __device__ float calcDensityConstraint(Particle* particles, int* neighbors, int*
 }
 
 //Returns the eta vector that points in the direction of the corrective force
-__device__ glm::vec3 eta(Particle &p, float &vorticityMag) {
+__device__ glm::vec3 eta(Particle* particles, int* neighbors, int* numNeighbors, int index, float &vorticityMag) {
 	glm::vec3 eta = glm::vec3(0.0f);
-	/*for (auto &n : p.neighbors) {
-		eta += WSpiky(p.newPos, n->newPos) * vorticityMag;
-	}*/
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		eta += WSpiky(particles[index].newPos, particles[neighbors[index + i]].newPos) * vorticityMag;
+	}
 
 	return eta;
 }
 
 //Calculates the vorticity force for a particle
-__device__ glm::vec3 vorticityForce(Particle &p) {
+__device__ glm::vec3 vorticityForce(Particle* particles, int* neighbors, int* numNeighbors, int index) {
 	//Calculate omega_i
 	glm::vec3 omega = glm::vec3(0.0f);
 	glm::vec3 velocityDiff;
 	glm::vec3 gradient;
 
-	/*for (auto &n : p.neighbors) {
-		velocityDiff = n->velocity - p.velocity;
-		gradient = WSpiky(p.newPos, n->newPos);
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		velocityDiff = particles[neighbors[index + i]].velocity - particles[index].velocity;
+		gradient = WSpiky(particles[index].newPos, particles[neighbors[index + i]].newPos);
 		omega += glm::cross(velocityDiff, gradient);
-	}*/
+	}
 
 	float omegaLength = glm::length(omega);
 	if (omegaLength == 0.0f) {
@@ -93,7 +93,7 @@ __device__ glm::vec3 vorticityForce(Particle &p) {
 		return glm::vec3(0.0f);
 	}
 
-	glm::vec3 etaVal = eta(p, omegaLength);
+	glm::vec3 etaVal = eta(particles, neighbors, numNeighbors, index, omegaLength);
 	if (etaVal == glm::vec3(0.0f)) {
 		//Particle is isolated or net force is 0
 		return glm::vec3(0.0f);
@@ -107,20 +107,20 @@ __device__ glm::vec3 vorticityForce(Particle &p) {
 	return (glm::cross(n, omega) * EPSILON_VORTICITY);
 }
 
-__device__ float sCorrCalc(Particle &pi, Particle* &pj) {
+__device__ float sCorrCalc(Particle &pi, Particle &pj) {
 	//Get Density from WPoly6
-	float corr = WPoly6(pi.newPos, pj->newPos) / wQH;
+	float corr = WPoly6(pi.newPos, pj.newPos) / wQH;
 	corr *= corr * corr * corr;
 	return -K * corr;
 }
 
-__device__ glm::vec3 xsphViscosity(Particle &p) {
+__device__ glm::vec3 xsphViscosity(Particle* particles, int* neighbors, int* numNeighbors, int index) {
 	glm::vec3 visc = glm::vec3(0.0f);
-	/*for (auto &n : p.neighbors) {
-		glm::vec3 velocityDiff = n->velocity - p.velocity;
-		velocityDiff *= WPoly6(p.newPos, n->newPos);
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		glm::vec3 velocityDiff = particles[neighbors[index + i]].velocity - particles[index].velocity;
+		velocityDiff *= WPoly6(particles[index].newPos, particles[neighbors[index + i]].newPos);
 		visc += velocityDiff;
-	}*/
+	}
 
 	return visc * C;
 }
@@ -177,51 +177,48 @@ __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbor
 	buffer2[index] = ((-1) * densityConstraint) / (sumGradients + EPSILON_LAMBDA);
 }
 
-__global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1) {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		glm::vec3 deltaP = glm::vec3(0.0f);
-		for (auto &n : p.neighbors) {
-			float lambdaSum = buffer2[i] + buffer2[n->index];
-			float sCorr = sCorrCalc(p, n);
-			deltaP += WSpiky(p.newPos, n->newPos) * (lambdaSum + sCorr);
-		}
+__global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 
-		buffer1[i] = deltaP / REST_DENSITY;
-	}*/
+	glm::vec3 deltaP = glm::vec3(0.0f);
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		float lambdaSum = buffer2[index] + buffer2[neighbors[index + i]];
+		float sCorr = sCorrCalc(particles[index], particles[neighbors[index + i]]);
+		deltaP += WSpiky(particles[index].newPos, particles[neighbors[index + i]].newPos) * (lambdaSum + sCorr);
+	}
+
+	buffer1[index] = deltaP / REST_DENSITY;
 }
 
 __global__ void updatePositions(Particle* particles, glm::vec3* buffer1) {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		p.newPos += buffer1[i];
-	}*/
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+
+	particles[index].newPos += buffer1[index];
 }
 
 __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1) {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		confineToBox(p);
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 
-		//set new velocity vi = (x*i - xi) / dt
-		p.velocity = (p.newPos - p.oldPos) / deltaT;
+	confineToBox(particles[index]);
 
-		//apply vorticity confinement
-		p.velocity += vorticityForce(p) * deltaT;
+	//set new velocity vi = (x*i - xi) / dt
+	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
 
-		//apply XSPH viscosity
-		buffer1[i] = xsphViscosity(p);
+	//apply vorticity confinement
+	particles[index].velocity += vorticityForce(particles, neighbors, numNeighbors, index) * deltaT;
 
-		//update position xi = x*i
-		p.oldPos = p.newPos;
-	}*/
+	//apply XSPH viscosity
+	buffer1[index] = xsphViscosity(particles, neighbors, numNeighbors, index);
+
+	//update position xi = x*i
+	particles[index].oldPos = particles[index].newPos;
+
 }
 
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		p.velocity += buffer1[i] * deltaT;
-	}*/
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	
+	particles[index].velocity += buffer1[index] * deltaT;
 }
 
 void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
@@ -241,7 +238,7 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 		calcLambda<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer2);
 
 		//calculate deltaP
-		calcDeltaP<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1);
+		calcDeltaP<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1, buffer2);
 
 		//update position x*i = x*i + deltaPi
 		updatePositions<<<dims, blockSize>>>(particles, buffer1);
