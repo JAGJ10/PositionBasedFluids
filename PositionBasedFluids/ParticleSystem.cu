@@ -251,7 +251,7 @@ __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
 	particles[index].velocity += buffer1[index] * deltaT;
 }
 
-void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2, cudaGraphicsResource *resource) {
+void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	//------------------WATER-----------------
 	//Predict positions and update velocity
 	predictPositions<<<dims, blockSize>>>(particles);
