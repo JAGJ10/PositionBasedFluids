@@ -172,6 +172,7 @@ __global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNei
 
 	//Naive method for now
 	for (int i = 0; i < NUM_PARTICLES_C; i++) {
+		if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
 		if (glm::distance(particles[index].newPos, particles[i].newPos) <= H) {
 			neighbors[numNeighbors[index]] = i;
 			numNeighbors[index]++;
