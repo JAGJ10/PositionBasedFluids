@@ -3,9 +3,8 @@
 
 #include "common.h"
 #include "Constants.h"
-#include "Cell.hpp"
-#include "CellGrid.h"
 #include "FoamParticle.hpp"
+#include "Particle.hpp"
 
 class ParticleSystem {
 public:
@@ -23,13 +22,10 @@ public:
 	std::vector<glm::vec4>& getFoamPositions();
 
 private:
-	//std::vector<Particle> particles;
 	std::vector<FoamParticle> foam;
 
 	std::vector<glm::vec3> fluidPositions;
 	std::vector<glm::vec4> foamPositions;
-
-	CellGrid grid;
 
 	void confineToBox(FoamParticle &p);
 	void updatePositions2();
