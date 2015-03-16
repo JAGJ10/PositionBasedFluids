@@ -176,7 +176,7 @@ __global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNei
 	for (int i = 0; i < NUM_PARTICLES_C; i++) {
 		if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
 		if (glm::distance(particles[index].newPos, particles[i].newPos) <= H) {
-			neighbors[numNeighbors[index]] = i;
+			neighbors[index + numNeighbors[index]] = i;
 			numNeighbors[index]++;
 		}
 	}
@@ -200,7 +200,7 @@ __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbor
 
 	//Add the particle i gradient magnitude squared to sum
 	sumGradients += glm::length2(gradientI);
-	buffer2[index] = ((-1) * densityConstraint) / (sumGradients + EPSILON_LAMBDA);
+	buffer2[index] = (-1 * densityConstraint) / (sumGradients + EPSILON_LAMBDA);
 }
 
 __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
@@ -210,14 +210,15 @@ __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbor
 	glm::vec3 deltaP = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
 		float lambdaSum = buffer2[index] + buffer2[neighbors[index + i]];
-		float sCorr = sCorrCalc(particles[index], particles[neighbors[index + i]]);
+		//float sCorr = sCorrCalc(particles[index], particles[neighbors[index + i]]);
+		float sCorr = 0;
 		deltaP += WSpiky(particles[index].newPos, particles[neighbors[index + i]].newPos) * (lambdaSum + sCorr);
 	}
 
 	buffer1[index] = deltaP / REST_DENSITY;
 }
 
-__global__ void updatePositions(Particle* particles, glm::vec3* buffer1) {
+__global__ void applyDeltaP(Particle* particles, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index > NUM_PARTICLES_C) return;
 
@@ -234,10 +235,10 @@ __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNe
 	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
 
 	//apply vorticity confinement
-	particles[index].velocity += vorticityForce(particles, neighbors, numNeighbors, index) * deltaT;
+	//particles[index].velocity += vorticityForce(particles, neighbors, numNeighbors, index) * deltaT;
 
 	//apply XSPH viscosity
-	buffer1[index] = xsphViscosity(particles, neighbors, numNeighbors, index);
+	//buffer1[index] = xsphViscosity(particles, neighbors, numNeighbors, index);
 
 	//update position xi = x*i
 	particles[index].oldPos = particles[index].newPos;
@@ -263,14 +264,11 @@ __global__ void updateVBO(Particle* particles, float* vboPtr) {
 void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	//------------------WATER-----------------
 	//Predict positions and update velocity
-	/*predictPositions<<<dims, blockSize>>>(particles);
+	predictPositions<<<dims, blockSize>>>(particles);
 
 	//Update neighbors
 	clearNeighbors<<<dims, blockSize>>>(neighbors, numNeighbors);
 	updateNeighbors<<<dims, blockSize>>>(particles, neighbors, numNeighbors);
-
-	//Needs to be after neighbor finding for weighted positions
-	//updatePositions<<<dims, blockSize>>>();
 
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
 		//set lambda
@@ -280,14 +278,14 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* b
 		calcDeltaP<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1, buffer2);
 
 		//update position x*i = x*i + deltaPi
-		updatePositions<<<dims, blockSize>>>(particles, buffer1);
+		applyDeltaP<<<dims, blockSize>>>(particles, buffer1);
 	}
 
 	//Update velocity, apply vorticity confinement, apply xsph viscosity, update position
 	updateVelocities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer1);
 
 	//Set new velocity
-	//updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);*/
+	//updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer1);
 }
 
 void setVBO(Particle* particles, float* vboPtr) {

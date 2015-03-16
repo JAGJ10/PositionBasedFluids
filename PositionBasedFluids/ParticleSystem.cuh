@@ -24,7 +24,7 @@ __global__ void clearNeighbors(int* neighbors, int* numNeighbors);
 __global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNeighbors);
 __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2);
 __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2);
-__global__ void updatePositions(Particle* particles, glm::vec3* buffer1);
+__global__ void applyDeltaP(Particle* particles, glm::vec3* buffer1);
 __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors);
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1);
 

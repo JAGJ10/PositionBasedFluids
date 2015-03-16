@@ -5,10 +5,10 @@
 
 //---------------------Fluid Constants----------------------
 static const int PRESSURE_ITERATIONS = 4;
-static const int numParticles = 8000;
+static const int numParticles = 2048;
 static const int MAX_NEIGHBORS = 50;
-static const int blockSize = 1;
-static const dim3 dims = numParticles / blockSize;
+static const int blockSize = 128;
+static const dim3 dims = int(numParticles / blockSize);
 
 #define NUM_PARTICLES_C numParticles
 #define MAX_NEIGHBORS_C MAX_NEIGHBORS
@@ -17,8 +17,8 @@ static const dim3 dims = numParticles / blockSize;
 #define PI 3.14159265358979323846f
 #define GRAVITY glm::vec3(0, -9.8f, 0)
 #define H 0.1f
-#define KPOLY (315 / (64 * PI * glm::pow(H, 9)))
-#define SPIKY (45 / (PI * glm::pow(H, 6)))
+#define KPOLY (315.0f / (64.0f * PI * glm::pow(H, 9)))
+#define SPIKY (45.0f / (PI * glm::pow(H, 6)))
 #define REST_DENSITY 6378.0f
 #define EPSILON_LAMBDA 600.0f
 #define EPSILON_VORTICITY 0.0001f
