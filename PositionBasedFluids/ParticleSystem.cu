@@ -128,20 +128,20 @@ __device__ glm::vec3 xsphViscosity(Particle* particles, int* neighbors, int* num
 __device__ void confineToBox(Particle &p) {
 	if (p.newPos.x < 0 || p.newPos.x > width) {
 		p.velocity.x = 0;
-		if (p.newPos.x < 0) p.newPos.x = 0.001f;
-		else p.newPos.x = width - 0.001f;
+		if (p.newPos.x < 0) p.newPos.x = 0.000f;
+		else p.newPos.x = width - 0.000f;
 	}
 
 	if (p.newPos.y < 0 || p.newPos.y > height) {
 		p.velocity.y = 0;
-		if (p.newPos.y < 0) p.newPos.y = 0.001f;
-		else p.newPos.y = height - 0.001f;
+		if (p.newPos.y < 0) p.newPos.y = 0.000f;
+		else p.newPos.y = height - 0.000f;
 	}
 
 	if (p.newPos.z < 0 || p.newPos.z > depth) {
 		p.velocity.z = 0;
-		if (p.newPos.z < 0) p.newPos.z = 0.001f;
-		else p.newPos.z = depth - 0.001f;
+		if (p.newPos.z < 0) p.newPos.z = 0.000f;
+		else p.newPos.z = depth - 0.000f;
 	}
 }
 
@@ -177,7 +177,7 @@ __global__ void updateNeighbors(Particle* particles, int* neighbors, int* numNei
 		if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
 		if (glm::distance(particles[index].newPos, particles[i].newPos) <= H) {
 			neighbors[index + numNeighbors[index]] = i;
-			numNeighbors[index]++;
+			numNeighbors[index] += 1;
 		}
 	}
 }
@@ -210,8 +210,7 @@ __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbor
 	glm::vec3 deltaP = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
 		float lambdaSum = buffer2[index] + buffer2[neighbors[index + i]];
-		//float sCorr = sCorrCalc(particles[index], particles[neighbors[index + i]]);
-		float sCorr = 0;
+		float sCorr = sCorrCalc(particles[index], particles[neighbors[index + i]]);
 		deltaP += WSpiky(particles[index].newPos, particles[neighbors[index + i]].newPos) * (lambdaSum + sCorr);
 	}
 
@@ -242,7 +241,6 @@ __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNe
 
 	//update position xi = x*i
 	particles[index].oldPos = particles[index].newPos;
-
 }
 
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
@@ -256,7 +254,7 @@ __global__ void updateVBO(Particle* particles, float* vboPtr) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index > NUM_PARTICLES_C) return;
 
-	vboPtr[3 * index + 0] = particles[index].oldPos.x;
+	vboPtr[3 * index] = particles[index].oldPos.x;
 	vboPtr[3 * index + 1] = particles[index].oldPos.y;
 	vboPtr[3 * index + 2] = particles[index].oldPos.z;
 }
