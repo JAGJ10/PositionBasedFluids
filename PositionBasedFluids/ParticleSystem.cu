@@ -5,9 +5,9 @@
 #include "Constants.h"
 #include "Particle.hpp"
 
-__constant__ float width = 8;
+__constant__ float width = 4;
 __constant__ float height = 8;
-__constant__ float depth = 7;
+__constant__ float depth = 4;
 
 __device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
