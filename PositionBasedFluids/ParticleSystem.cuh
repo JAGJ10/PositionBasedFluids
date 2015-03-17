@@ -28,7 +28,7 @@ __global__ void applyDeltaP(Particle* particles, glm::vec3* buffer1);
 __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors);
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1);
 
-void update(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2);
+void update(Particle* particles, int* neighbors, int* numNeighbors, int* gridCells, int* gridCounters, glm::vec3* buffer1, float* buffer2);
 void setVBO(Particle* particles, float* vboPtr);
 
 #endif

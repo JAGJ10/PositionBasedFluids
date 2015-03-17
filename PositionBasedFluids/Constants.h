@@ -7,11 +7,13 @@
 static const int PRESSURE_ITERATIONS = 4;
 static const int numParticles = 10240;
 static const int MAX_NEIGHBORS = 50;
+static const int MAX_PARTICLES = 30;
 static const int blockSize = 128;
 static const dim3 dims = int(numParticles / blockSize);
 
 #define NUM_PARTICLES_C numParticles
 #define MAX_NEIGHBORS_C MAX_NEIGHBORS
+#define MAX_PARTICLES_C MAX_PARTICLES
 
 #define deltaT 0.0083f
 #define PI 3.14159265358979323846f

@@ -11,6 +11,8 @@ public:
 	Particle* particles;
 	int* neighbors;
 	int* numNeighbors;
+	int* gridCells;
+	int* gridCounters;
 	glm::vec3* buffer1;
 	float* buffer2;
 
