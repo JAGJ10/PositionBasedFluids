@@ -10,11 +10,6 @@ static int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() {
 	//Initialize fluid particles
-	int w = 4;
-	int h = 4;
-	int d = 4;
-	int gridSize = int((w / H) * (h / H) * (d / H)) + 1;
-	
 	gpuErrchk(cudaMalloc((void**)&particles, numParticles * sizeof(Particle)));
 	gpuErrchk(cudaMalloc((void**)&neighbors, MAX_NEIGHBORS * numParticles * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&numNeighbors, numParticles * sizeof(int)));
