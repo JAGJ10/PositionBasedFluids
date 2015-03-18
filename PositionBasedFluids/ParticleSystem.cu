@@ -147,7 +147,9 @@ __device__ void confineToBox(Particle &p) {
 
 __device__ int getGridIndex(glm::vec3 pos) {
 	//return int(pos.x + width * (pos.y + depth * pos.z));
-	return int(pos.x*width*height + pos.y*width + pos.z);
+	int w = int(width / H);
+	int h = int(height / H);
+	return int(pos.x*w*h + pos.y*w + pos.z);
 }
 
 __global__ void predictPositions(Particle* particles) {
@@ -178,7 +180,7 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES_C) return;
 
-	int gIndex = getGridIndex(particles[index].newPos);
+	int gIndex = getGridIndex(particles[index].newPos / H);
 
 	if (gridCounters[gIndex] >= MAX_PARTICLES_C) return;
 
@@ -200,19 +202,23 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 		}
 	}*/
 	
-	glm::ivec3 pos = particles[index].newPos;
+	glm::ivec3 pos = particles[index].newPos / H;
 	int pIndex;
 
-	for (int x = -1; x < 2; ++x) {
-		for (int y = -1; y < 2; ++y) {
-			for (int z = -1; z < 2; ++z) {
+	int w = int(width / H);
+	int h = int(height / H);
+	int d = int(depth / H);
+
+	for (int x = -1; x < 2; x++) {
+		for (int y = -1; y < 2; y++) {
+			for (int z = -1; z < 2; z++) {
 				glm::ivec3 n = glm::ivec3(pos.x + x, pos.y + y, pos.z + z);
-				if (n.x >= 0 && n.x < width && n.y >= 0 && n.y < height	&& n.z >= 0 && n.z < depth) {
-					int gIndex = getGridIndex(n);
+				if (n.x >= 0 && n.x < w && n.y >= 0 && n.y < h && n.z >= 0 && n.z < d) {
+					int gIndex = int(n.x*w*h + n.y*w + n.z);
 					for (int i = 0; i < gridCounters[gIndex]; i++) {
 						if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
 					
-						pIndex = gridCells[int(n.x*width*height + n.y*width + n.z) * MAX_PARTICLES_C + i];
+						pIndex = gridCells[gIndex * MAX_PARTICLES_C + i];
 						if (glm::distance(particles[index].newPos, particles[pIndex].newPos) <= H) {
 							neighbors[(index * MAX_NEIGHBORS_C) + numNeighbors[index]] = pIndex;
 							numNeighbors[index] += 1;
