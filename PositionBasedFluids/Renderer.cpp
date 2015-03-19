@@ -48,7 +48,7 @@ void Renderer::run(Camera &cam) {
 		cudaGraphicsMapResources(1, &resource, 0);
 		size_t size;
 		cudaGraphicsResourceGetMappedPointer((void**)&vboPtr, &size, resource);
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 2; i++) {
 			system.updateWrapper();
 			//system.clothUpdate();
 		}

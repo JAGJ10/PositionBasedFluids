@@ -5,9 +5,9 @@
 #include "Constants.h"
 #include "Particle.hpp"
 
-__constant__ float width = 2;
-__constant__ float height = 4;
-__constant__ float depth = 4;
+__constant__ float width = w * H;
+__constant__ float height = h * H;
+__constant__ float depth = d * H;
 
 __device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
@@ -147,9 +147,9 @@ __device__ void confineToBox(Particle &p) {
 
 __device__ int getGridIndex(glm::ivec3 pos) {
 	//return int(pos.x + w * (pos.y + d * pos.z));
-	return int((pos.x * h + pos.y) * d + pos.z);
+	//return int((pos.x * h + pos.y) * d + pos.z);
 	//return int(pos.x*w*h + pos.y*w + pos.z);
-	//return int((pos.z*h)*w + (pos.y*w) + pos.x);
+	return int((pos.z * h * w) + (pos.y * w) + pos.x);
 }
 
 __global__ void predictPositions(Particle* particles) {
@@ -184,7 +184,7 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 	if (index >= NUM_PARTICLES_C) return;
 
 	Particle &p = particles[index];
-	int gIndex = getGridIndex(glm::ivec3(p.newPos.x / H, p.newPos.y / H, p.newPos.z / H));
+	int gIndex = getGridIndex(glm::ivec3(int(p.newPos.x / H) % w, int(p.newPos.y / H) % h, int(p.newPos.z / H) % d));
 
 	int i = atomicAdd(&gridCounters[gIndex], 1);
 	i = min(i, MAX_PARTICLES_C - 1);
@@ -196,12 +196,12 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 	if (index >= NUM_PARTICLES_C) return;
 	
 	Particle &p = particles[index];
-	glm::ivec3 pos = glm::ivec3(p.newPos.x / H, p.newPos.y / H, p.newPos.z / H);
+	glm::ivec3 pos = glm::ivec3(int(p.newPos.x / H) % w, int(p.newPos.y / H) % h, int(p.newPos.z / H) % d);
 	int pIndex;
 
-	for (int x = -1; x < 2; x++) {
+	for (int z = -1; z < 2; z++) {
 		for (int y = -1; y < 2; y++) {
-			for (int z = -1; z < 2; z++) {
+			for (int x = -1; x < 2; x++) {
 				glm::ivec3 n = glm::ivec3(pos.x + x, pos.y + y, pos.z + z);
 				if (n.x >= 0 && n.x < w && n.y >= 0 && n.y < h && n.z >= 0 && n.z < d) {
 					int gIndex = getGridIndex(n);

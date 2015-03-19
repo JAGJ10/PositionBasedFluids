@@ -18,7 +18,8 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMalloc((void**)&buffer1, numParticles * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&buffer2, numParticles * sizeof(float)));
 
-	gpuErrchk(cudaMemset(particles, 0, numParticles*sizeof(Particle)));
+	//Clear memory in case it's left over from last time?
+	gpuErrchk(cudaMemset(particles, 0, numParticles * sizeof(Particle)));
 	gpuErrchk(cudaMemset(neighbors, 0, MAX_NEIGHBORS * numParticles * sizeof(int)));
 	gpuErrchk(cudaMemset(numNeighbors, 0, numParticles * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
@@ -29,7 +30,7 @@ ParticleSystem::ParticleSystem() {
 	tempParticles = new Particle[numParticles];
 
 	int count = 0;
-	for (int i = 0; i < 25; i += 1) {
+	for (int i = 0; i < 30; i += 1) {
 		for (int j = 0; j < 64; j += 1) {
 			for (int k = 20; k < 52; k += 1) {
 				tempParticles[count].invMass = 1;

@@ -5,22 +5,22 @@
 
 //---------------------Fluid Constants----------------------
 static const int PRESSURE_ITERATIONS = 4;
-static const int numParticles = 51200;
+static const int numParticles = 61440;
 static const int MAX_NEIGHBORS = 50;
 static const int MAX_PARTICLES = 50;
 static const int blockSize = 128;
 static const dim3 dims = int(numParticles / blockSize);
 
-static const int w = 20;
-static const int h = 40;
-static const int d = 40;
-static const int gridSize = 64000;
-static const dim3 gridDims = int(gridSize / blockSize);
+static const int w = 50;
+static const int h = 50;
+static const int d = 30;
+static const int gridSize = w * h * d;
+static const dim3 gridDims = int(ceil(gridSize / blockSize));
 
 #define NUM_PARTICLES_C numParticles
 #define MAX_NEIGHBORS_C MAX_NEIGHBORS
 #define MAX_PARTICLES_C MAX_PARTICLES
-#define GRID_SIZE_C 64000
+#define GRID_SIZE_C gridSize
 
 #define deltaT 0.0083f
 #define PI 3.14159265358979323846f
@@ -38,10 +38,8 @@ static const dim3 gridDims = int(gridSize / blockSize);
 #define lifetime 1.0f
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
-{
-	if (code != cudaSuccess)
-	{
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true) {
+	if (code != cudaSuccess) {
 		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
 		if (abort) exit(code);
 	}
