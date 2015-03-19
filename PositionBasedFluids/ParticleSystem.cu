@@ -146,10 +146,10 @@ __device__ void confineToBox(Particle &p) {
 }
 
 __device__ int getGridIndex(glm::vec3 pos) {
-	//return int(pos.x + width * (pos.y + depth * pos.z));
-	//int w = int(width / H);
-	//int h = int(height / H);
+	//return int(pos.x + w * (pos.y + d * pos.z));
+	//return int((pos.x * h + pos.y) * d + pos.z);
 	return int(pos.x*w*h + pos.y*w + pos.z);
+	//return int((pos.z*h)*w + (pos.y*w) + pos.x);
 }
 
 __global__ void predictPositions(Particle* particles) {
@@ -168,9 +168,6 @@ __global__ void predictPositions(Particle* particles) {
 __global__ void clearNeighbors(int* neighbors, int* numNeighbors) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES_C) return;
-	//for (int i = 0; i < numNeighbors[index]; i++) {
-	//	neighbors[(index * MAX_NEIGHBORS_C) + i] = 0;
-	//}
 
 	numNeighbors[index] = 0;
 }
@@ -188,11 +185,9 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 
 	int gIndex = getGridIndex(particles[index].newPos / H);
 
-	if (gridCounters[gIndex] >= MAX_PARTICLES_C) return;
-
-	atomicExch(&gridCells[(gIndex * MAX_PARTICLES_C) + gridCounters[gIndex]], index);
-	atomicAdd(&gridCounters[gIndex], 1);
-	//gridCells[gIndex * MAX_PARTICLES_C + gridCounters[gIndex]] = index;
+	int i = atomicAdd(&gridCounters[gIndex], 1);
+	i = min(i, MAX_PARTICLES_C - 1);
+	gridCells[gIndex * MAX_PARTICLES_C + i] = index;
 }
 
 __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors) {
@@ -200,40 +195,37 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 	if (index >= NUM_PARTICLES_C) return;
 
 	//Naive method for now
-	for (int i = 0; i < NUM_PARTICLES_C; i++) {
+	/*for (int i = 0; i < NUM_PARTICLES_C; i++) {
 		if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
 		if (glm::distance(particles[index].newPos, particles[i].newPos) <= H) {
 			neighbors[(index * MAX_NEIGHBORS_C) + numNeighbors[index]] = i;
 			numNeighbors[index] += 1;
 		}
-	}
+	}*/
 	
-	/*glm::ivec3 pos = particles[index].newPos / H;
+	glm::ivec3 pos = particles[index].newPos / H;
 	int pIndex;
-
-	//int w = int(width / H);
-	//int h = int(height / H);
-	//int d = int(depth / H);
 
 	for (int x = -1; x < 2; x++) {
 		for (int y = -1; y < 2; y++) {
 			for (int z = -1; z < 2; z++) {
 				glm::ivec3 n = glm::ivec3(pos.x + x, pos.y + y, pos.z + z);
 				if (n.x >= 0 && n.x < w && n.y >= 0 && n.y < h && n.z >= 0 && n.z < d) {
-					int gIndex = int(n.x*w*h + n.y*w + n.z);
-					for (int i = 0; i < gridCounters[gIndex]; i++) {
+					int gIndex = getGridIndex(n);
+					int cellParticles = min(gridCounters[gIndex], MAX_PARTICLES_C - 1);
+					for (int i = 0; i < cellParticles; i++) {
 						if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
-					
+
 						pIndex = gridCells[gIndex * MAX_PARTICLES_C + i];
 						if (glm::distance(particles[index].newPos, particles[pIndex].newPos) <= H) {
 							neighbors[(index * MAX_NEIGHBORS_C) + numNeighbors[index]] = pIndex;
-							numNeighbors[index] += 1;
+							numNeighbors[index]++;
 						}
 					}
 				}
 			}
 		}
-	}*/
+	}
 }
 
 __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
@@ -313,7 +305,7 @@ __global__ void updateVBO(Particle* particles, float* vboPtr) {
 	vboPtr[3 * index + 2] = particles[index].oldPos.z;
 }
 
-void update(Particle* particles, int* neighbors, int* numNeighbors, int* gridCells, int* gridCounters, glm::vec3* buffer1, float* buffer2) {
+void update(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	//------------------WATER-----------------
 	//Predict positions and update velocity
 	predictPositions<<<dims, blockSize>>>(particles);
@@ -321,7 +313,7 @@ void update(Particle* particles, int* neighbors, int* numNeighbors, int* gridCel
 	//Update neighbors
 	clearNeighbors<<<dims, blockSize>>>(neighbors, numNeighbors);
 	clearGrid<<<gridDims, blockSize>>>(gridCounters);
-	updateGrid<<<dims, blockSize >>>(particles, gridCells, gridCounters);
+	updateGrid<<<dims, blockSize>>>(particles, gridCells, gridCounters);
 	updateNeighbors<<<dims, blockSize>>>(particles, gridCells, gridCounters, neighbors, numNeighbors);
 
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
