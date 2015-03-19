@@ -5,9 +5,9 @@
 
 //---------------------Fluid Constants----------------------
 static const int PRESSURE_ITERATIONS = 4;
-static const int numParticles = 10240;
+static const int numParticles = 25600;
 static const int MAX_NEIGHBORS = 50;
-static const int MAX_PARTICLES = 10;
+static const int MAX_PARTICLES = 50;
 static const int blockSize = 128;
 static const dim3 dims = int(numParticles / blockSize);
 

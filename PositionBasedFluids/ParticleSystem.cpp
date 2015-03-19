@@ -18,10 +18,10 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMalloc((void**)&buffer1, numParticles * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&buffer2, numParticles * sizeof(float)));
 
-	Particle tempParticles[numParticles];
+	Particle* tempParticles = new Particle[numParticles];
 
 	int count = 0;
-	for (int i = 0; i < 10; i += 1) {
+	for (int i = 0; i < 25; i += 1) {
 		for (int j = 0; j < 32; j += 1) {
 			for (int k = 20; k < 52; k += 1) {
 				tempParticles[count].invMass = 1;
@@ -35,7 +35,7 @@ ParticleSystem::ParticleSystem() {
 	}
 	
 	gpuErrchk(cudaMemcpy(particles, tempParticles, sizeof(tempParticles), cudaMemcpyHostToDevice));
-
+	delete[] tempParticles;
 	//srand((unsigned int)time(0));
 }
 

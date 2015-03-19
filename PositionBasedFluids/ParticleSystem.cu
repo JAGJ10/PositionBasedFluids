@@ -145,10 +145,10 @@ __device__ void confineToBox(Particle &p) {
 	}
 }
 
-__device__ int getGridIndex(glm::vec3 pos) {
+__device__ int getGridIndex(glm::ivec3 pos) {
 	//return int(pos.x + w * (pos.y + d * pos.z));
-	//return int((pos.x * h + pos.y) * d + pos.z);
-	return int(pos.x*w*h + pos.y*w + pos.z);
+	return int((pos.x * h + pos.y) * d + pos.z);
+	//return int(pos.x*w*h + pos.y*w + pos.z);
 	//return int((pos.z*h)*w + (pos.y*w) + pos.x);
 }
 
@@ -183,7 +183,8 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES_C) return;
 
-	int gIndex = getGridIndex(particles[index].newPos / H);
+	Particle &p = particles[index];
+	int gIndex = getGridIndex(glm::ivec3(p.newPos.x / H, p.newPos.y / H, p.newPos.z / H));
 
 	int i = atomicAdd(&gridCounters[gIndex], 1);
 	i = min(i, MAX_PARTICLES_C - 1);
@@ -193,17 +194,9 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES_C) return;
-
-	//Naive method for now
-	/*for (int i = 0; i < NUM_PARTICLES_C; i++) {
-		if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
-		if (glm::distance(particles[index].newPos, particles[i].newPos) <= H) {
-			neighbors[(index * MAX_NEIGHBORS_C) + numNeighbors[index]] = i;
-			numNeighbors[index] += 1;
-		}
-	}*/
 	
-	glm::ivec3 pos = particles[index].newPos / H;
+	Particle &p = particles[index];
+	glm::ivec3 pos = glm::ivec3(p.newPos.x / H, p.newPos.y / H, p.newPos.z / H);
 	int pIndex;
 
 	for (int x = -1; x < 2; x++) {
