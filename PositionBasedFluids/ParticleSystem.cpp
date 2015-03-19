@@ -18,11 +18,19 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMalloc((void**)&buffer1, numParticles * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&buffer2, numParticles * sizeof(float)));
 
-	Particle* tempParticles = new Particle[numParticles];
+	gpuErrchk(cudaMemset(particles, 0, numParticles*sizeof(Particle)));
+	gpuErrchk(cudaMemset(neighbors, 0, MAX_NEIGHBORS * numParticles * sizeof(int)));
+	gpuErrchk(cudaMemset(numNeighbors, 0, numParticles * sizeof(int)));
+	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
+	gpuErrchk(cudaMemset(gridCounters, 0, gridSize * sizeof(int)));
+	gpuErrchk(cudaMemset(buffer1, 0, numParticles * sizeof(glm::vec3)));
+	gpuErrchk(cudaMemset(buffer2, 0, numParticles * sizeof(float)));
+
+	tempParticles = new Particle[numParticles];
 
 	int count = 0;
 	for (int i = 0; i < 25; i += 1) {
-		for (int j = 0; j < 32; j += 1) {
+		for (int j = 0; j < 64; j += 1) {
 			for (int k = 20; k < 52; k += 1) {
 				tempParticles[count].invMass = 1;
 				tempParticles[count].newPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
@@ -34,19 +42,19 @@ ParticleSystem::ParticleSystem() {
 		}
 	}
 	
-	gpuErrchk(cudaMemcpy(particles, tempParticles, sizeof(tempParticles), cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpy(particles, tempParticles, numParticles * sizeof(Particle), cudaMemcpyHostToDevice));
 	delete[] tempParticles;
 	//srand((unsigned int)time(0));
 }
 
 ParticleSystem::~ParticleSystem() {
-	cudaFree(particles);
-	cudaFree(neighbors);
-	cudaFree(numNeighbors);
-	cudaFree(gridCells);
-	cudaFree(gridCounters);
-	cudaFree(buffer1);
-	cudaFree(buffer2);
+	gpuErrchk(cudaFree(particles));
+	gpuErrchk(cudaFree(neighbors));
+	gpuErrchk(cudaFree(numNeighbors));
+	gpuErrchk(cudaFree(gridCells));
+	gpuErrchk(cudaFree(gridCounters));
+	gpuErrchk(cudaFree(buffer1));
+	gpuErrchk(cudaFree(buffer2));
 }
 
 void ParticleSystem::updateWrapper() {

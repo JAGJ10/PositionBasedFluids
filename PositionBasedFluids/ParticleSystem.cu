@@ -5,7 +5,7 @@
 #include "Constants.h"
 #include "Particle.hpp"
 
-__constant__ float width = 4;
+__constant__ float width = 2;
 __constant__ float height = 4;
 __constant__ float depth = 4;
 

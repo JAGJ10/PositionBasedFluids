@@ -9,6 +9,7 @@
 class ParticleSystem {
 public:
 	Particle* particles;
+	Particle* tempParticles;
 	int* neighbors;
 	int* numNeighbors;
 	int* gridCells;
