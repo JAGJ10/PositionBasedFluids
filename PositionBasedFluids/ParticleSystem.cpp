@@ -11,6 +11,7 @@ ParticleSystem::ParticleSystem() {
 	//Initialize particles
 	gpuErrchk(cudaMalloc((void**)&particles, NUM_PARTICLES * sizeof(Particle)));
 	gpuErrchk(cudaMalloc((void**)&foamParticles, NUM_FOAM * sizeof(FoamParticle)));
+	//gpuErrchk(cudaMalloc((void**)&freeList, NUM_FOAM * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&neighbors, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&numNeighbors, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
@@ -23,6 +24,7 @@ ParticleSystem::ParticleSystem() {
 	//Clear memory in case it's left over from last time?
 	gpuErrchk(cudaMemset(particles, 0, NUM_PARTICLES * sizeof(Particle)));
 	gpuErrchk(cudaMemset(foamParticles, 0, NUM_FOAM * sizeof(FoamParticle)));
+	//gpuErrchk(cudaMemset(freeList, 0, NUM_FOAM * sizeof(int)));
 	gpuErrchk(cudaMemset(neighbors, 0, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
@@ -56,6 +58,7 @@ ParticleSystem::ParticleSystem() {
 ParticleSystem::~ParticleSystem() {
 	gpuErrchk(cudaFree(particles));
 	gpuErrchk(cudaFree(foamParticles));
+	//gpuErrchk(cudaFree(freeList));
 	gpuErrchk(cudaFree(neighbors));
 	gpuErrchk(cudaFree(numNeighbors));
 	gpuErrchk(cudaFree(gridCells));
@@ -87,26 +90,6 @@ void ParticleSystem::updateWrapper() {
 
 void ParticleSystem::setVBOWrapper(float* vboPtr) {
 	setVBO(particles, vboPtr);
-}
-
-void ParticleSystem::confineToBox(FoamParticle &p) {
-	/*if (p.pos.x < 0 || p.pos.x > width) {
-		p.velocity.x = 0;
-		if (p.pos.x < 0) p.pos.x = 0.001f;
-		else p.pos.x = width - 0.001f;
-	}
-
-	if (p.pos.y < 0 || p.pos.y > height) {
-		p.velocity.y = 0;
-		if (p.pos.y < 0) p.pos.y = 0.001f;
-		else p.pos.y = height - 0.001f;
-	}
-
-	if (p.pos.z < 0 || p.pos.z > depth) {
-		p.velocity.z = 0;
-		if (p.pos.z < 0) p.pos.z = 0.001f;
-		else p.pos.z = depth - 0.001f;
-	}*/
 }
 
 void ParticleSystem::updatePositions2() {

@@ -9,6 +9,14 @@
 __constant__ int width = gridWidth * H;
 __constant__ int height = gridHeight * H;
 __constant__ int depth = gridDepth * H;
+__constant__ float distr[] = { 
+	-0.34828757091811f, -0.64246175794046f, -0.15712936555833f, -0.28922267225069f, 0.70090742209037f,
+	0.54293139350737f, 0.86755128105523f, 0.68346917800767f, -0.74589352018474f, 0.39762042062246f,
+	-0.70243115988673f, -0.85088539675385f, -0.25780126697281f, 0.61167922970451f, -0.8751634423971f,
+	-0.12334015086449f, 0.10898816916579f, -0.97167591190509f, 0.89839695948101f, -0.71134930649369f,
+	-0.33928178406287f, -0.27579196788175f, -0.5057460942798f, 0.2341509513716f, 0.97802030852904f,
+	0.49743173248015f, -0.92212845381448f, 0.088328595779989f, -0.70214782175708f, -0.67050553191011f
+};
 __device__ int foamCount = 0;
 
 __device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
@@ -134,6 +142,26 @@ __device__ void confineToBox(Particle &p) {
 		p.velocity.z = 0;
 		if (p.newPos.z < 0) p.newPos.z = 0.001f;
 		else p.newPos.z = depth - 0.001f;
+	}
+}
+
+__device__ void confineToBox(FoamParticle &p) {
+	if (p.pos.x < 0 || p.pos.x > width) {
+		p.velocity.x = 0;
+		if (p.pos.x < 0) p.pos.x = 0.001f;
+		else p.pos.x = width - 0.001f;
+	}
+
+	if (p.pos.y < 0 || p.pos.y > height) {
+		p.velocity.y = 0;
+		if (p.pos.y < 0) p.pos.y = 0.001f;
+		else p.pos.y = height - 0.001f;
+	}
+
+	if (p.pos.z < 0 || p.pos.z > depth) {
+		p.velocity.z = 0;
+		if (p.pos.z < 0) p.pos.z = 0.001f;
+		else p.pos.z = depth - 0.001f;
 	}
 }
 
@@ -311,9 +339,23 @@ __global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, i
 	float ek = 0.5f * glm::length2(particles[index].velocity);
 	float potential = velocityDiff * ek * max(1.0f - (1.0f * buffer2[index] / REST_DENSITY), 0.0f);
 	int nd = 0;
-	if (potential > 0.7f) nd = 20;
+	if (potential > 0.7f) nd = min(20, (NUM_FOAM - 1 - foamCount));
+	nd = atomicAdd(&foamCount, nd);
 	for (int i = 0; i < nd; i++) {
+		float rx = distr[i % 30] * H;
+		float ry = distr[(i + 1) % 30] * H;
+		float rz = distr[(i + 2) % 30] * H;
+		int rd = distr[index % 30] > 0.5f ? 1 : -1;
 
+		glm::vec3 xd = particles[index].newPos + glm::vec3(rx * rd, ry * rd, rz * rd);
+		int type;
+		if (numNeighbors[index] + 1 < 8) type = 1;
+		else type = 2;
+		foamParticles[foamCount + i].pos = xd;
+		foamParticles[foamCount + i].velocity = particles[index].velocity;
+		foamParticles[foamCount + i].ttl = 1.0f;
+		foamParticles[foamCount + i].type = type;
+		confineToBox(foamParticles[foamCount + i]);
 	}
 }
 

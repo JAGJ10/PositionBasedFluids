@@ -11,6 +11,7 @@ public:
 	Particle* particles;
 	Particle* tempParticles;
 	FoamParticle* foamParticles;
+	//int* freeList;
 	int* neighbors;
 	int* numNeighbors;
 	int* gridCells;
@@ -27,9 +28,7 @@ public:
 	void setVBOWrapper(float* vboPtr);
 
 private:
-	void confineToBox(FoamParticle &p);
 	void updatePositions2();
-	void calcDensities();
 	void updateFoam();
 	void generateFoam();
 	float easeInOutQuad(float t, float b, float c, float d);
