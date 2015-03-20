@@ -1,4 +1,3 @@
-#define NOMINMAX
 #include "ParticleSystem.h"
 #include "ParticleSystem.cuh"
 
@@ -16,8 +15,10 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMalloc((void**)&numNeighbors, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCounters, gridSize * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&buffer0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&buffer1, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&buffer2, NUM_PARTICLES * sizeof(float)));
+	gpuErrchk(cudaMalloc((void**)&buffer3, NUM_PARTICLES * sizeof(float)));
 
 	//Clear memory in case it's left over from last time?
 	gpuErrchk(cudaMemset(particles, 0, NUM_PARTICLES * sizeof(Particle)));
@@ -26,8 +27,10 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMemset(numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCounters, 0, gridSize * sizeof(int)));
+	gpuErrchk(cudaMemset(buffer0, 0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMemset(buffer1, 0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMemset(buffer2, 0, NUM_PARTICLES * sizeof(float)));
+	gpuErrchk(cudaMemset(buffer3, 0, NUM_PARTICLES * sizeof(float)));
 
 	tempParticles = new Particle[NUM_PARTICLES];
 
@@ -52,16 +55,19 @@ ParticleSystem::ParticleSystem() {
 
 ParticleSystem::~ParticleSystem() {
 	gpuErrchk(cudaFree(particles));
+	gpuErrchk(cudaFree(foamParticles));
 	gpuErrchk(cudaFree(neighbors));
 	gpuErrchk(cudaFree(numNeighbors));
 	gpuErrchk(cudaFree(gridCells));
 	gpuErrchk(cudaFree(gridCounters));
+	gpuErrchk(cudaFree(buffer0));
 	gpuErrchk(cudaFree(buffer1));
 	gpuErrchk(cudaFree(buffer2));
+	gpuErrchk(cudaFree(buffer3));
 }
 
 void ParticleSystem::updateWrapper() {
-	update(particles, gridCells, gridCounters, neighbors, numNeighbors, buffer1, buffer2);
+	update(particles, foamParticles, gridCells, gridCounters, neighbors, numNeighbors, buffer0, buffer1, buffer2, buffer3);
 	//Move wall
 	/*if (frameCounter >= 500) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
