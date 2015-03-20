@@ -35,7 +35,7 @@ Renderer::Renderer() :
 
 	glGenBuffers(1, &fluidVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-	glBufferData(GL_ARRAY_BUFFER, numParticles * 3 * sizeof(float), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), NULL, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	initFramebuffers();
 }
@@ -107,7 +107,7 @@ void Renderer::run(Camera &cam) {
 		
 	glBindVertexArray(depth.vao);
 		
-	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
+	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
@@ -193,7 +193,7 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(thickness.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
+	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);

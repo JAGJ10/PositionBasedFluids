@@ -10,6 +10,7 @@ class ParticleSystem {
 public:
 	Particle* particles;
 	Particle* tempParticles;
+	FoamParticle* foamParticles;
 	int* neighbors;
 	int* numNeighbors;
 	int* gridCells;
@@ -22,22 +23,22 @@ public:
 
 	void updateWrapper();
 	void setVBOWrapper(float* vboPtr);
-	std::vector<glm::vec3>& getFluidPositions();
-	std::vector<glm::vec4>& getFoamPositions();
 
 private:
-	std::vector<FoamParticle> foam;
-
-	std::vector<glm::vec3> fluidPositions;
-	std::vector<glm::vec4> foamPositions;
-
 	void confineToBox(FoamParticle &p);
 	void updatePositions2();
-	void setNeighbors();
 	void calcDensities();
 	void updateFoam();
 	void generateFoam();
 	float easeInOutQuad(float t, float b, float c, float d);
+
+	#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+	inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true) {
+		if (code != cudaSuccess) {
+			fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+			if (abort) exit(code);
+		}
+	}
 };
 
 #endif

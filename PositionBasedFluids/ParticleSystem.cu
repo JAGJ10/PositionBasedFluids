@@ -4,10 +4,11 @@
 #include "common.h"
 #include "Constants.h"
 #include "Particle.hpp"
+#include "FoamParticle.hpp"
 
-__constant__ float width = w * H;
-__constant__ float height = h * H;
-__constant__ float depth = d * H;
+__constant__ int width = gridWidth * H;
+__constant__ int height = gridHeight * H;
+__constant__ int depth = gridDepth * H;
 
 __device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
 	glm::vec3 r = pi - pj;
@@ -58,7 +59,7 @@ __device__ float WAirPotential(glm::vec3 &pi, glm::vec3 &pj) {
 __device__ float calcDensityConstraint(Particle* particles, int* neighbors, int* numNeighbors, int index) {
 	float sum = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		sum += WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].newPos);
+		sum += WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
 	}
 
 	return (sum / REST_DENSITY) - 1;
@@ -68,7 +69,7 @@ __device__ float calcDensityConstraint(Particle* particles, int* neighbors, int*
 __device__ glm::vec3 eta(Particle* particles, int* neighbors, int* numNeighbors, int index, float &vorticityMag) {
 	glm::vec3 eta = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		eta += WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].newPos) * vorticityMag;
+		eta += WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos) * vorticityMag;
 	}
 
 	return eta;
@@ -82,8 +83,8 @@ __device__ glm::vec3 vorticityForce(Particle* particles, int* neighbors, int* nu
 	glm::vec3 gradient;
 
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		velocityDiff = particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].velocity - particles[index].velocity;
-		gradient = WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].newPos);
+		velocityDiff = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity - particles[index].velocity;
+		gradient = WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
 		omega += glm::cross(velocityDiff, gradient);
 	}
 
@@ -117,8 +118,8 @@ __device__ float sCorrCalc(Particle &pi, Particle &pj) {
 __device__ glm::vec3 xsphViscosity(Particle* particles, int* neighbors, int* numNeighbors, int index) {
 	glm::vec3 visc = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		glm::vec3 velocityDiff = particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].velocity - particles[index].velocity;
-		velocityDiff *= WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].newPos);
+		glm::vec3 velocityDiff = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity - particles[index].velocity;
+		velocityDiff *= WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
 		visc += velocityDiff;
 	}
 
@@ -145,16 +146,17 @@ __device__ void confineToBox(Particle &p) {
 	}
 }
 
+__device__ glm::ivec3 getGridPos(glm::vec3 pos) {
+	return glm::ivec3(int(pos.x / H) % gridWidth, int(pos.y / H) % gridHeight, int(pos.z / H) % gridDepth);
+}
+
 __device__ int getGridIndex(glm::ivec3 pos) {
-	//return int(pos.x + w * (pos.y + d * pos.z));
-	//return int((pos.x * h + pos.y) * d + pos.z);
-	//return int(pos.x*w*h + pos.y*w + pos.z);
-	return int((pos.z * h * w) + (pos.y * w) + pos.x);
+	return (pos.z * gridHeight * gridWidth) + (pos.y * gridWidth) + pos.x;
 }
 
 __global__ void predictPositions(Particle* particles) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	//update velocity vi = vi + dt * fExt
 	particles[index].velocity += GRAVITY * deltaT;
@@ -167,51 +169,50 @@ __global__ void predictPositions(Particle* particles) {
 
 __global__ void clearNeighbors(int* neighbors, int* numNeighbors) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	numNeighbors[index] = 0;
 }
 
 __global__ void clearGrid(int* gridCounters) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= GRID_SIZE_C) return;
+	if (index >= GRID_SIZE) return;
 
 	gridCounters[index] = 0;
 }
 
 __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounters) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
-	Particle &p = particles[index];
-	int gIndex = getGridIndex(glm::ivec3(int(p.newPos.x / H) % w, int(p.newPos.y / H) % h, int(p.newPos.z / H) % d));
+	glm::ivec3 pos = getGridPos(particles[index].newPos);
+	int gIndex = getGridIndex(pos);
 
 	int i = atomicAdd(&gridCounters[gIndex], 1);
-	i = min(i, MAX_PARTICLES_C - 1);
-	gridCells[gIndex * MAX_PARTICLES_C + i] = index;
+	i = min(i, MAX_PARTICLES - 1);
+	gridCells[gIndex * MAX_PARTICLES + i] = index;
 }
 
 __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 	
-	Particle &p = particles[index];
-	glm::ivec3 pos = glm::ivec3(int(p.newPos.x / H) % w, int(p.newPos.y / H) % h, int(p.newPos.z / H) % d);
+	glm::ivec3 pos = getGridPos(particles[index].newPos);
 	int pIndex;
 
 	for (int z = -1; z < 2; z++) {
 		for (int y = -1; y < 2; y++) {
 			for (int x = -1; x < 2; x++) {
 				glm::ivec3 n = glm::ivec3(pos.x + x, pos.y + y, pos.z + z);
-				if (n.x >= 0 && n.x < w && n.y >= 0 && n.y < h && n.z >= 0 && n.z < d) {
+				if (n.x >= 0 && n.x < gridWidth && n.y >= 0 && n.y < gridHeight && n.z >= 0 && n.z < gridDepth) {
 					int gIndex = getGridIndex(n);
-					int cellParticles = min(gridCounters[gIndex], MAX_PARTICLES_C - 1);
+					int cellParticles = min(gridCounters[gIndex], MAX_PARTICLES - 1);
 					for (int i = 0; i < cellParticles; i++) {
-						if (numNeighbors[index] >= MAX_NEIGHBORS_C) return;
+						if (numNeighbors[index] >= MAX_NEIGHBORS) return;
 
-						pIndex = gridCells[gIndex * MAX_PARTICLES_C + i];
+						pIndex = gridCells[gIndex * MAX_PARTICLES + i];
 						if (glm::distance(particles[index].newPos, particles[pIndex].newPos) <= H) {
-							neighbors[(index * MAX_NEIGHBORS_C) + numNeighbors[index]] = pIndex;
+							neighbors[(index * MAX_NEIGHBORS) + numNeighbors[index]] = pIndex;
 							numNeighbors[index]++;
 						}
 					}
@@ -223,14 +224,14 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 
 __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	float densityConstraint = calcDensityConstraint(particles, neighbors, numNeighbors, index);
 	glm::vec3 gradientI = glm::vec3(0.0f);
 	float sumGradients = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
 		//Calculate gradient with respect to j
-		glm::vec3 gradientJ = WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].newPos) / REST_DENSITY;
+		glm::vec3 gradientJ = WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos) / REST_DENSITY;
 
 		//Add magnitude squared to sum
 		sumGradients += glm::length2(gradientJ);
@@ -244,13 +245,13 @@ __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbor
 
 __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	glm::vec3 deltaP = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		float lambdaSum = buffer2[index] + buffer2[neighbors[(index * MAX_NEIGHBORS_C) + i]];
-		float sCorr = sCorrCalc(particles[index], particles[neighbors[(index * MAX_NEIGHBORS_C) + i]]);
-		deltaP += WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS_C) + i]].newPos) * (lambdaSum + sCorr);
+		float lambdaSum = buffer2[index] + buffer2[neighbors[(index * MAX_NEIGHBORS) + i]];
+		float sCorr = sCorrCalc(particles[index], particles[neighbors[(index * MAX_NEIGHBORS) + i]]);
+		deltaP += WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos) * (lambdaSum + sCorr);
 	}
 
 	buffer1[index] = deltaP / REST_DENSITY;
@@ -258,14 +259,14 @@ __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbor
 
 __global__ void applyDeltaP(Particle* particles, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	particles[index].newPos += buffer1[index];
 }
 
 __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	confineToBox(particles[index]);
 
@@ -284,14 +285,54 @@ __global__ void updateVelocities(Particle* particles, int* neighbors, int* numNe
 
 __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer1) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	particles[index].velocity += buffer1[index] * deltaT;
 }
 
+__global__ void calcDensities(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= NUM_PARTICLES) return;
+
+	float rhoSum = 0.0f;
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		rhoSum += WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
+	}
+
+	buffer2[index] = rhoSum;
+}
+
+__global__ void generateFoam(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= NUM_PARTICLES) return;
+
+	float velocityDiff = 0.0f;
+	for (int i = 0; i < numNeighbors[index]; i++) {
+		int nIndex = neighbors[(index * MAX_NEIGHBORS) + i];
+		if (index != nIndex) {
+			float wAir = WAirPotential(particles[index].newPos, particles[nIndex].newPos);
+			glm::vec3 xij = glm::normalize(particles[index].newPos - particles[nIndex].newPos);
+			glm::vec3 vijHat = glm::normalize(particles[index].velocity - particles[nIndex].velocity);
+			velocityDiff += glm::length(particles[index].velocity - particles[nIndex].velocity) * (1 - glm::dot(vijHat, xij)) * wAir;
+		}
+	}
+
+	float ek = 0.5f * glm::length2(particles[index].velocity);
+	float potential = velocityDiff * ek * max(1.0f - (1.0f * buffer2[index] / REST_DENSITY), 0.0f);
+	int nd = 0;
+	if (potential > 0.7f) nd = 20;
+	for (int i = 0; i < nd; i++) {
+
+	}
+}
+
+__global__ void updateFoam(FoamParticle* foamParticles) {
+
+}
+
 __global__ void updateVBO(Particle* particles, float* vboPtr) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES_C) return;
+	if (index >= NUM_PARTICLES) return;
 
 	vboPtr[3 * index] = particles[index].oldPos.x;
 	vboPtr[3 * index + 1] = particles[index].oldPos.y;
@@ -299,6 +340,8 @@ __global__ void updateVBO(Particle* particles, float* vboPtr) {
 }
 
 void update(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* buffer1, float* buffer2) {
+	int gridSize = gridWidth * gridHeight * gridDepth;
+	dim3 gridDims = int(ceil(gridSize / blockSize));
 	//------------------WATER-----------------
 	//Predict positions and update velocity
 	predictPositions<<<dims, blockSize>>>(particles);

@@ -9,25 +9,27 @@ static int flag = 1;
 static int frameCounter = 0;
 
 ParticleSystem::ParticleSystem() {
-	//Initialize fluid particles
-	gpuErrchk(cudaMalloc((void**)&particles, numParticles * sizeof(Particle)));
-	gpuErrchk(cudaMalloc((void**)&neighbors, MAX_NEIGHBORS * numParticles * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&numNeighbors, numParticles * sizeof(int)));
+	//Initialize particles
+	gpuErrchk(cudaMalloc((void**)&particles, NUM_PARTICLES * sizeof(Particle)));
+	gpuErrchk(cudaMalloc((void**)&foamParticles, NUM_FOAM * sizeof(FoamParticle)));
+	gpuErrchk(cudaMalloc((void**)&neighbors, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&numNeighbors, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCounters, gridSize * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&buffer1, numParticles * sizeof(glm::vec3)));
-	gpuErrchk(cudaMalloc((void**)&buffer2, numParticles * sizeof(float)));
+	gpuErrchk(cudaMalloc((void**)&buffer1, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMalloc((void**)&buffer2, NUM_PARTICLES * sizeof(float)));
 
 	//Clear memory in case it's left over from last time?
-	gpuErrchk(cudaMemset(particles, 0, numParticles * sizeof(Particle)));
-	gpuErrchk(cudaMemset(neighbors, 0, MAX_NEIGHBORS * numParticles * sizeof(int)));
-	gpuErrchk(cudaMemset(numNeighbors, 0, numParticles * sizeof(int)));
+	gpuErrchk(cudaMemset(particles, 0, NUM_PARTICLES * sizeof(Particle)));
+	gpuErrchk(cudaMemset(foamParticles, 0, NUM_FOAM * sizeof(FoamParticle)));
+	gpuErrchk(cudaMemset(neighbors, 0, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMemset(numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCounters, 0, gridSize * sizeof(int)));
-	gpuErrchk(cudaMemset(buffer1, 0, numParticles * sizeof(glm::vec3)));
-	gpuErrchk(cudaMemset(buffer2, 0, numParticles * sizeof(float)));
+	gpuErrchk(cudaMemset(buffer1, 0, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMemset(buffer2, 0, NUM_PARTICLES * sizeof(float)));
 
-	tempParticles = new Particle[numParticles];
+	tempParticles = new Particle[NUM_PARTICLES];
 
 	int count = 0;
 	for (int i = 0; i < 30; i += 1) {
@@ -43,7 +45,7 @@ ParticleSystem::ParticleSystem() {
 		}
 	}
 	
-	gpuErrchk(cudaMemcpy(particles, tempParticles, numParticles * sizeof(Particle), cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpy(particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
 	delete[] tempParticles;
 	//srand((unsigned int)time(0));
 }
@@ -82,7 +84,7 @@ void ParticleSystem::setVBOWrapper(float* vboPtr) {
 }
 
 void ParticleSystem::confineToBox(FoamParticle &p) {
-	if (p.pos.x < 0 || p.pos.x > width) {
+	/*if (p.pos.x < 0 || p.pos.x > width) {
 		p.velocity.x = 0;
 		if (p.pos.x < 0) p.pos.x = 0.001f;
 		else p.pos.x = width - 0.001f;
@@ -98,13 +100,10 @@ void ParticleSystem::confineToBox(FoamParticle &p) {
 		p.velocity.z = 0;
 		if (p.pos.z < 0) p.pos.z = 0.001f;
 		else p.pos.z = depth - 0.001f;
-	}
+	}*/
 }
 
 void ParticleSystem::updatePositions2() {
-	fluidPositions.clear();
-	foamPositions.clear();
-
 	/*#pragma omp parallel for num_threads(8)
 	for (int i = 0; i < particles.size(); i++) {
 		Particle &p = particles.at(i);
@@ -115,47 +114,11 @@ void ParticleSystem::updatePositions2() {
 	//for (auto &p : particles) fluidPositions.push_back(getWeightedPosition(p));
 	//for (auto &p : particles) fluidPositions.push_back(p.oldPos);
 	
-	for (int i = 0; i < foam.size(); i++) {
-		FoamParticle &p = foam.at(i);
-		int r = rand() % foam.size();
+	//for (int i = 0; i < foam.size(); i++) {
+		//FoamParticle &p = foam.at(i);
+		//int r = rand() % foam.size();
 		//foamPositions.push_back(glm::vec4(p.pos.x, p.pos.y, p.pos.z, (p.type * 1000) + float(i) + abs(p.lifetime - lifetime) / lifetime));
-	}
-}
-
-vector<glm::vec3>& ParticleSystem::getFluidPositions() {
-	return fluidPositions;
-}
-
-vector<glm::vec4>& ParticleSystem::getFoamPositions() {
-	return foamPositions;
-}
-
-void ParticleSystem::setNeighbors() {
-	//#pragma omp parallel for num_threads(8)
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		p.neighbors.clear();
-		glm::ivec3 pos = p.newPos; //* 10;
-		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
-			for (auto &n : c->particles) {
-				if (glm::distance(p.newPos, n->newPos) <= H) {
-					p.neighbors.push_back(n);
-				}
-			}
-		}
-	}*/
-}
-
-void ParticleSystem::calcDensities() {
-	/*for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		float rhoSum = 0;
-		for (auto &n : p.neighbors) {
-			rhoSum += WPoly6(p.newPos, n->newPos);
-		}
-
-		buffer2[i] = rhoSum;
-	}*/
+	//}
 }
 
 void ParticleSystem::updateFoam() {

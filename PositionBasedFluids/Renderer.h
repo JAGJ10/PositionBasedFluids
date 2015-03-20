@@ -2,7 +2,6 @@
 #define RENDERER_H
 
 #include "common.h"
-#include "Cell.hpp"
 #include "ParticleSystem.h"
 #include "Shader.hpp"
 #include <GLFW/glfw3.h>

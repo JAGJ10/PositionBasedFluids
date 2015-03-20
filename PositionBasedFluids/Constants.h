@@ -5,44 +5,36 @@
 
 //---------------------Fluid Constants----------------------
 static const int PRESSURE_ITERATIONS = 4;
-static const int numParticles = 61440;
-static const int MAX_NEIGHBORS = 50;
-static const int MAX_PARTICLES = 50;
 static const int blockSize = 128;
-static const dim3 dims = int(numParticles / blockSize);
 
-static const int w = 50;
-static const int h = 50;
-static const int d = 30;
-static const int gridSize = w * h * d;
+#define gridWidth 50
+#define gridHeight 50
+#define gridDepth 30
+
+static const int gridSize = gridWidth * gridHeight * gridDepth;
+
+#define NUM_PARTICLES 61440
+#define NUM_FOAM 2000000
+#define MAX_NEIGHBORS 50
+#define MAX_PARTICLES 50
+#define GRID_SIZE gridSize
+
+static const dim3 dims = int(NUM_PARTICLES / blockSize);
 static const dim3 gridDims = int(ceil(gridSize / blockSize));
-
-#define NUM_PARTICLES_C numParticles
-#define MAX_NEIGHBORS_C MAX_NEIGHBORS
-#define MAX_PARTICLES_C MAX_PARTICLES
-#define GRID_SIZE_C gridSize
 
 #define deltaT 0.0083f
 #define PI 3.14159265358979323846f
 #define GRAVITY glm::vec3(0, -9.8f, 0)
 #define H 0.1f
-#define KPOLY (315.0f / (64.0f * PI * glm::pow(H, 9)))
-#define SPIKY (45.0f / (PI * glm::pow(H, 6)))
+#define KPOLY 1566681471.06084471147494f //(315.0f / (64.0f * PI * glm::pow(H, 9)))
+#define SPIKY 14323944.878270580219199538f //(45.0f / (PI * glm::pow(H, 6)))
 #define REST_DENSITY 6378.0f
 #define EPSILON_LAMBDA 600.0f
 #define EPSILON_VORTICITY 0.0001f
 #define C 0.01f
 #define K 0.00001f
 #define deltaQMag 0.3f * H
-#define wQH (KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3))
+#define wQH 1180.60572282879181f //(KPOLY * glm::pow((H * H - deltaQMag * deltaQMag), 3))
 #define lifetime 1.0f
-
-#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true) {
-	if (code != cudaSuccess) {
-		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-		if (abort) exit(code);
-	}
-}
 
 #endif

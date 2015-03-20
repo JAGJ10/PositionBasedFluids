@@ -1,15 +1,12 @@
 #ifndef FOAM_PARTICLE_H
 #define FOAM_PARTICLE_H
 
-class FoamParticle {
+struct FoamParticle {
 public:
 	glm::vec3 pos;
 	glm::vec3 velocity;
-	//float lifetime;
+	float ttl;
 	int type;
-
-	//FoamParticle(glm::vec3 pos, glm::vec3 velocity, float lifetime, int type) : pos(pos), 
-		//velocity(velocity), lifetime(lifetime), type(type) {}
 };
 
 #endif

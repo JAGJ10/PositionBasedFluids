@@ -68,9 +68,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CellGrid.cpp">
-      <Filter>Source Files\physics</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files\rendering</Filter>
     </ClCompile>
@@ -82,16 +79,10 @@
     <ClInclude Include="common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CellGrid.h">
-      <Filter>Header Files\water</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Header Files\rendering</Filter>
     </ClInclude>
     <ClInclude Include="Particle.hpp">
-      <Filter>Header Files\water</Filter>
-    </ClInclude>
-    <ClInclude Include="Cell.hpp">
       <Filter>Header Files\water</Filter>
     </ClInclude>
     <ClInclude Include="Shader.hpp">
