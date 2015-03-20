@@ -63,6 +63,9 @@
     <Filter Include="shaders\general">
       <UniqueIdentifier>{645086ed-259e-4ee8-adcd-3982bd34807d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\cloth">
+      <UniqueIdentifier>{d9ba68e2-da2a-4503-a821-3a4cbb863e76}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -99,6 +102,12 @@
     </ClInclude>
     <ClInclude Include="ParticleSystem.h">
       <Filter>Header Files\water</Filter>
+    </ClInclude>
+    <ClInclude Include="BendingConstraint.hpp">
+      <Filter>Header Files\cloth</Filter>
+    </ClInclude>
+    <ClInclude Include="DistanceConstaint.hpp">
+      <Filter>Header Files\cloth</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
