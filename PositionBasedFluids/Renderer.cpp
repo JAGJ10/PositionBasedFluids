@@ -12,7 +12,7 @@ static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
-static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
+static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f); //glm::vec4(0.1f, 0.4f, 0.8f, 1.0f);
 static float filterRadius = 3;
 static const float radius = 0.03f;
 static const float clothRadius = 0.03f;
@@ -47,17 +47,15 @@ void Renderer::run(Camera &cam) {
 		cudaGraphicsGLRegisterBuffer(&resource, fluidVBO, cudaGraphicsMapFlagsNone);
 		cudaGraphicsMapResources(1, &resource, 0);
 		size_t size;
-		cudaGraphicsResourceGetMappedPointer((void**)&vboPtr, &size, resource);
+		cudaGraphicsResourceGetMappedPointer((void**)&positionVBO, &size, resource);
 		for (int i = 0; i < 2; i++) {
 			system.updateWrapper();
 			//system.clothUpdate();
 		}
-		system.setVBOWrapper(vboPtr);
+		system.setVBOWrapper(positionVBO);
 		cudaGraphicsUnmapResources(1, &resource, 0);
 		//cudaGraphicsUnregisterResource(resource);
 	}
-
-	//cout << "Foam: " << foamPositions.size() << endl;
 
 	//Set camera
 	glm::mat4 mView = cam.getMView();
@@ -84,158 +82,8 @@ void Renderer::run(Camera &cam) {
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	//----------------------Particle Depth----------------------
-	glUseProgram(depth.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	//depth.shaderVAOPoints(fluidPositions);
-	depth.shaderVAOCuda(fluidVBO);
-
-	setMatrix(depth, mView, "mView");
-	setMatrix(depth, projection, "projection");
-	setFloat(depth, radius, "pointRadius");
-	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
-		
-	glBindVertexArray(depth.vao);
-		
-	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
-
-	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
-	
-	//--------------------Particle Blur-------------------------
-	glUseProgram(blur.program);
-
-	//Vertical blur
-	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboV);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	blur.shaderVAOQuad();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depth.tex);
-	GLint depthMap = glGetUniformLocation(blur.program, "depthMap");
-	glUniform1i(depthMap, 0);
-
-	setMatrix(blur, projection, "projection");
-	setVec2(blur, screenSize, "screenSize");
-	setVec2(blur, blurDirY, "blurDir");
-	setFloat(blur, filterRadius, "filterRadius");
-	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
-	setFloat(blur, 0.1f, "blurScale");
-
-	glEnable(GL_DEPTH_TEST);
-
-	glBindVertexArray(blur.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	//Horizontal blur
-	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboH);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, blur.texV);
-	depthMap = glGetUniformLocation(blur.program, "depthMap");
-	glUniform1i(depthMap, 0);
-
-	setVec2(blur, screenSize, "screenSize");
-	setMatrix(blur, projection, "projection");
-	setVec2(blur, blurDirX, "blurDir");
-	setFloat(blur, filterRadius, "filterRadius");
-	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
-	setFloat(blur, 0.1f, "blurScale");
-
-	glEnable(GL_DEPTH_TEST);
-
-	glBindVertexArray(blur.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	glDisable(GL_DEPTH_TEST);
-
-	//--------------------Particle Thickness-------------------------
-	glUseProgram(thickness.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, thickness.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//thickness.shaderVAOPoints(fluidPositions);
-	thickness.shaderVAOCuda(fluidVBO);
-
-	setMatrix(thickness, mView, "mView");
-	setMatrix(thickness, projection, "projection");
-	setFloat(depth, radius * 4.0f, "pointRadius");
-	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-	glBlendEquation(GL_FUNC_ADD);
-	glDepthMask(GL_FALSE);
-	//glEnable(GL_DEPTH_TEST);
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
-
-	glBindVertexArray(thickness.vao);
-
-	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
-
-	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-
-	//--------------------Particle fluidFinal-------------------------
-	glUseProgram(fluidFinal.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, fluidFinal.fbo);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	fluidFinal.shaderVAOQuad();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, blur.texH);
-	depthMap = glGetUniformLocation(fluidFinal.program, "depthMap");
-	glUniform1i(depthMap, 0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, thickness.tex);
-	GLint thicknessMap = glGetUniformLocation(fluidFinal.program, "thicknessMap");
-	glUniform1i(thicknessMap, 1);
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, plane.tex);
-	GLint sceneMap = glGetUniformLocation(fluidFinal.program, "sceneMap");
-	glUniform1i(sceneMap, 2);
-
-	setMatrix(fluidFinal, projection, "projection");
-	setMatrix(fluidFinal, mView, "mView");
-	setVec4(fluidFinal, color, "color");
-	setVec2(fluidFinal, glm::vec2(1.0f / width, 1.0f / height), "invTexScale");
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-
-	glBindVertexArray(fluidFinal.vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	glDisable(GL_DEPTH_TEST);
+	//--------------------WATER-------------------------
+	renderWater(projection, mView, cam);
 
 	//--------------------FOAM--------------------------
 	//renderFoam(projection, mView, cam);
@@ -372,6 +220,161 @@ void Renderer::setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name)
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m));
 }
 
+void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) {
+	//----------------------Particle Depth----------------------
+	glUseProgram(depth.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	//depth.shaderVAOPoints(fluidPositions);
+	depth.shaderVAOCuda(fluidVBO);
+
+	setMatrix(depth, mView, "mView");
+	setMatrix(depth, projection, "projection");
+	setFloat(depth, radius, "pointRadius");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
+
+	glBindVertexArray(depth.vao);
+
+	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
+
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
+
+	//--------------------Particle Blur-------------------------
+	glUseProgram(blur.program);
+
+	//Vertical blur
+	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboV);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	blur.shaderVAOQuad();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depth.tex);
+	GLint depthMap = glGetUniformLocation(blur.program, "depthMap");
+	glUniform1i(depthMap, 0);
+
+	setMatrix(blur, projection, "projection");
+	setVec2(blur, screenSize, "screenSize");
+	setVec2(blur, blurDirY, "blurDir");
+	setFloat(blur, filterRadius, "filterRadius");
+	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+	setFloat(blur, 0.1f, "blurScale");
+
+	glEnable(GL_DEPTH_TEST);
+
+	glBindVertexArray(blur.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	//Horizontal blur
+	glBindFramebuffer(GL_FRAMEBUFFER, blur.fboH);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, blur.texV);
+	depthMap = glGetUniformLocation(blur.program, "depthMap");
+	glUniform1i(depthMap, 0);
+
+	setVec2(blur, screenSize, "screenSize");
+	setMatrix(blur, projection, "projection");
+	setVec2(blur, blurDirX, "blurDir");
+	setFloat(blur, filterRadius, "filterRadius");
+	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+	setFloat(blur, 0.1f, "blurScale");
+
+	glEnable(GL_DEPTH_TEST);
+
+	glBindVertexArray(blur.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDisable(GL_DEPTH_TEST);
+
+	//--------------------Particle Thickness-------------------------
+	glUseProgram(thickness.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, thickness.fbo);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//thickness.shaderVAOPoints(fluidPositions);
+	thickness.shaderVAOCuda(fluidVBO);
+
+	setMatrix(thickness, mView, "mView");
+	setMatrix(thickness, projection, "projection");
+	setFloat(depth, radius * 4.0f, "pointRadius");
+	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glBlendEquation(GL_FUNC_ADD);
+	glDepthMask(GL_FALSE);
+	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
+
+	glBindVertexArray(thickness.vao);
+
+	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
+
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+	//--------------------Particle fluidFinal-------------------------
+	glUseProgram(fluidFinal.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, fluidFinal.fbo);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	fluidFinal.shaderVAOQuad();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, blur.texH);
+	depthMap = glGetUniformLocation(fluidFinal.program, "depthMap");
+	glUniform1i(depthMap, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, thickness.tex);
+	GLint thicknessMap = glGetUniformLocation(fluidFinal.program, "thicknessMap");
+	glUniform1i(thicknessMap, 1);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, plane.tex);
+	GLint sceneMap = glGetUniformLocation(fluidFinal.program, "sceneMap");
+	glUniform1i(sceneMap, 2);
+
+	setMatrix(fluidFinal, projection, "projection");
+	setMatrix(fluidFinal, mView, "mView");
+	setVec4(fluidFinal, color, "color");
+	setVec2(fluidFinal, glm::vec2(1.0f / width, 1.0f / height), "invTexScale");
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+
+	glBindVertexArray(fluidFinal.vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDisable(GL_DEPTH_TEST);
+}
+
 void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) {
 	//--------------------Foam Depth-------------------------
 	glUseProgram(foamDepth.program);
@@ -379,7 +382,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foamDepth.shaderVAOPointsFoam(foamPositions);
+	//foamDepth.shaderVAOPointsFoam(foamPositions);
 
 	setMatrix(foamDepth, projection, "projection");
 	setMatrix(foamDepth, mView, "mView");
@@ -394,7 +397,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 
 	glBindVertexArray(foamDepth.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
+	//glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
 
 	glDisable(GL_DEPTH_TEST);
 
@@ -404,7 +407,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foamThickness.shaderVAOPointsFoam(foamPositions);
+	//foamThickness.shaderVAOPointsFoam(foamPositions);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, foamDepth.tex2);
@@ -432,7 +435,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam) 
 
 	glBindVertexArray(foamThickness.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
+	//glDrawArrays(GL_POINTS, 0, (GLsizei)foamPositions.size());
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);

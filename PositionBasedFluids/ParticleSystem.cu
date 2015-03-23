@@ -9,7 +9,8 @@
 __constant__ int width = gridWidth * H;
 __constant__ int height = gridHeight * H;
 __constant__ int depth = gridDepth * H;
-__constant__ float distr[] = { 
+__constant__ float distr[] = 
+{ 
 	-0.34828757091811f, -0.64246175794046f, -0.15712936555833f, -0.28922267225069f, 0.70090742209037f,
 	0.54293139350737f, 0.86755128105523f, 0.68346917800767f, -0.74589352018474f, 0.39762042062246f,
 	-0.70243115988673f, -0.85088539675385f, -0.25780126697281f, 0.61167922970451f, -0.8751634423971f,
@@ -241,7 +242,7 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 	}
 }
 
-__global__ void calcDensities(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2) {
+__global__ void calcDensities(Particle* particles, int* neighbors, int* numNeighbors, float* densities) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES) return;
 
@@ -250,14 +251,14 @@ __global__ void calcDensities(Particle* particles, int* neighbors, int* numNeigh
 		rhoSum += WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
 	}
 
-	buffer2[index] = rhoSum;
+	densities[index] = rhoSum;
 }
 
-__global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* buffer2, float* buffer3) {
+__global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* densities, float* buffer3) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES) return;
 
-	float densityConstraint = (buffer2[index] / REST_DENSITY) - 1;
+	float densityConstraint = (densities[index] / REST_DENSITY) - 1;
 	glm::vec3 gradientI = glm::vec3(0.0f);
 	float sumGradients = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
@@ -321,7 +322,7 @@ __global__ void updateXSPHVelocities(Particle* particles, glm::vec3* buffer0) {
 	particles[index].velocity += buffer0[index] * deltaT;
 }
 
-__global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, int* neighbors, int* numNeighbors, float* buffer2) {
+__global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, int* neighbors, int* numNeighbors, float* densities) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES || foamCount >= NUM_FOAM) return;
 
@@ -337,7 +338,7 @@ __global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, i
 	}
 
 	float ek = 0.5f * glm::length2(particles[index].velocity);
-	float potential = velocityDiff * ek * max(1.0f - (1.0f * buffer2[index] / REST_DENSITY), 0.0f);
+	float potential = velocityDiff * ek * max(1.0f - (1.0f * densities[index] / REST_DENSITY), 0.0f);
 	int nd = 0;
 	if (potential > 0.7f) nd = min(20, (NUM_FOAM - 1 - foamCount));
 	nd = atomicAdd(&foamCount, nd);
@@ -363,16 +364,16 @@ __global__ void updateFoam(FoamParticle* foamParticles) {
 
 }
 
-__global__ void updateVBO(Particle* particles, float* vboPtr) {
+__global__ void updateVBO(Particle* particles, float* positionVBO) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES) return;
 
-	vboPtr[3 * index] = particles[index].oldPos.x;
-	vboPtr[3 * index + 1] = particles[index].oldPos.y;
-	vboPtr[3 * index + 2] = particles[index].oldPos.z;
+	positionVBO[3 * index] = particles[index].oldPos.x;
+	positionVBO[3 * index + 1] = particles[index].oldPos.y;
+	positionVBO[3 * index + 2] = particles[index].oldPos.z;
 }
 
-void update(Particle* particles, FoamParticle* foamParticles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* buffer0, glm::vec3* buffer1, float* buffer2, float* buffer3) {
+void updateWater(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* buffer0, glm::vec3* buffer1, float* densities, float* buffer3) {
 	int gridSize = gridWidth * gridHeight * gridDepth;
 	dim3 gridDims = int(ceil(gridSize / blockSize));
 	//------------------WATER-----------------
@@ -386,11 +387,11 @@ void update(Particle* particles, FoamParticle* foamParticles, int* gridCells, in
 	updateNeighbors<<<dims, blockSize>>>(particles, gridCells, gridCounters, neighbors, numNeighbors);
 
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
-		//Calculate fluid densities and store in buffer2
-		calcDensities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer2);
+		//Calculate fluid densities and store in densities
+		calcDensities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, densities);
 
 		//Calculate all lambdas and store in buffer3
-		calcLambda<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer2, buffer3);
+		calcLambda<<<dims, blockSize>>>(particles, neighbors, numNeighbors, densities, buffer3);
 
 		//calculate deltaP
 		calcDeltaP<<<dims, blockSize>>>(particles, neighbors, numNeighbors, buffer0, buffer3);
@@ -406,8 +407,17 @@ void update(Particle* particles, FoamParticle* foamParticles, int* gridCells, in
 	updateXSPHVelocities<<<dims, blockSize>>>(particles, buffer0);
 }
 
-void setVBO(Particle* particles, float* vboPtr) {
-	updateVBO<<<dims, blockSize>>>(particles, vboPtr);
+void updateCloth(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* buffer0, glm::vec3* buffer1, float* densities, float* buffer3) {
+
+}
+
+void update(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* buffer0, glm::vec3* buffer1, float* densities, float* buffer3) {
+	updateWater(particles, gridCells, gridCounters, neighbors, numNeighbors, buffer0, buffer1, densities, buffer3);
+	//updateCloth(particles, foamParticles, gridCells, gridCounters, neighbors, numNeighbors, buffer0, buffer1, densities, buffer3);
+}
+
+void setVBO(Particle* particles, float* positionVBO) {
+	updateVBO<<<dims, blockSize>>>(particles, positionVBO);
 }
 
 #endif

@@ -18,7 +18,7 @@ public:
 	int* gridCounters;
 	glm::vec3* buffer0;
 	glm::vec3* buffer1;
-	float* buffer2;
+	float* densities;
 	float* buffer3;
 
 	ParticleSystem();
@@ -30,7 +30,6 @@ public:
 private:
 	void updatePositions2();
 	void updateFoam();
-	void generateFoam();
 	float easeInOutQuad(float t, float b, float c, float d);
 
 	#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }

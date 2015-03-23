@@ -119,6 +119,6 @@ void handleInput(GLFWwindow* window, Renderer &render, Camera &cam) {
 
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 		cam.mouseMovement((float(xpos) - lastX), (lastY - float(ypos)), deltaTime);
 }

@@ -16,10 +16,8 @@ public:
 	ParticleSystem system;
 
 	cudaGraphicsResource *resource;
-	float* vboPtr;
+	float* positionVBO;
 	GLuint fluidVBO;
-	std::vector<glm::vec3> fluidPositions;
-	std::vector<glm::vec4> foamPositions;
 
 	bool running;
 
@@ -35,6 +33,7 @@ public:
 	Shader finalFS;
 
 private:
+	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
 	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
 	void initFramebuffers();
 	void setInt(Shader &shader, const int &x, const GLchar* name);
