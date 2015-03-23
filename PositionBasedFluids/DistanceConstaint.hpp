@@ -6,13 +6,11 @@
 
 class DistanceConstraint {
 public:
-	Particle *p1;
-	Particle *p2;
+	int p1;
+	int p2;
 	float restLength;
 
-	DistanceConstraint(Particle *p1, Particle *p2) : p1(p1), p2(p2) {
-		restLength = glm::length(p1->oldPos - p2->oldPos);
-	}
+	DistanceConstraint(int p1, int p2, float restLength) : p1(p1), p2(p2), restLength(restLength) {}
 };
 
 #endif
