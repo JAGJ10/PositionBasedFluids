@@ -162,12 +162,6 @@
     <None Include="radiance.vert">
       <Filter>shaders\foam\radiance</Filter>
     </None>
-    <None Include="cubemap.frag">
-      <Filter>shaders\general</Filter>
-    </None>
-    <None Include="cubemap.vert">
-      <Filter>shaders\general</Filter>
-    </None>
     <None Include="plane.vert">
       <Filter>shaders\general</Filter>
     </None>

@@ -295,7 +295,7 @@ void ParticleSystem::updateFoam() {
 }
 
 Particle& ParticleSystem::getIndex(float i, float j) {
-	return clothParticles.at(int(i * cols + j));
+	return int(i * cols + j);
 }*/
 
 float ParticleSystem::easeInOutQuad(float t, float b, float c, float d) {

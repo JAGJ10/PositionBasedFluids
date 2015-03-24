@@ -194,8 +194,6 @@
   <ItemGroup>
     <None Include="blur.frag" />
     <None Include="blur.vert" />
-    <None Include="cubemap.frag" />
-    <None Include="cubemap.vert" />
     <None Include="fluidFinal.frag" />
     <None Include="fluidFinal.vert" />
     <None Include="depth.frag" />
