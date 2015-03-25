@@ -16,7 +16,7 @@ public:
 	int* numNeighbors;
 	int* gridCells;
 	int* gridCounters;
-	glm::vec3* buffer0;
+	glm::vec3* deltaPs;
 	glm::vec3* buffer1;
 	float* densities;
 	float* buffer3;

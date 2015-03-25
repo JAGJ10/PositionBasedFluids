@@ -13,7 +13,7 @@ static const int blockSize = 128;
 
 static const int gridSize = gridWidth * gridHeight * gridDepth;
 
-#define NUM_PARTICLES 61440
+#define NUM_PARTICLES 1152
 #define NUM_FOAM 2000000
 #define MAX_NEIGHBORS 50
 #define MAX_PARTICLES 50

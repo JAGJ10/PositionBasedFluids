@@ -23,7 +23,7 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMalloc((void**)&numNeighbors, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&gridCounters, gridSize * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&buffer0, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMalloc((void**)&deltaPs, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&buffer1, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&densities, NUM_PARTICLES * sizeof(float)));
 	gpuErrchk(cudaMalloc((void**)&buffer3, NUM_PARTICLES * sizeof(float)));
@@ -36,7 +36,7 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMemset(numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMemset(gridCounters, 0, gridSize * sizeof(int)));
-	gpuErrchk(cudaMemset(buffer0, 0, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMemset(deltaPs, 0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMemset(buffer1, 0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMemset(densities, 0, NUM_PARTICLES * sizeof(float)));
 	gpuErrchk(cudaMemset(buffer3, 0, NUM_PARTICLES * sizeof(float)));
@@ -44,9 +44,9 @@ ParticleSystem::ParticleSystem() {
 	tempParticles = new Particle[NUM_PARTICLES];
 
 	int count = 0;
-	for (int i = 0; i < 30; i += 1) {
-		for (int j = 0; j < 64; j += 1) {
-			for (int k = 20; k < 52; k += 1) {
+	for (int i = 1; i < 33; i += 1) {
+		for (int j = 48; j < 49; j += 1) {
+			for (int k = 12; k < 16; k += 1) {
 				tempParticles[count].invMass = 1;
 				tempParticles[count].newPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
 				tempParticles[count].oldPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
@@ -57,24 +57,29 @@ ParticleSystem::ParticleSystem() {
 		}
 	}
 	
-	gpuErrchk(cudaMemcpy(particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
-	delete[] tempParticles;
+	
 	//srand((unsigned int)time(0));
 
 	//Initialize cloth particles
-	/*count = 0;
-	for (float i = 0; i < cols; i++) {
-		for (float j = 0; j < cols; j++) {
-			clothParticles.push_back(Particle(glm::vec3(i / cols, 4, j / cols), 1, count, 1));
-			if (j == 0.0f && i == 0.0f) clothParticles.back().invMass = 0;
-			if (i == cols - 1 && j == 0.0f) clothParticles.back().invMass = 0;
-			if (j == cols - 1 && i == cols - 1) clothParticles.back().invMass = 0;
-			if (i == 0.0f && j == cols - 1) clothParticles.back().invMass = 0;
+	
+	for (float i = 1; i < 33; i++) {
+		for (float j = 1; j < 33; j++) {
+			tempParticles[count].invMass = 1;
+			tempParticles[count].newPos = glm::vec3(float(i) / 20, 1.0f, float(j) / 20);
+			tempParticles[count].oldPos = glm::vec3(float(i) / 20, 1.0f, float(j) / 20);
+			tempParticles[count].velocity = glm::vec3(0.0f);
+			tempParticles[count].phase = 1;
+			//if (j == 0.0f && i == 0.0f) clothParticles.back().invMass = 0;
+			//if (i == cols - 1 && j == 0.0f) clothParticles.back().invMass = 0;
+			//if (j == cols - 1 && i == cols - 1) clothParticles.back().invMass = 0;
+			//if (i == 0.0f && j == cols - 1) clothParticles.back().invMass = 0;
 			count++;
 		}
 	}
+	gpuErrchk(cudaMemcpy(particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
+	delete[] tempParticles;
 	//Distance constraints
-	for (float i = 0; i < cols; i++) {
+	/*for (float i = 0; i < cols; i++) {
 		for (float j = 0; j < cols; j++) {
 			if (j > 0) dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i, j - 1)));
 			if (i > 0) dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i - 1, j)));
@@ -102,14 +107,14 @@ ParticleSystem::~ParticleSystem() {
 	gpuErrchk(cudaFree(numNeighbors));
 	gpuErrchk(cudaFree(gridCells));
 	gpuErrchk(cudaFree(gridCounters));
-	gpuErrchk(cudaFree(buffer0));
+	gpuErrchk(cudaFree(deltaPs));
 	gpuErrchk(cudaFree(buffer1));
 	gpuErrchk(cudaFree(densities));
 	gpuErrchk(cudaFree(buffer3));
 }
 
 void ParticleSystem::updateWrapper() {
-	update(particles, gridCells, gridCounters, neighbors, numNeighbors, buffer0, buffer1, densities, buffer3);
+	update(particles, gridCells, gridCounters, neighbors, numNeighbors, deltaPs, buffer1, densities, buffer3);
 	//Move wall
 	/*if (frameCounter >= 500) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
