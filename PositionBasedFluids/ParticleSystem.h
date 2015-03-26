@@ -5,13 +5,11 @@
 #include "Constants.h"
 #include "FoamParticle.hpp"
 #include "Particle.hpp"
+#include "DistanceConstraint.hpp"
 
-class ParticleSystem {
-public:
+struct Buffers {
 	Particle* particles;
-	Particle* tempParticles;
-	FoamParticle* foamParticles;
-	//int* freeList;
+	DistanceConstraint* dConstraints;
 	int* neighbors;
 	int* numNeighbors;
 	int* gridCells;
@@ -20,6 +18,15 @@ public:
 	glm::vec3* buffer1;
 	float* densities;
 	float* buffer3;
+	int numConstraints;
+};
+
+class ParticleSystem {
+public:
+	Buffers* p;
+	Particle* tempParticles;
+	std::vector<DistanceConstraint> tempdConstraints;
+	FoamParticle* foamParticles;
 
 	ParticleSystem();
 	~ParticleSystem();
@@ -29,6 +36,7 @@ public:
 
 private:
 	void updatePositions2();
+	int getIndex(float i, float j);
 	void updateFoam();
 	float easeInOutQuad(float t, float b, float c, float d);
 

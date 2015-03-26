@@ -106,7 +106,7 @@
     <ClInclude Include="BendingConstraint.hpp">
       <Filter>Header Files\cloth</Filter>
     </ClInclude>
-    <ClInclude Include="DistanceConstaint.hpp">
+    <ClInclude Include="DistanceConstraint.hpp">
       <Filter>Header Files\cloth</Filter>
     </ClInclude>
   </ItemGroup>

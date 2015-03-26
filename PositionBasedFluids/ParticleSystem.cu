@@ -3,10 +3,7 @@
 
 #include "common.h"
 #include "Constants.h"
-#include "Particle.hpp"
-#include "FoamParticle.hpp"
-#include "DistanceConstaint.hpp"
-#include "BendingConstraint.hpp"
+#include "ParticleSystem.h"
 
 __constant__ int width = gridWidth * H;
 __constant__ int height = gridHeight * H;
@@ -186,7 +183,7 @@ __global__ void predictPositions(Particle* particles) {
 	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
 
 	//update velocity vi = vi + dt * fExt
-	particles[index].velocity += GRAVITY * deltaT;
+	particles[index].velocity += particles[index].invMass * GRAVITY * deltaT;
 
 	//predict position x* = xi + dt * vi
 	particles[index].newPos += particles[index].velocity * deltaT;
@@ -262,15 +259,16 @@ __global__ void particleCollisions(Particle* particles, int* neighbors, int* num
 			glm::vec3 temp = particles[index].velocity;
 			//particles[index].velocity = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity;
 			//particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity = temp;
-			particles[index].velocity = glm::vec3(0, 10, 0);
-			deltaPs[index] += particles[index].velocity * deltaT;
+			deltaPs[index] += glm::vec3(0, 1, 0) * deltaT;
 			n++;
 		}
 	}
+
 	if (n > 0) {
 		deltaPs[index] /= glm::vec3(n);
 	}
-	particles[index].oldPos += deltaPs[index];
+
+	//particles[index].oldPos += deltaPs[index];
 	particles[index].newPos += deltaPs[index];
 }
 
@@ -403,49 +401,60 @@ __global__ void updateFoam(FoamParticle* foamParticles) {
 
 }
 
-void updateWater(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* deltaPs, glm::vec3* buffer1, float* densities, float* buffer3) {
+__global__ void clearDeltaP(Particle* particles, glm::vec3* deltaPs) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= NUM_PARTICLES || particles[index].phase != 1) return;
+
+	deltaPs[index] = glm::vec3(0);
+}
+
+__global__ void solveDistance(Particle* particles, glm::vec3* deltaPs) {
+
+}
+
+void updateWater(Buffers* p) {
 	//------------------WATER-----------------
 	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
 		//Calculate fluid densities and store in densities
-		calcDensities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, densities);
+		calcDensities<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->densities);
 
 		//Calculate all lambdas and store in buffer3
-		calcLambda<<<dims, blockSize>>>(particles, neighbors, numNeighbors, densities, buffer3);
+		calcLambda<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->densities, p->buffer3);
 
 		//calculate deltaP
-		calcDeltaP<<<dims, blockSize>>>(particles, neighbors, numNeighbors, deltaPs, buffer3);
+		calcDeltaP<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->deltaPs, p->buffer3);
 
 		//update position x*i = x*i + deltaPi
-		applyDeltaP<<<dims, blockSize>>>(particles, deltaPs);
+		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs);
 	}
 
 	//Update velocity, apply vorticity confinement, apply xsph viscosity, update position
-	updateVelocities<<<dims, blockSize>>>(particles, neighbors, numNeighbors, deltaPs);
+	updateVelocities<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->deltaPs);
 
 	//Set new velocity
-	updateXSPHVelocities<<<dims, blockSize>>>(particles, deltaPs);
+	updateXSPHVelocities<<<dims, blockSize>>>(p->particles, p->deltaPs);
 }
 
-void updateCloth(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* deltaPs, glm::vec3* buffer1, float* densities, float* buffer3) {
-	
+void updateCloth(Buffers* p) {
+	clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs);
 }
 
-void update(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, glm::vec3* deltaPs, glm::vec3* buffer1, float* densities, float* buffer3) {
+void update(Buffers* p) {
 	//Predict positions and update velocity
-	predictPositions<<<dims, blockSize>>>(particles);
+	predictPositions<<<dims, blockSize>>>(p->particles);
 
 	//Update neighbors
-	clearNeighbors<<<dims, blockSize>>>(neighbors, numNeighbors);
-	clearGrid<<<gridDims, blockSize>>>(gridCounters);
-	updateGrid<<<dims, blockSize>>>(particles, gridCells, gridCounters);
-	updateNeighbors<<<dims, blockSize>>>(particles, gridCells, gridCounters, neighbors, numNeighbors);
+	clearNeighbors<<<dims, blockSize>>>(p->neighbors, p->numNeighbors);
+	clearGrid<<<gridDims, blockSize>>>(p->gridCounters);
+	updateGrid<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters);
+	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors);
 
 	for (int i = 0; i < 2; i++) {
-		particleCollisions<<<dims, blockSize>>>(particles, neighbors, numNeighbors, deltaPs);
+		particleCollisions<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->deltaPs);
 	}
 
 	//Solve constraints
-	updateWater(particles, neighbors, numNeighbors, deltaPs, buffer1, densities, buffer3);
+	updateWater(p);
 	//updateCloth(particles, neighbors, numNeighbors, deltaPs, buffer1, densities, buffer3);
 }
 

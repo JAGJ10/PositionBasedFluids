@@ -15,31 +15,30 @@ static const float kLin = 1.0f - glm::pow(1.0f - kStretch, 1.0f / SOLVER_ITERATI
 static const float globalK = 0.0f; //0 means you aren't forcing it into a shape (like a plant)
 
 ParticleSystem::ParticleSystem() {
+	p = new Buffers;
 	//Initialize particles
-	gpuErrchk(cudaMalloc((void**)&particles, NUM_PARTICLES * sizeof(Particle)));
+	gpuErrchk(cudaMalloc((void**)&p->particles, NUM_PARTICLES * sizeof(Particle)));
 	//gpuErrchk(cudaMalloc((void**)&foamParticles, NUM_FOAM * sizeof(FoamParticle)));
-	//gpuErrchk(cudaMalloc((void**)&freeList, NUM_FOAM * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&neighbors, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&numNeighbors, NUM_PARTICLES * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&gridCounters, gridSize * sizeof(int)));
-	gpuErrchk(cudaMalloc((void**)&deltaPs, NUM_PARTICLES * sizeof(glm::vec3)));
-	gpuErrchk(cudaMalloc((void**)&buffer1, NUM_PARTICLES * sizeof(glm::vec3)));
-	gpuErrchk(cudaMalloc((void**)&densities, NUM_PARTICLES * sizeof(float)));
-	gpuErrchk(cudaMalloc((void**)&buffer3, NUM_PARTICLES * sizeof(float)));
+	gpuErrchk(cudaMalloc((void**)&p->neighbors, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&p->numNeighbors, NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&p->gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&p->gridCounters, gridSize * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&p->deltaPs, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMalloc((void**)&p->buffer1, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMalloc((void**)&p->densities, NUM_PARTICLES * sizeof(float)));
+	gpuErrchk(cudaMalloc((void**)&p->buffer3, NUM_PARTICLES * sizeof(float)));
 
 	//Clear memory in case it's left over from last time?
-	gpuErrchk(cudaMemset(particles, 0, NUM_PARTICLES * sizeof(Particle)));
+	gpuErrchk(cudaMemset(p->particles, 0, NUM_PARTICLES * sizeof(Particle)));
 	//gpuErrchk(cudaMemset(foamParticles, 0, NUM_FOAM * sizeof(FoamParticle)));
-	//gpuErrchk(cudaMemset(freeList, 0, NUM_FOAM * sizeof(int)));
-	gpuErrchk(cudaMemset(neighbors, 0, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
-	gpuErrchk(cudaMemset(numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
-	gpuErrchk(cudaMemset(gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
-	gpuErrchk(cudaMemset(gridCounters, 0, gridSize * sizeof(int)));
-	gpuErrchk(cudaMemset(deltaPs, 0, NUM_PARTICLES * sizeof(glm::vec3)));
-	gpuErrchk(cudaMemset(buffer1, 0, NUM_PARTICLES * sizeof(glm::vec3)));
-	gpuErrchk(cudaMemset(densities, 0, NUM_PARTICLES * sizeof(float)));
-	gpuErrchk(cudaMemset(buffer3, 0, NUM_PARTICLES * sizeof(float)));
+	gpuErrchk(cudaMemset(p->neighbors, 0, MAX_NEIGHBORS * NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMemset(p->numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMemset(p->gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
+	gpuErrchk(cudaMemset(p->gridCounters, 0, gridSize * sizeof(int)));
+	gpuErrchk(cudaMemset(p->deltaPs, 0, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMemset(p->buffer1, 0, NUM_PARTICLES * sizeof(glm::vec3)));
+	gpuErrchk(cudaMemset(p->densities, 0, NUM_PARTICLES * sizeof(float)));
+	gpuErrchk(cudaMemset(p->buffer3, 0, NUM_PARTICLES * sizeof(float)));
 
 	tempParticles = new Particle[NUM_PARTICLES];
 
@@ -57,11 +56,14 @@ ParticleSystem::ParticleSystem() {
 		}
 	}
 	
-	
 	//srand((unsigned int)time(0));
 
 	//Initialize cloth particles
-	
+	float stretchStiffness = 0.9f;
+	float bendStiffness = 1.0f;
+	float shearStiffness = 0.9f;
+
+	int baseIndex = count;
 	for (float i = 1; i < 33; i++) {
 		for (float j = 1; j < 33; j++) {
 			tempParticles[count].invMass = 1;
@@ -69,52 +71,94 @@ ParticleSystem::ParticleSystem() {
 			tempParticles[count].oldPos = glm::vec3(float(i) / 20, 1.0f, float(j) / 20);
 			tempParticles[count].velocity = glm::vec3(0.0f);
 			tempParticles[count].phase = 1;
-			//if (j == 0.0f && i == 0.0f) clothParticles.back().invMass = 0;
-			//if (i == cols - 1 && j == 0.0f) clothParticles.back().invMass = 0;
-			//if (j == cols - 1 && i == cols - 1) clothParticles.back().invMass = 0;
-			//if (i == 0.0f && j == cols - 1) clothParticles.back().invMass = 0;
+			if (j == 1.0f && i == 1.0f) tempParticles[count].invMass = 0;
+			if (i == 33 - 1 && j == 1.0f) tempParticles[count].invMass = 0;
+			if (j == 33 - 1 && i == 33 - 1) tempParticles[count].invMass = 0;
+			if (i == 1.0f && j == 33 - 1) tempParticles[count].invMass = 0;
 			count++;
 		}
 	}
-	gpuErrchk(cudaMemcpy(particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
+	
+	//Horizontal Distance constraints
+	p->numConstraints = 0;
+	for (float j = 0; j < 32; j++) {
+		for (float i = 0; i < 32; i++) {
+			int i0 = j * 32 + i;
+			if (i > 0) {
+				int i1 = j*32 + i - 1;
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i1, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i1].oldPos), stretchStiffness));
+				p->numConstraints++;
+			}
+
+			if (i > 1) {
+				int i2 = j * 32 + i - 2;
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i2, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i2].oldPos), bendStiffness));
+				p->numConstraints++;
+			}
+
+			if (j > 0 && i < 31) {
+				int iDiag = (j - 1)*32 + i + 1;
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + iDiag, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + iDiag].oldPos), shearStiffness));
+				p->numConstraints++;
+			}
+
+			if (j > 0 && i > 0) {
+				int iDiag = (j - 1) * 32 + i - 1;
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + iDiag, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + iDiag].oldPos), shearStiffness));
+				p->numConstraints++;
+			}
+		}
+	}
+
+	//Vertical Distance constraints
+	for (float i = 0; i < 32; i++) {
+		for (float j = 0; j < 32; j++) {
+			int i0 = j * 32 + i;
+			if (j > 0) {
+				int i1 = (j - 1) * 32 + i;
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i1, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i1].oldPos), stretchStiffness));
+				p->numConstraints++;
+			}
+
+			if (j > 1) {
+				int i1 = (j - 2) * 32 + i;
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i1, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i1].oldPos), stretchStiffness));
+				p->numConstraints++;
+			}
+		}
+	}
+
+	DistanceConstraint* temp = new DistanceConstraint[tempdConstraints.size()];
+	int cCount = 0;
+	for (auto &d : tempdConstraints) {
+		temp[cCount] = d;
+		cCount++;
+	}
+
+	gpuErrchk(cudaMemcpy(p->particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMemcpy(p->dConstraints, temp, p->numConstraints * sizeof(DistanceConstraint), cudaMemcpyHostToDevice));
 	delete[] tempParticles;
-	//Distance constraints
-	/*for (float i = 0; i < cols; i++) {
-		for (float j = 0; j < cols; j++) {
-			if (j > 0) dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i, j - 1)));
-			if (i > 0) dConstraints.push_back(DistanceConstraint(&getIndex(i, j), &getIndex(i - 1, j)));
-		}
-	}
-	//Need shearing constraint?
-	//Bending constraints
-	for (float i = 0; i < cols; i++) {
-		for (float j = 0; j < cols - 2; j++) {
-			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i, j + 1), &getIndex(i, j + 2)));
-		}
-	}
-	for (float i = 0; i < cols - 2; i++) {
-		for (float j = 0; j < cols; j++) {
-			bConstraints.push_back(BendingConstraint(&getIndex(i, j), &getIndex(i + 1, j), &getIndex(i + 2, j)));
-		}
-	}*/
+	delete[] temp;
+	tempdConstraints.clear();
 }
 
 ParticleSystem::~ParticleSystem() {
-	gpuErrchk(cudaFree(particles));
+	gpuErrchk(cudaFree(p->particles));
 	//gpuErrchk(cudaFree(foamParticles));
 	//gpuErrchk(cudaFree(freeList));
-	gpuErrchk(cudaFree(neighbors));
-	gpuErrchk(cudaFree(numNeighbors));
-	gpuErrchk(cudaFree(gridCells));
-	gpuErrchk(cudaFree(gridCounters));
-	gpuErrchk(cudaFree(deltaPs));
-	gpuErrchk(cudaFree(buffer1));
-	gpuErrchk(cudaFree(densities));
-	gpuErrchk(cudaFree(buffer3));
+	gpuErrchk(cudaFree(p->neighbors));
+	gpuErrchk(cudaFree(p->numNeighbors));
+	gpuErrchk(cudaFree(p->gridCells));
+	gpuErrchk(cudaFree(p->gridCounters));
+	gpuErrchk(cudaFree(p->deltaPs));
+	gpuErrchk(cudaFree(p->buffer1));
+	gpuErrchk(cudaFree(p->densities));
+	gpuErrchk(cudaFree(p->buffer3));
+	delete p;
 }
 
 void ParticleSystem::updateWrapper() {
-	update(particles, gridCells, gridCounters, neighbors, numNeighbors, deltaPs, buffer1, densities, buffer3);
+	update(p);
 	//Move wall
 	/*if (frameCounter >= 500) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
@@ -133,7 +177,7 @@ void ParticleSystem::updateWrapper() {
 }
 
 void ParticleSystem::setVBOWrapper(float* positionVBO) {
-	setVBO(particles, positionVBO);
+	setVBO(p->particles, positionVBO);
 }
 
 void ParticleSystem::updatePositions2() {
@@ -297,11 +341,11 @@ void ParticleSystem::updateFoam() {
 		// xi <- pi
 		p.oldPos = p.newPos;
 	}
-}
-
-Particle& ParticleSystem::getIndex(float i, float j) {
-	return int(i * cols + j);
 }*/
+
+int ParticleSystem::getIndex(float i, float j) {
+	return int(i * 20 + j);
+}
 
 float ParticleSystem::easeInOutQuad(float t, float b, float c, float d) {
 	t /= d / 2;
