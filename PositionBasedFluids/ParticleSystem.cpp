@@ -8,11 +8,11 @@ static int flag = 1;
 static int frameCounter = 0;
 
 //---------------------Cloth Constants----------------------
-static const int SOLVER_ITERATIONS = 16;
-static const float kStretch = 0.75f;
-static const float kDamp = 0.05f;
-static const float kLin = 1.0f - glm::pow(1.0f - kStretch, 1.0f / SOLVER_ITERATIONS);
-static const float globalK = 0.0f; //0 means you aren't forcing it into a shape (like a plant)
+//static const int SOLVER_ITERATIONS = 16;
+//static const float kStretch = 0.75f;
+//static const float kDamp = 0.05f;
+//static const float kLin = 1.0f - glm::pow(1.0f - kStretch, 1.0f / SOLVER_ITERATIONS);
+//static const float globalK = 0.0f; //0 means you aren't forcing it into a shape (like a plant)
 
 ParticleSystem::ParticleSystem() {
 	p = new Buffers;
@@ -64,28 +64,41 @@ ParticleSystem::ParticleSystem() {
 	float shearStiffness = 0.9f;
 
 	int baseIndex = count;
+	int c1, c2, c3, c4;
 	for (float i = 1; i < 33; i++) {
 		for (float j = 1; j < 33; j++) {
 			tempParticles[count].invMass = 1;
-			tempParticles[count].newPos = glm::vec3(float(i) / 20, 1.0f, float(j) / 20);
-			tempParticles[count].oldPos = glm::vec3(float(i) / 20, 1.0f, float(j) / 20);
+			tempParticles[count].newPos = glm::vec3(float(i) / 20, 2.0f, float(j) / 20);
+			tempParticles[count].oldPos = glm::vec3(float(i) / 20, 2.0f, float(j) / 20);
 			tempParticles[count].velocity = glm::vec3(0.0f);
 			tempParticles[count].phase = 1;
-			if (j == 1.0f && i == 1.0f) tempParticles[count].invMass = 0;
-			if (i == 33 - 1 && j == 1.0f) tempParticles[count].invMass = 0;
-			if (j == 33 - 1 && i == 33 - 1) tempParticles[count].invMass = 0;
-			if (i == 1.0f && j == 33 - 1) tempParticles[count].invMass = 0;
+			if (j == 1.0f && i == 1.0f) {
+				tempParticles[count].invMass = 0;
+				c1 = count;
+			}
+			if (i == 33 - 1 && j == 1.0f) {
+				tempParticles[count].invMass = 0;
+				c2 = count;
+			}
+			if (j == 33 - 1 && i == 33 - 1) {
+				tempParticles[count].invMass = 0;
+				c3 = count;
+			}
+			if (i == 1.0f && j == 33 - 1) {
+				tempParticles[count].invMass = 0;
+				c4 = count;
+			}
 			count++;
 		}
 	}
 	
 	//Horizontal Distance constraints
 	p->numConstraints = 0;
-	for (float j = 0; j < 32; j++) {
-		for (float i = 0; i < 32; i++) {
+	for (int j = 0; j < 32; j++) {
+		for (int i = 0; i < 32; i++) {
 			int i0 = j * 32 + i;
 			if (i > 0) {
-				int i1 = j*32 + i - 1;
+				int i1 = j * 32 + i - 1;
 				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i1, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i1].oldPos), stretchStiffness));
 				p->numConstraints++;
 			}
@@ -97,7 +110,7 @@ ParticleSystem::ParticleSystem() {
 			}
 
 			if (j > 0 && i < 31) {
-				int iDiag = (j - 1)*32 + i + 1;
+				int iDiag = (j - 1) * 32 + i + 1;
 				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + iDiag, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + iDiag].oldPos), shearStiffness));
 				p->numConstraints++;
 			}
@@ -111,8 +124,8 @@ ParticleSystem::ParticleSystem() {
 	}
 
 	//Vertical Distance constraints
-	for (float i = 0; i < 32; i++) {
-		for (float j = 0; j < 32; j++) {
+	for (int i = 0; i < 32; i++) {
+		for (int j = 0; j < 32; j++) {
 			int i0 = j * 32 + i;
 			if (j > 0) {
 				int i1 = (j - 1) * 32 + i;
@@ -122,28 +135,34 @@ ParticleSystem::ParticleSystem() {
 
 			if (j > 1) {
 				int i1 = (j - 2) * 32 + i;
-				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i1, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i1].oldPos), stretchStiffness));
+				tempdConstraints.push_back(DistanceConstraint(baseIndex + i0, baseIndex + i1, glm::length(tempParticles[baseIndex + i0].oldPos - tempParticles[baseIndex + i1].oldPos), bendStiffness));
 				p->numConstraints++;
 			}
 		}
 	}
 
-	DistanceConstraint* temp = new DistanceConstraint[tempdConstraints.size()];
-	int cCount = 0;
-	for (auto &d : tempdConstraints) {
-		temp[cCount] = d;
-		cCount++;
+	//Tethers
+	float stiffness = -1.0f;
+	for (int i = baseIndex; i < count; i++) {
+		if (tempParticles[i].invMass > 0) {
+			//tempdConstraints.push_back(DistanceConstraint(c1, i, glm::length(tempParticles[c1].oldPos - tempParticles[i].oldPos), stiffness));
+			//tempdConstraints.push_back(DistanceConstraint(c2, i, glm::length(tempParticles[c2].oldPos - tempParticles[i].oldPos), stiffness));
+			//tempdConstraints.push_back(DistanceConstraint(c3, i, glm::length(tempParticles[c3].oldPos - tempParticles[i].oldPos), stiffness));
+			//tempdConstraints.push_back(DistanceConstraint(c4, i, glm::length(tempParticles[c4].oldPos - tempParticles[i].oldPos), stiffness));
+			//p->numConstraints += 4;
+		}
 	}
-
+	
 	gpuErrchk(cudaMemcpy(p->particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
-	gpuErrchk(cudaMemcpy(p->dConstraints, temp, p->numConstraints * sizeof(DistanceConstraint), cudaMemcpyHostToDevice));
+	gpuErrchk(cudaMalloc((void**)&p->dConstraints, p->numConstraints * sizeof(DistanceConstraint)));
+	gpuErrchk(cudaMemcpy(p->dConstraints, tempdConstraints.data(), p->numConstraints * sizeof(DistanceConstraint), cudaMemcpyHostToDevice));
 	delete[] tempParticles;
-	delete[] temp;
 	tempdConstraints.clear();
 }
 
 ParticleSystem::~ParticleSystem() {
 	gpuErrchk(cudaFree(p->particles));
+	gpuErrchk(cudaFree(p->dConstraints));
 	//gpuErrchk(cudaFree(foamParticles));
 	//gpuErrchk(cudaFree(freeList));
 	gpuErrchk(cudaFree(p->neighbors));

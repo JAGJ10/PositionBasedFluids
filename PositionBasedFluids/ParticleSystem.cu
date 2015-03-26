@@ -180,7 +180,7 @@ __device__ int getGridIndex(glm::ivec3 pos) {
 
 __global__ void predictPositions(Particle* particles) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
+	if (index >= NUM_PARTICLES) return;
 
 	//update velocity vi = vi + dt * fExt
 	particles[index].velocity += particles[index].invMass * GRAVITY * deltaT;
@@ -256,19 +256,20 @@ __global__ void particleCollisions(Particle* particles, int* neighbors, int* num
 	int n = 0;
 	for (int i = 0; i < numNeighbors[index]; i++) {
 		if (phase == 0 && particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 1) {
-			glm::vec3 temp = particles[index].velocity;
+			//glm::vec3 temp = particles[index].velocity;
 			//particles[index].velocity = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity;
 			//particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity = temp;
-			deltaPs[index] += glm::vec3(0, 1, 0) * deltaT;
+			//deltaPs[index] += particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity * (3*deltaT);
+			deltaPs[index] += 2 * (H - glm::distance(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos)) * glm::normalize(-particles[index].velocity);
 			n++;
 		}
 	}
 
 	if (n > 0) {
-		deltaPs[index] /= glm::vec3(n);
+		deltaPs[index] /= n;
 	}
 
-	//particles[index].oldPos += deltaPs[index];
+	particles[index].oldPos += deltaPs[index];
 	particles[index].newPos += deltaPs[index];
 }
 
@@ -401,15 +402,55 @@ __global__ void updateFoam(FoamParticle* foamParticles) {
 
 }
 
-__global__ void clearDeltaP(Particle* particles, glm::vec3* deltaPs) {
+__global__ void clearDeltaP(Particle* particles, glm::vec3* deltaPs, float* buffer3) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES || particles[index].phase != 1) return;
 
 	deltaPs[index] = glm::vec3(0);
+	buffer3[index] = 0;
 }
 
-__global__ void solveDistance(Particle* particles, glm::vec3* deltaPs) {
+__global__ void solveDistance(Particle* particles, DistanceConstraint* dConstraints, int numConstraints, glm::vec3* deltaPs, float* buffer3) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= numConstraints) return;
 
+	DistanceConstraint &c = dConstraints[index];
+	glm::vec3 dir = particles[c.p1].newPos - particles[c.p2].newPos;
+	float length = glm::length(dir);
+	float invMass = particles[c.p1].invMass + particles[c.p2].invMass;
+	glm::vec3 dp;
+	if (length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
+	else dp = (1 / invMass) * (length - c.restLength) * (dir / length) * (1.0f - glm::pow(1.0f - c.stiffness, 1.0f / 64));
+	if (particles[c.p1].invMass > 0) {
+		atomicAdd(&deltaPs[c.p1].x, -dp.x);
+		atomicAdd(&deltaPs[c.p1].y, -dp.y);
+		atomicAdd(&deltaPs[c.p1].z, -dp.z);
+		buffer3[c.p1]++;
+	}
+
+	if (particles[c.p2].invMass > 0) {
+		atomicAdd(&deltaPs[c.p2].x, dp.x);
+		atomicAdd(&deltaPs[c.p2].y, dp.y);
+		atomicAdd(&deltaPs[c.p2].z, dp.z);
+		buffer3[c.p2]++;
+	}
+	//if (c.p1->invMass > 0) particles[c.p1].newPos -= deltaP * particles[c.p1].invMass;
+	//if (c.p2->invMass > 0) particles[c.p1].newPos += deltaP * particles[c.p2].invMass;
+}
+
+__global__ void applyClothDeltaP(Particle* particles, glm::vec3* deltaPs, float* buffer3) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= NUM_PARTICLES || particles[index].phase != 1) return;
+
+	if (particles[index].invMass > 0 && buffer3[index] > 0) particles[index].newPos += deltaPs[index] / buffer3[index];
+}
+
+__global__ void updateClothVelocity(Particle* particles) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= NUM_PARTICLES || particles[index].phase != 1) return;
+
+	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
+	particles[index].oldPos = particles[index].newPos;
 }
 
 void updateWater(Buffers* p) {
@@ -436,7 +477,15 @@ void updateWater(Buffers* p) {
 }
 
 void updateCloth(Buffers* p) {
-	clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs);
+	static const dim3 constraintDims = int(ceil(p->numConstraints / blockSize));
+	clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
+
+	for (int i = 0; i < SOLVER_ITERATIONS; i++) {
+		solveDistance<<<constraintDims, blockSize>>>(p->particles, p->dConstraints, p->numConstraints, p->deltaPs, p->buffer3);
+		applyClothDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
+	}
+
+	updateClothVelocity<<<dims, blockSize>>>(p->particles);
 }
 
 void update(Buffers* p) {
@@ -455,7 +504,7 @@ void update(Buffers* p) {
 
 	//Solve constraints
 	updateWater(p);
-	//updateCloth(particles, neighbors, numNeighbors, deltaPs, buffer1, densities, buffer3);
+	updateCloth(p);
 }
 
 __global__ void updateVBO(Particle* particles, float* positionVBO) {
