@@ -96,7 +96,30 @@ void Renderer::run(Camera &cam) {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//--------------------CLOTH-------------------------
+	glUseProgram(cloth.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	cloth.shaderVAOCuda(clothVBO);
+
+	setMatrix(cloth, mView, "mView");
+	setMatrix(cloth, projection, "projection");
+	setFloat(cloth, clothRadius, "pointRadius");
+	setFloat(cloth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glEnable(GL_POINT_SPRITE);
+
+	glBindVertexArray(cloth.vao);
+
+	glDrawArrays(GL_POINTS, 0, (GLsizei)1024);
+
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_POINT_SPRITE);
+	return;
 
 	//--------------------WATER-------------------------
 	renderWater(projection, mView, cam);

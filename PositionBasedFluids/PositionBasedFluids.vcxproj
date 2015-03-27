@@ -187,6 +187,8 @@
     <ClInclude Include="FoamParticle.hpp" />
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="ParticleSystem.h" />
+    <None Include="clothMesh.frag" />
+    <None Include="clothMesh.vert" />
     <None Include="ParticleSystem.cuh" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.hpp" />
