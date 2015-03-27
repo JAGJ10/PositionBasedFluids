@@ -146,14 +146,14 @@ ParticleSystem::ParticleSystem() {
 	}
 
 	//Tethers
-	float stiffness = -0.8f;
+	float stiffness = -0.05f;
 	for (int i = baseIndex; i < count; i++) {
 		if (tempParticles[i].invMass > 0) {
-			//tempdConstraints.push_back(DistanceConstraint(c1, i, glm::length(tempParticles[c1].oldPos - tempParticles[i].oldPos), stiffness));
-			//tempdConstraints.push_back(DistanceConstraint(c2, i, glm::length(tempParticles[c2].oldPos - tempParticles[i].oldPos), stiffness));
-			//tempdConstraints.push_back(DistanceConstraint(c3, i, glm::length(tempParticles[c3].oldPos - tempParticles[i].oldPos), stiffness));
-			//tempdConstraints.push_back(DistanceConstraint(c4, i, glm::length(tempParticles[c4].oldPos - tempParticles[i].oldPos), stiffness));
-			//p->numConstraints += 4;
+			tempdConstraints.push_back(DistanceConstraint(c1, i, glm::length(tempParticles[c1].oldPos - tempParticles[i].oldPos), stiffness));
+			tempdConstraints.push_back(DistanceConstraint(c2, i, glm::length(tempParticles[c2].oldPos - tempParticles[i].oldPos), stiffness));
+			tempdConstraints.push_back(DistanceConstraint(c3, i, glm::length(tempParticles[c3].oldPos - tempParticles[i].oldPos), stiffness));
+			tempdConstraints.push_back(DistanceConstraint(c4, i, glm::length(tempParticles[c4].oldPos - tempParticles[i].oldPos), stiffness));
+			p->numConstraints += 4;
 		}
 	}
 	

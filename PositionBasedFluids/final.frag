@@ -15,8 +15,8 @@ const float PI = 3.14159265358979323846f;
 void main() {
 	vec4 cloth = texture(clothMap, coord);
 	if (cloth.x > 0) {
-		fragColor = cloth;
-		return;
+		//fragColor = cloth;
+		//return;
 	}
 	float foamIntensity = texture(foamIntensityMap, coord).x;
 	float foamRadiance = texture(foamRadianceMap, coord).x;
@@ -35,5 +35,5 @@ void main() {
 	}
 
 	float squiggly = clamp(sum * (vec3(1, 1, 1) - vec3(0, 0.2, 0.6)), 0, 1);
-	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (1 - squiggly));
+	fragColor = cloth + (1 - foamIntensity) * fluid + (foamIntensity * (1 - squiggly));
 }

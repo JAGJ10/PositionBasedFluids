@@ -257,6 +257,7 @@ __global__ void particleCollisions(Particle* particles, int* contacts, int* numC
 
 	for (int i = 0; i < numContacts[index]; i++) {
 		int nIndex = contacts[index * MAX_CONTACTS + i];
+		if (particles[nIndex].invMass == 0) continue;
 		glm::vec3 dir = particles[index].newPos - particles[nIndex].newPos;
 		float length = glm::length(dir);
 		float invMass = particles[index].invMass + particles[nIndex].invMass;
@@ -264,9 +265,12 @@ __global__ void particleCollisions(Particle* particles, int* contacts, int* numC
 		if (length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
 		else dp = (1 / invMass) * (length - H) * (dir / length);
 		deltaPs[index] -= dp;
-		deltaPs[nIndex] += dp;
 		buffer3[index]++;
-		buffer3[nIndex]++;
+
+		atomicAdd(&deltaPs[nIndex].x, dp.x);
+		atomicAdd(&deltaPs[nIndex].y, dp.y);
+		atomicAdd(&deltaPs[nIndex].z, dp.z);
+		atomicAdd(&buffer3[nIndex], 1);
 	}
 }
 
@@ -418,19 +422,24 @@ __global__ void solveDistance(Particle* particles, DistanceConstraint* dConstrai
 	float invMass = particles[c.p1].invMass + particles[c.p2].invMass;
 	glm::vec3 dp;
 	if (length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
-	else dp = (1 / invMass) * (length - c.restLength) * (dir / length) * (1.0f - glm::pow(1.0f - c.stiffness, 1.0f / 64));
+	else {
+		if (c.stiffness > 0) dp = (1 / invMass) * (length - c.restLength) * (dir / length) * (1.0f - glm::pow(1.0f - c.stiffness, 1.0f / 4));
+		else if (length > c.restLength) {
+			dp += (1 / invMass) * (length - c.restLength) * (dir / length) * (1.0f - glm::pow(1.0f + c.stiffness, 1.0f / 4));
+		}
+	}
 	if (particles[c.p1].invMass > 0) {
 		atomicAdd(&deltaPs[c.p1].x, -dp.x);
 		atomicAdd(&deltaPs[c.p1].y, -dp.y);
 		atomicAdd(&deltaPs[c.p1].z, -dp.z);
-		buffer3[c.p1]++;
+		atomicAdd(&buffer3[c.p1], 1);
 	}
 
 	if (particles[c.p2].invMass > 0) {
 		atomicAdd(&deltaPs[c.p2].x, dp.x);
 		atomicAdd(&deltaPs[c.p2].y, dp.y);
 		atomicAdd(&deltaPs[c.p2].z, dp.z);
-		buffer3[c.p2]++;
+		atomicAdd(&buffer3[c.p2], 1);
 	}
 }
 
@@ -487,7 +496,7 @@ void update(Buffers* p) {
 	updateGrid<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters);
 	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors, p->contacts, p->numContacts);
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 20; i++) {
 		clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
 		particleCollisions<<<dims, blockSize>>>(p->particles, p->contacts, p->numContacts, p->deltaPs, p->buffer3);
 		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3, 1);

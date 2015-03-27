@@ -5,7 +5,7 @@
 
 //---------------------Fluid Constants----------------------
 static const int PRESSURE_ITERATIONS = 4;
-static const int SOLVER_ITERATIONS = 64;
+static const int SOLVER_ITERATIONS = 4;
 static const int blockSize = 128;
 
 #define gridWidth 50
