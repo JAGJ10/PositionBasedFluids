@@ -66,7 +66,7 @@ int main() {
 
 		render.run(cam);
 
-		/*ILuint imageID = ilGenImage();
+		ILuint imageID = ilGenImage();
 		ilBindImage(imageID);
 		ilutGLScreen();
 		ilEnable(IL_FILE_OVERWRITE);
@@ -76,7 +76,7 @@ int main() {
 		ilSaveImage(c);
 		//ilutGLScreenie();
 		ilDeleteImage(imageID);
-		w++;*/
+		w++;
 
 		// Swap the buffers
 		glfwSwapBuffers(window);

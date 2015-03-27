@@ -84,6 +84,16 @@ public:
 
 	}
 
+	~Shader() {
+		glDeleteBuffers(1, &fbo);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ebo);
+		glDeleteVertexArrays(1, &vao);
+		glDeleteTextures(1, &tex);
+		glDeleteTextures(1, &tex2);
+		glDeleteProgram(program);
+	}
+
 	void initFBO(GLuint &fbo) {
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);

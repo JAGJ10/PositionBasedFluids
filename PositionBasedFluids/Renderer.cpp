@@ -18,6 +18,9 @@ static const float radius = 0.03f;
 static const float clothRadius = 0.01f;
 static const float foamRadius = 0.01f;
 
+size_t size;
+size_t size1;
+
 Renderer::Renderer() :
 	running(true),
 	plane(Shader("plane.vert", "plane.frag")),
@@ -49,6 +52,8 @@ Renderer::Renderer() :
 Renderer::~Renderer() {
 	cudaGraphicsUnregisterResource(resource1);
 	cudaGraphicsUnregisterResource(resource2);
+	glDeleteBuffers(1, &fluidVBO);
+	glDeleteBuffers(1, &clothVBO);
 }
 
 void Renderer::run(Camera &cam) {
@@ -58,10 +63,9 @@ void Renderer::run(Camera &cam) {
 
 		cudaGraphicsGLRegisterBuffer(&resource2, clothVBO, cudaGraphicsMapFlagsNone);
 		cudaGraphicsMapResources(1, &resource2, 0);
-		size_t size;
+	
 		cudaGraphicsResourceGetMappedPointer((void**)&fluidPositions, &size, resource1);
 
-		size_t size1;
 		cudaGraphicsResourceGetMappedPointer((void**)&clothPositions, &size1, resource2);
 		for (int i = 0; i < 2; i++) {
 			system.updateWrapper();
@@ -118,7 +122,7 @@ void Renderer::run(Camera &cam) {
 
 	glBindVertexArray(cloth.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)1024);
+	glDrawArrays(GL_POINTS, 0, (GLsizei)size1);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
@@ -296,7 +300,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam)
 
 	glBindVertexArray(depth.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
+	glDrawArrays(GL_POINTS, 0, (GLsizei)size);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
@@ -382,7 +386,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam)
 
 	glBindVertexArray(thickness.vao);
 
-	glDrawArrays(GL_POINTS, 0, (GLsizei)NUM_PARTICLES);
+	glDrawArrays(GL_POINTS, 0, (GLsizei)size);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);

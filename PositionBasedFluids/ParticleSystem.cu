@@ -262,7 +262,7 @@ __global__ void particleCollisions(Particle* particles, int* contacts, int* numC
 		float length = glm::length(dir);
 		float invMass = particles[index].invMass + particles[nIndex].invMass;
 		glm::vec3 dp;
-		if (length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
+		if ((length - H) > 0.0f || length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
 		else dp = (1 / invMass) * (length - H) * (dir / length);
 		deltaPs[index] -= dp;
 		buffer3[index]++;
@@ -496,7 +496,7 @@ void update(Buffers* p) {
 	updateGrid<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters);
 	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors, p->contacts, p->numContacts);
 
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 4; i++) {
 		clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
 		particleCollisions<<<dims, blockSize>>>(p->particles, p->contacts, p->numContacts, p->deltaPs, p->buffer3);
 		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3, 1);

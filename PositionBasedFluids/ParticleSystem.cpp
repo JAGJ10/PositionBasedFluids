@@ -48,7 +48,7 @@ ParticleSystem::ParticleSystem() {
 
 	int count = 0;
 	for (int i = 1; i < 33; i += 1) {
-		for (int j = 48; j < 49; j += 1) {
+		for (int j = 48; j < 70; j += 1) {
 			for (int k = 12; k < 16; k += 1) {
 				tempParticles[count].invMass = 1;
 				tempParticles[count].newPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
@@ -71,7 +71,7 @@ ParticleSystem::ParticleSystem() {
 	int c1, c2, c3, c4;
 	for (float i = 1; i < 33; i++) {
 		for (float j = 1; j < 33; j++) {
-			tempParticles[count].invMass = 1;
+			tempParticles[count].invMass = .5f;
 			tempParticles[count].newPos = glm::vec3(float(i) / 20, 2.0f, float(j) / 20);
 			tempParticles[count].oldPos = glm::vec3(float(i) / 20, 2.0f, float(j) / 20);
 			tempParticles[count].velocity = glm::vec3(0.0f);
@@ -146,7 +146,7 @@ ParticleSystem::ParticleSystem() {
 	}
 
 	//Tethers
-	float stiffness = -0.05f;
+	float stiffness = -0.5f;
 	for (int i = baseIndex; i < count; i++) {
 		if (tempParticles[i].invMass > 0) {
 			tempdConstraints.push_back(DistanceConstraint(c1, i, glm::length(tempParticles[c1].oldPos - tempParticles[i].oldPos), stiffness));
