@@ -1,13 +1,18 @@
-#version 420 core
+#version 400 core
 
-in vec3 position;
+in vec3 vertexPos;
 
-uniform mat4 mView;
 uniform mat4 projection;
+uniform mat4 mView;
+uniform vec2 screenSize;
+uniform float pointRadius;
+uniform float pointScale;
 
-out vec3 fragPos;
+out vec3 pos;
 
 void main() {
-	gl_Position = projection * mView * vec4(position, 1.0);
-	fragPos = (mView * vec4(position, 1.0)).xyz;
+	vec4 viewPos = mView * vec4(vertexPos, 1.0);
+    gl_Position = projection * viewPos;
+	pos = viewPos.xyz;
+	gl_PointSize = pointScale * (pointRadius / gl_Position.w);
 }
