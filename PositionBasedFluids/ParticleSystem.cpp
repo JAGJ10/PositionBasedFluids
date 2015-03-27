@@ -142,7 +142,7 @@ ParticleSystem::ParticleSystem() {
 	}
 
 	//Tethers
-	float stiffness = -1.0f;
+	float stiffness = -0.8f;
 	for (int i = baseIndex; i < count; i++) {
 		if (tempParticles[i].invMass > 0) {
 			//tempdConstraints.push_back(DistanceConstraint(c1, i, glm::length(tempParticles[c1].oldPos - tempParticles[i].oldPos), stiffness));
@@ -195,8 +195,8 @@ void ParticleSystem::updateWrapper() {
 	frameCounter++;*/
 }
 
-void ParticleSystem::setVBOWrapper(float* positionVBO) {
-	setVBO(p->particles, positionVBO);
+void ParticleSystem::setVBOWrapper(float* fluidPositions, float* clothPositions) {
+	setVBO(p->particles, fluidPositions, clothPositions);
 }
 
 void ParticleSystem::updatePositions2() {

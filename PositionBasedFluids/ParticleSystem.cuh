@@ -5,6 +5,6 @@
 #include "ParticleSystem.h"
 
 void update(Buffers *p);
-void setVBO(Particle* particles, float* vboPtr);
+void setVBO(Particle* particles, float* fluidPositions, float* clothPositions);
 
 #endif

@@ -15,13 +15,17 @@ public:
 
 	ParticleSystem system;
 
-	cudaGraphicsResource *resource;
-	float* positionVBO;
+	cudaGraphicsResource *resource1;
+	cudaGraphicsResource *resource2;
+	float* fluidPositions;
+	float* clothPositions;
 	GLuint fluidVBO;
+	GLuint clothVBO;
 
 	bool running;
 
 	Shader plane;
+	Shader cloth;
 	Shader depth;
 	BlurShader blur;
 	Shader thickness;

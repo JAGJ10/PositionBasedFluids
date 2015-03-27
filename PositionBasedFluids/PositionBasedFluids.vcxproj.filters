@@ -66,6 +66,9 @@
     <Filter Include="Header Files\cloth">
       <UniqueIdentifier>{d9ba68e2-da2a-4503-a821-3a4cbb863e76}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\cloth">
+      <UniqueIdentifier>{f7164201-4158-43a6-981a-df6e36e6cf99}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

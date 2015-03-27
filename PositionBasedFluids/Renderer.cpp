@@ -21,6 +21,7 @@ static const float foamRadius = 0.01f;
 Renderer::Renderer() :
 	running(true),
 	plane(Shader("plane.vert", "plane.frag")),
+	cloth(Shader("cloth.vert", "cloth.frag")),
 	depth(Shader("depth.vert", "depth.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
@@ -35,7 +36,12 @@ Renderer::Renderer() :
 
 	glGenBuffers(1, &fluidVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &clothVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, clothVBO);
+	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	initFramebuffers();
 }
@@ -44,16 +50,23 @@ Renderer::~Renderer() {}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
-		cudaGraphicsGLRegisterBuffer(&resource, fluidVBO, cudaGraphicsMapFlagsNone);
-		cudaGraphicsMapResources(1, &resource, 0);
+		cudaGraphicsGLRegisterBuffer(&resource1, fluidVBO, cudaGraphicsMapFlagsNone);
+		cudaGraphicsMapResources(1, &resource1, 0);
+
+		cudaGraphicsGLRegisterBuffer(&resource2, clothVBO, cudaGraphicsMapFlagsNone);
+		cudaGraphicsMapResources(1, &resource2, 0);
 		size_t size;
-		cudaGraphicsResourceGetMappedPointer((void**)&positionVBO, &size, resource);
+		cudaGraphicsResourceGetMappedPointer((void**)&fluidPositions, &size, resource1);
+
+		size_t size1;
+		cudaGraphicsResourceGetMappedPointer((void**)&clothPositions, &size1, resource2);
 		for (int i = 0; i < 2; i++) {
 			system.updateWrapper();
 			//system.clothUpdate();
 		}
-		system.setVBOWrapper(positionVBO);
-		cudaGraphicsUnmapResources(1, &resource, 0);
+		system.setVBOWrapper(fluidPositions, clothPositions);
+		cudaGraphicsUnmapResources(1, &resource1, 0);
+		cudaGraphicsUnmapResources(1, &resource2, 0);
 		//cudaGraphicsUnregisterResource(resource);
 	}
 
@@ -81,6 +94,9 @@ void Renderer::run(Camera &cam) {
 	glBindVertexArray(plane.vao);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	//--------------------CLOTH-------------------------
+
 
 	//--------------------WATER-------------------------
 	renderWater(projection, mView, cam);

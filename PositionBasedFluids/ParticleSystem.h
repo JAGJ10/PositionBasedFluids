@@ -32,7 +32,7 @@ public:
 	~ParticleSystem();
 
 	void updateWrapper();
-	void setVBOWrapper(float* vboPtr);
+	void setVBOWrapper(float* fluidPositions, float* clothPositions);
 
 private:
 	void updatePositions2();

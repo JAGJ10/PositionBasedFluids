@@ -260,7 +260,7 @@ __global__ void particleCollisions(Particle* particles, int* neighbors, int* num
 			//particles[index].velocity = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity;
 			//particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity = temp;
 			//deltaPs[index] += particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity * (3*deltaT);
-			deltaPs[index] += 2 * (H - glm::distance(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos)) * glm::normalize(-particles[index].velocity);
+			deltaPs[index] += (H - glm::distance(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos)) * glm::normalize(-particles[index].velocity);
 			n++;
 		}
 	}
@@ -329,7 +329,7 @@ __global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbor
 
 __global__ void applyDeltaP(Particle* particles, glm::vec3* deltaPs) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
 
 	particles[index].newPos += deltaPs[index];
 }
@@ -434,8 +434,6 @@ __global__ void solveDistance(Particle* particles, DistanceConstraint* dConstrai
 		atomicAdd(&deltaPs[c.p2].z, dp.z);
 		buffer3[c.p2]++;
 	}
-	//if (c.p1->invMass > 0) particles[c.p1].newPos -= deltaP * particles[c.p1].invMass;
-	//if (c.p2->invMass > 0) particles[c.p1].newPos += deltaP * particles[c.p2].invMass;
 }
 
 __global__ void applyClothDeltaP(Particle* particles, glm::vec3* deltaPs, float* buffer3) {
@@ -507,17 +505,23 @@ void update(Buffers* p) {
 	updateCloth(p);
 }
 
-__global__ void updateVBO(Particle* particles, float* positionVBO) {
+__global__ void updateVBO(Particle* particles, float* fluidPositions, float* clothPositions) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES) return;
 
-	positionVBO[3 * index] = particles[index].oldPos.x;
-	positionVBO[3 * index + 1] = particles[index].oldPos.y;
-	positionVBO[3 * index + 2] = particles[index].oldPos.z;
+	if (particles[index].phase == 0) {
+		fluidPositions[3 * index] = particles[index].oldPos.x;
+		fluidPositions[3 * index + 1] = particles[index].oldPos.y;
+		fluidPositions[3 * index + 2] = particles[index].oldPos.z;
+	} else {
+		clothPositions[3 * index] = particles[index].oldPos.x;
+		clothPositions[3 * index + 1] = particles[index].oldPos.y;
+		clothPositions[3 * index + 2] = particles[index].oldPos.z;
+	}
 }
 
-void setVBO(Particle* particles, float* positionVBO) {
-	updateVBO<<<dims, blockSize>>>(particles, positionVBO);
+void setVBO(Particle* particles, float* fluidPositions, float* clothPositions) {
+	updateVBO<<<dims, blockSize>>>(particles, fluidPositions, clothPositions);
 }
 
 #endif
