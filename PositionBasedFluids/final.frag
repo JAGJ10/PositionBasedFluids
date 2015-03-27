@@ -5,6 +5,7 @@ in vec2 coord;
 uniform sampler2D fluidMap;
 uniform sampler2D foamIntensityMap;
 uniform sampler2D foamRadianceMap;
+uniform sampler2D clothMap;
 uniform vec2 screenSize;
 
 out vec4 fragColor;
@@ -12,6 +13,11 @@ out vec4 fragColor;
 const float PI = 3.14159265358979323846f;
 
 void main() {
+	vec4 cloth = texture(clothMap, coord);
+	if (cloth.x > 0) {
+		fragColor = cloth;
+		return;
+	}
 	float foamIntensity = texture(foamIntensityMap, coord).x;
 	float foamRadiance = texture(foamRadianceMap, coord).x;
 	float hPass = texture(foamRadianceMap, coord).y;

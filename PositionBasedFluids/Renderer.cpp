@@ -15,7 +15,7 @@ static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f); //glm::vec4(0.1f, 0.4f, 0.8f, 1.0f);
 static float filterRadius = 3;
 static const float radius = 0.03f;
-static const float clothRadius = 0.03f;
+static const float clothRadius = 0.01f;
 static const float foamRadius = 0.01f;
 
 Renderer::Renderer() :
@@ -46,7 +46,10 @@ Renderer::Renderer() :
 	initFramebuffers();
 }
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() {
+	cudaGraphicsUnregisterResource(resource1);
+	cudaGraphicsUnregisterResource(resource2);
+}
 
 void Renderer::run(Camera &cam) {
 	if (running) {
@@ -97,7 +100,7 @@ void Renderer::run(Camera &cam) {
 
 	//--------------------CLOTH-------------------------
 	glUseProgram(cloth.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, cloth.fbo);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -119,7 +122,6 @@ void Renderer::run(Camera &cam) {
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glDisable(GL_POINT_SPRITE);
-	return;
 
 	//--------------------WATER-------------------------
 	renderWater(projection, mView, cam);
@@ -150,6 +152,11 @@ void Renderer::run(Camera &cam) {
 	GLint foamRadianceMap = glGetUniformLocation(finalFS.program, "foamRadianceMap");
 	glUniform1i(foamRadianceMap, 2);
 
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, cloth.tex);
+	GLint clothMap = glGetUniformLocation(finalFS.program, "clothMap");
+	glUniform1i(clothMap, 3);
+
 	setVec2(foamRadiance, screenSize, "screenSize");
 
 	glBindVertexArray(finalFS.vao);
@@ -166,6 +173,12 @@ void Renderer::initFramebuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, plane.fbo);
 	plane.initTexture(width, height, GL_RGBA, GL_RGBA32F, plane.tex);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, plane.tex, 0);
+
+	//Cloth buffer
+	cloth.initFBO(cloth.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, cloth.fbo);
+	cloth.initTexture(width, height, GL_RGBA, GL_RGBA32F, cloth.tex);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cloth.tex, 0);
 
 	//Depth buffer
 	depth.initFBO(depth.fbo);

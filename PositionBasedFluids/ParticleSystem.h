@@ -14,6 +14,8 @@ struct Buffers {
 	int* numNeighbors;
 	int* gridCells;
 	int* gridCounters;
+	int* contacts;
+	int* numContacts;
 	glm::vec3* deltaPs;
 	glm::vec3* buffer1;
 	float* densities;

@@ -18,6 +18,7 @@ static const int gridSize = gridWidth * gridHeight * gridDepth;
 #define NUM_FOAM 2000000
 #define MAX_NEIGHBORS 50
 #define MAX_PARTICLES 50
+#define MAX_CONTACTS 10
 #define GRID_SIZE gridSize
 
 static const dim3 dims = int(NUM_PARTICLES / blockSize);

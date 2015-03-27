@@ -191,11 +191,12 @@ __global__ void predictPositions(Particle* particles) {
 	confineToBox(particles[index]);
 }
 
-__global__ void clearNeighbors(int* neighbors, int* numNeighbors) {
+__global__ void clearNeighbors(int* numNeighbors, int* numContacts) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES) return;
 
 	numNeighbors[index] = 0;
+	numContacts[index] = 0;
 }
 
 __global__ void clearGrid(int* gridCounters) {
@@ -217,7 +218,7 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 	gridCells[gIndex * MAX_PARTICLES + i] = index;
 }
 
-__global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors) {
+__global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, int* contacts, int* numContacts) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES) return;
 	
@@ -238,6 +239,10 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 						if (glm::distance(particles[index].newPos, particles[pIndex].newPos) <= H) {
 							neighbors[(index * MAX_NEIGHBORS) + numNeighbors[index]] = pIndex;
 							numNeighbors[index]++;
+							if (particles[index].phase == 0 && particles[pIndex].phase == 1 && numContacts[index] < MAX_CONTACTS) {
+								contacts[index * MAX_CONTACTS + numContacts[index]] = pIndex;
+								numContacts[index]++;
+							}
 						}
 					}
 				}
@@ -491,10 +496,10 @@ void update(Buffers* p) {
 	predictPositions<<<dims, blockSize>>>(p->particles);
 
 	//Update neighbors
-	clearNeighbors<<<dims, blockSize>>>(p->neighbors, p->numNeighbors);
+	clearNeighbors<<<dims, blockSize>>>(p->numNeighbors, p->numContacts);
 	clearGrid<<<gridDims, blockSize>>>(p->gridCounters);
 	updateGrid<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters);
-	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors);
+	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors, p->contacts, p->numContacts);
 
 	for (int i = 0; i < 2; i++) {
 		particleCollisions<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->deltaPs);

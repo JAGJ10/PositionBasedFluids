@@ -23,6 +23,8 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMalloc((void**)&p->numNeighbors, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&p->gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&p->gridCounters, gridSize * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&p->contacts, MAX_CONTACTS * NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMalloc((void**)&p->numContacts, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMalloc((void**)&p->deltaPs, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&p->buffer1, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMalloc((void**)&p->densities, NUM_PARTICLES * sizeof(float)));
@@ -35,6 +37,8 @@ ParticleSystem::ParticleSystem() {
 	gpuErrchk(cudaMemset(p->numNeighbors, 0, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(p->gridCells, 0, MAX_PARTICLES * gridSize * sizeof(int)));
 	gpuErrchk(cudaMemset(p->gridCounters, 0, gridSize * sizeof(int)));
+	gpuErrchk(cudaMemset(p->contacts, 0, MAX_CONTACTS * NUM_PARTICLES * sizeof(int)));
+	gpuErrchk(cudaMemset(p->numContacts, 0, NUM_PARTICLES * sizeof(int)));
 	gpuErrchk(cudaMemset(p->deltaPs, 0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMemset(p->buffer1, 0, NUM_PARTICLES * sizeof(glm::vec3)));
 	gpuErrchk(cudaMemset(p->densities, 0, NUM_PARTICLES * sizeof(float)));
@@ -169,6 +173,8 @@ ParticleSystem::~ParticleSystem() {
 	gpuErrchk(cudaFree(p->numNeighbors));
 	gpuErrchk(cudaFree(p->gridCells));
 	gpuErrchk(cudaFree(p->gridCounters));
+	gpuErrchk(cudaFree(p->contacts));
+	gpuErrchk(cudaFree(p->numContacts));
 	gpuErrchk(cudaFree(p->deltaPs));
 	gpuErrchk(cudaFree(p->buffer1));
 	gpuErrchk(cudaFree(p->densities));
