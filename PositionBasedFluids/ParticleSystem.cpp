@@ -48,8 +48,8 @@ ParticleSystem::ParticleSystem() {
 
 	int count = 0;
 	for (int i = 1; i < 33; i += 1) {
-		for (int j = 48; j < 70; j += 1) {
-			for (int k = 12; k < 16; k += 1) {
+		for (int j = 1; j < 65; j += 1) {
+			for (int k = 1; k < 33; k += 1) {
 				tempParticles[count].invMass = 1;
 				tempParticles[count].newPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
 				tempParticles[count].oldPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
@@ -63,7 +63,7 @@ ParticleSystem::ParticleSystem() {
 	//srand((unsigned int)time(0));
 
 	//Initialize cloth particles
-	float stretchStiffness = 0.9f;
+	/*float stretchStiffness = 0.9f;
 	float bendStiffness = 1.0f;
 	float shearStiffness = 0.9f;
 
@@ -155,13 +155,13 @@ ParticleSystem::ParticleSystem() {
 			tempdConstraints.push_back(DistanceConstraint(c4, i, glm::length(tempParticles[c4].oldPos - tempParticles[i].oldPos), stiffness));
 			p->numConstraints += 4;
 		}
-	}
+	}*/
 	
 	gpuErrchk(cudaMemcpy(p->particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
-	gpuErrchk(cudaMalloc((void**)&p->dConstraints, p->numConstraints * sizeof(DistanceConstraint)));
-	gpuErrchk(cudaMemcpy(p->dConstraints, tempdConstraints.data(), p->numConstraints * sizeof(DistanceConstraint), cudaMemcpyHostToDevice));
+	//gpuErrchk(cudaMalloc((void**)&p->dConstraints, p->numConstraints * sizeof(DistanceConstraint)));
+	//gpuErrchk(cudaMemcpy(p->dConstraints, tempdConstraints.data(), p->numConstraints * sizeof(DistanceConstraint), cudaMemcpyHostToDevice));
 	delete[] tempParticles;
-	tempdConstraints.clear();
+	//tempdConstraints.clear();
 }
 
 ParticleSystem::~ParticleSystem() {

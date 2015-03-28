@@ -496,15 +496,15 @@ void update(Buffers* p) {
 	updateGrid<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters);
 	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors, p->contacts, p->numContacts);
 
-	for (int i = 0; i < 4; i++) {
+	/*for (int i = 0; i < 4; i++) {
 		clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
 		particleCollisions<<<dims, blockSize>>>(p->particles, p->contacts, p->numContacts, p->deltaPs, p->buffer3);
 		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3, 1);
-	}
+	}*/
 
 	//Solve constraints
 	updateWater(p);
-	updateCloth(p);
+	//updateCloth(p);
 }
 
 __global__ void updateVBO(Particle* particles, float* fluidPositions, float* clothPositions) {
@@ -516,9 +516,9 @@ __global__ void updateVBO(Particle* particles, float* fluidPositions, float* clo
 		fluidPositions[3 * index + 1] = particles[index].oldPos.y;
 		fluidPositions[3 * index + 2] = particles[index].oldPos.z;
 	} else {
-		clothPositions[3 * index] = particles[index].oldPos.x;
-		clothPositions[3 * index + 1] = particles[index].oldPos.y;
-		clothPositions[3 * index + 2] = particles[index].oldPos.z;
+		//clothPositions[3 * index] = particles[index].oldPos.x;
+		//clothPositions[3 * index + 1] = particles[index].oldPos.y;
+		//clothPositions[3 * index + 2] = particles[index].oldPos.z;
 	}
 }
 
