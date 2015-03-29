@@ -22,7 +22,7 @@ size_t size;
 size_t size1;
 
 Renderer::Renderer() :
-	running(true),
+	running(false),
 	plane(Shader("plane.vert", "plane.frag")),
 	cloth(Shader("cloth.vert", "cloth.frag")),
 	depth(Shader("depth.vert", "depth.frag")),
@@ -39,12 +39,12 @@ Renderer::Renderer() :
 
 	glGenBuffers(1, &fluidVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 0 * 3 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenBuffers(1, &clothVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, clothVBO);
-	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * 3 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 0 * 3 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	initFramebuffers();
 }

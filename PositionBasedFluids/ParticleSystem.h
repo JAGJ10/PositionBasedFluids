@@ -2,33 +2,17 @@
 #define PARTICLE_SYSTEM_H
 
 #include "common.h"
-#include "Constants.h"
+#include "parameters.h"
 #include "FoamParticle.hpp"
 #include "Particle.hpp"
 #include "DistanceConstraint.hpp"
 
-struct Buffers {
-	Particle* particles;
-	DistanceConstraint* dConstraints;
-	int* neighbors;
-	int* numNeighbors;
-	int* gridCells;
-	int* gridCounters;
-	int* contacts;
-	int* numContacts;
-	glm::vec3* deltaPs;
-	glm::vec3* buffer1;
-	float* densities;
-	float* buffer3;
-	int numConstraints;
-};
-
 class ParticleSystem {
 public:
-	Buffers* p;
-	Particle* tempParticles;
+	solver* s;
+	solverParams* sp;
+
 	std::vector<DistanceConstraint> tempdConstraints;
-	FoamParticle* foamParticles;
 
 	ParticleSystem();
 	~ParticleSystem();
@@ -49,6 +33,8 @@ private:
 			if (abort) exit(code);
 		}
 	}
+
+	#define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
 };
 
 #endif

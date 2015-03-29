@@ -2,14 +2,20 @@
 #define PARTICLE_SYSTEM_CU
 
 #include "common.h"
-#include "Constants.h"
-#include "ParticleSystem.h"
+#include "parameters.h"
 
-__constant__ int width = gridWidth * H;
-__constant__ int height = gridHeight * H;
-__constant__ int depth = gridDepth * H;
-__constant__ float distr[] = 
-{ 
+#define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
+static dim3 dims;
+static dim3 gridDims;
+static const int blockSize = 128;
+
+__constant__ solverParams sp;
+__constant__ float deltaT = 0.0083f;
+__device__ int MAX_NEIGHBORS = 50;
+__device__ int MAX_PARTICLES = 50;
+__device__ int MAX_CONTACTS = 10;
+__constant__ float distr[] =
+{
 	-0.34828757091811f, -0.64246175794046f, -0.15712936555833f, -0.28922267225069f, 0.70090742209037f,
 	0.54293139350737f, 0.86755128105523f, 0.68346917800767f, -0.74589352018474f, 0.39762042062246f,
 	-0.70243115988673f, -0.85088539675385f, -0.25780126697281f, 0.61167922970451f, -0.8751634423971f,
@@ -17,75 +23,74 @@ __constant__ float distr[] =
 	-0.33928178406287f, -0.27579196788175f, -0.5057460942798f, 0.2341509513716f, 0.97802030852904f,
 	0.49743173248015f, -0.92212845381448f, 0.088328595779989f, -0.70214782175708f, -0.67050553191011f
 };
-__device__ int foamCount = 0;
 
-__device__ float WPoly6(glm::vec3 &pi, glm::vec3 &pj) {
+__device__ float WPoly6(glm::vec3 const &pi, glm::vec3 const &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
-	if (rLen > H || rLen == 0) {
+	if (rLen > sp.restDistance || rLen == 0) {
 		return 0;
 	}
 
-	return KPOLY * glm::pow((H * H - glm::length2(r)), 3);
+	return sp.KPOLY * glm::pow((sp.restDistance * sp.restDistance - glm::length2(r)), 3);
 }
 
-__device__ glm::vec3 gradWPoly6(glm::vec3 &pi, glm::vec3 &pj) {
+__device__ glm::vec3 gradWPoly6(glm::vec3 const &pi, glm::vec3 const &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
-	if (rLen > H || rLen == 0) {
+	if (rLen > sp.restDistance || rLen == 0) {
 		return glm::vec3(0.0f);
 	}
 
-	float coeff = glm::pow((H * H) - (rLen * rLen), 2);
-	coeff *= -6 * KPOLY;
+	float coeff = glm::pow((sp.restDistance * sp.restDistance) - (rLen * rLen), 2);
+	coeff *= -6 * sp.KPOLY;
 	return r * coeff;
 }
 
-__device__ glm::vec3 WSpiky(glm::vec3 &pi, glm::vec3 &pj) {
+__device__ glm::vec3 WSpiky(glm::vec3 const &pi, glm::vec3 const &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
-	if (rLen > H || rLen == 0) {
+	if (rLen > sp.restDistance || rLen == 0) {
 		return glm::vec3(0.0f);
 	}
 
-	float coeff = (H - rLen) * (H - rLen);
-	coeff *= SPIKY;
+	float coeff = (sp.restDistance - rLen) * (sp.restDistance - rLen);
+	coeff *= sp.SPIKY;
 	coeff /= rLen;
 	return r * -coeff;
 }
 
-__device__ float WAirPotential(glm::vec3 &pi, glm::vec3 &pj) {
+__device__ float WAirPotential(glm::vec3 const &pi, glm::vec3 const &pj) {
 	glm::vec3 r = pi - pj;
 	float rLen = glm::length(r);
-	if (rLen > H || rLen == 0) {
+	if (rLen > sp.restDistance || rLen == 0) {
 		return 0.0f;
 	}
 
-	return 1 - (rLen / H);
+	return 1 - (rLen / sp.restDistance);
 }
 
 //Returns the eta vector that points in the direction of the corrective force
-__device__ glm::vec3 eta(Particle* particles, int* neighbors, int* numNeighbors, int index, float &vorticityMag) {
+__device__ glm::vec3 eta(glm::vec4* newPos, int* phases, int* neighbors, int* numNeighbors, int &index, float &vorticityMag) {
 	glm::vec3 eta = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 0)
-			eta += WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos) * vorticityMag;
+		if (phases[neighbors[(index * MAX_NEIGHBORS) + i]] == 0)
+			eta += WSpiky(glm::vec3(newPos[index]), glm::vec3(newPos[neighbors[(index * MAX_NEIGHBORS) + i]])) * vorticityMag;
 	}
 
 	return eta;
 }
 
 //Calculates the vorticity force for a particle
-__device__ glm::vec3 vorticityForce(Particle* particles, int* neighbors, int* numNeighbors, int index) {
+__device__ glm::vec3 vorticityForce(glm::vec4* newPos, glm::vec3* velocities, int* phases, int* neighbors, int* numNeighbors, int index) {
 	//Calculate omega_i
 	glm::vec3 omega = glm::vec3(0.0f);
 	glm::vec3 velocityDiff;
 	glm::vec3 gradient;
 
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 0) {
-			velocityDiff = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity - particles[index].velocity;
-			gradient = WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
+		if (phases[neighbors[(index * MAX_NEIGHBORS) + i]] == 0) {
+			velocityDiff = velocities[neighbors[(index * MAX_NEIGHBORS) + i]] - velocities[index];
+			gradient = WSpiky(glm::vec3(newPos[index]), glm::vec3(newPos[neighbors[(index * MAX_NEIGHBORS) + i]]));
 			omega += glm::cross(velocityDiff, gradient);
 		}
 	}
@@ -96,41 +101,38 @@ __device__ glm::vec3 vorticityForce(Particle* particles, int* neighbors, int* nu
 		return glm::vec3(0.0f);
 	}
 
-	glm::vec3 etaVal = eta(particles, neighbors, numNeighbors, index, omegaLength);
+	glm::vec3 etaVal = eta(newPos, phases, neighbors, numNeighbors, index, omegaLength);
 	if (etaVal == glm::vec3(0.0f)) {
 		//Particle is isolated or net force is 0
 		return glm::vec3(0.0f);
 	}
 
 	glm::vec3 n = glm::normalize(etaVal);
-	//if (glm::isinf(n.x) || glm::isinf(n.y) || glm::isinf(n.z)) {
-		//return glm::vec3(0.0f);
-	//}
 
-	return (glm::cross(n, omega) * EPSILON_VORTICITY);
+	return (glm::cross(n, omega) * sp.vorticityEps);
 }
 
-__device__ float sCorrCalc(Particle &pi, Particle &pj) {
+__device__ float sCorrCalc(glm::vec4 &pi, glm::vec4 &pj) {
 	//Get Density from WPoly6
-	float corr = WPoly6(pi.newPos, pj.newPos) / wQH;
+	float corr = WPoly6(glm::vec3(pi), glm::vec3(pj)) / sp.wQH;
 	corr *= corr * corr * corr;
-	return -K * corr;
+	return -sp.K * corr;
 }
 
-__device__ glm::vec3 xsphViscosity(Particle* particles, int* neighbors, int* numNeighbors, int index) {
+__device__ glm::vec3 xsphViscosity(glm::vec4* newPos, glm::vec3* velocities, int* phases, int* neighbors, int* numNeighbors, int index) {
 	glm::vec3 visc = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 0) {
-			glm::vec3 velocityDiff = particles[neighbors[(index * MAX_NEIGHBORS) + i]].velocity - particles[index].velocity;
-			velocityDiff *= WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
+		if (phases[neighbors[(index * MAX_NEIGHBORS) + i]] == 0) {
+			glm::vec3 velocityDiff = velocities[neighbors[(index * MAX_NEIGHBORS) + i]] - velocities[index];
+			velocityDiff *= WPoly6(glm::vec3(newPos[index]), glm::vec3(newPos[neighbors[(index * MAX_NEIGHBORS) + i]]));
 			visc += velocityDiff;
 		}
 	}
 
-	return visc * C;
+	return visc * sp.C;
 }
 
-__device__ void confineToBox(Particle &p) {
+/*__device__ void confineToBox(Particle &p) {
 	if (p.newPos.x < 0 || p.newPos.x > width) {
 		p.velocity.x = 0;
 		if (p.newPos.x < 0) p.newPos.x = 0.001f;
@@ -168,32 +170,32 @@ __device__ void confineToBox(FoamParticle &p) {
 		if (p.pos.z < 0) p.pos.z = 0.001f;
 		else p.pos.z = depth - 0.001f;
 	}
-}
+}*/
 
-__device__ glm::ivec3 getGridPos(glm::vec3 pos) {
-	return glm::ivec3(int(pos.x / H) % gridWidth, int(pos.y / H) % gridHeight, int(pos.z / H) % gridDepth);
+__device__ glm::ivec3 getGridPos(glm::vec4 pos) {
+	return glm::ivec3(int(pos.x / sp.restDistance) % sp.gridWidth, int(pos.y / sp.restDistance) % sp.gridHeight, int(pos.z / sp.restDistance) % sp.gridDepth);
 }
 
 __device__ int getGridIndex(glm::ivec3 pos) {
-	return (pos.z * gridHeight * gridWidth) + (pos.y * gridWidth) + pos.x;
+	return (pos.z * sp.gridHeight * sp.gridWidth) + (pos.y * sp.gridWidth) + pos.x;
 }
 
-__global__ void predictPositions(Particle* particles) {
+__global__ void predictPositions(glm::vec4* newPos, glm::vec3* velocities) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 
 	//update velocity vi = vi + dt * fExt
-	particles[index].velocity += particles[index].invMass * GRAVITY * deltaT;
+	velocities[index] += newPos[index].w * sp.gravity * deltaT;
 
 	//predict position x* = xi + dt * vi
-	particles[index].newPos += particles[index].velocity * deltaT;
+	newPos[index] += glm::vec4(velocities[index] * deltaT, 0);
 
-	confineToBox(particles[index]);
+	//confineToBox(particles[index]);
 }
 
 __global__ void clearNeighbors(int* numNeighbors, int* numContacts) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 
 	numNeighbors[index] = 0;
 	numContacts[index] = 0;
@@ -201,16 +203,16 @@ __global__ void clearNeighbors(int* numNeighbors, int* numContacts) {
 
 __global__ void clearGrid(int* gridCounters) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= GRID_SIZE) return;
+	if (index >= sp.gridSize) return;
 
 	gridCounters[index] = 0;
 }
 
-__global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounters) {
+__global__ void updateGrid(glm::vec4* newPos, int* gridCells, int* gridCounters) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 
-	glm::ivec3 pos = getGridPos(particles[index].newPos);
+	glm::ivec3 pos = getGridPos(newPos[index]);
 	int gIndex = getGridIndex(pos);
 
 	int i = atomicAdd(&gridCounters[gIndex], 1);
@@ -218,28 +220,28 @@ __global__ void updateGrid(Particle* particles, int* gridCells, int* gridCounter
 	gridCells[gIndex * MAX_PARTICLES + i] = index;
 }
 
-__global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, int* contacts, int* numContacts) {
+__global__ void updateNeighbors(glm::vec4* newPos, int* phases, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, int* contacts, int* numContacts) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 	
-	glm::ivec3 pos = getGridPos(particles[index].newPos);
+	glm::ivec3 pos = getGridPos(newPos[index]);
 	int pIndex;
 
 	for (int z = -1; z < 2; z++) {
 		for (int y = -1; y < 2; y++) {
 			for (int x = -1; x < 2; x++) {
 				glm::ivec3 n = glm::ivec3(pos.x + x, pos.y + y, pos.z + z);
-				if (n.x >= 0 && n.x < gridWidth && n.y >= 0 && n.y < gridHeight && n.z >= 0 && n.z < gridDepth) {
+				if (n.x >= 0 && n.x < sp.gridWidth && n.y >= 0 && n.y < sp.gridHeight && n.z >= 0 && n.z < sp.gridDepth) {
 					int gIndex = getGridIndex(n);
 					int cellParticles = min(gridCounters[gIndex], MAX_PARTICLES - 1);
 					for (int i = 0; i < cellParticles; i++) {
 						if (numNeighbors[index] >= MAX_NEIGHBORS) return;
 
 						pIndex = gridCells[gIndex * MAX_PARTICLES + i];
-						if (glm::distance(particles[index].newPos, particles[pIndex].newPos) <= H) {
+						if (glm::distance(glm::vec3(newPos[index]), glm::vec3(newPos[pIndex])) <= sp.restDistance) {
 							neighbors[(index * MAX_NEIGHBORS) + numNeighbors[index]] = pIndex;
 							numNeighbors[index]++;
-							if (particles[index].phase == 0 && particles[pIndex].phase == 1 && numContacts[index] < MAX_CONTACTS) {
+							if (phases[index] == 0 && phases[pIndex] == 1 && numContacts[index] < MAX_CONTACTS) {
 								contacts[index * MAX_CONTACTS + numContacts[index]] = pIndex;
 								numContacts[index]++;
 							}
@@ -251,53 +253,53 @@ __global__ void updateNeighbors(Particle* particles, int* gridCells, int* gridCo
 	}
 }
 
-__global__ void particleCollisions(Particle* particles, int* contacts, int* numContacts, glm::vec3* deltaPs, float* buffer3) {
+__global__ void particleCollisions(glm::vec4* newPos, int* contacts, int* numContacts, glm::vec3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 
 	for (int i = 0; i < numContacts[index]; i++) {
 		int nIndex = contacts[index * MAX_CONTACTS + i];
-		if (particles[nIndex].invMass == 0) continue;
-		glm::vec3 dir = particles[index].newPos - particles[nIndex].newPos;
+		if (newPos[nIndex].w == 0) continue;
+		glm::vec3 dir = glm::vec3(newPos[index]) - glm::vec3(newPos[nIndex]);
 		float length = glm::length(dir);
-		float invMass = particles[index].invMass + particles[nIndex].invMass;
+		float invMass = newPos[index].w + newPos[nIndex].w;
 		glm::vec3 dp;
-		if ((length - H) > 0.0f || length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
-		else dp = (1 / invMass) * (length - H) * (dir / length);
+		if ((length - sp.restDistance) > 0.0f || length == 0.0f || invMass == 0.0f) dp = glm::vec3(0);
+		else dp = (1 / invMass) * (length - sp.restDistance) * (dir / length);
 		deltaPs[index] -= dp;
-		buffer3[index]++;
+		buffer0[index]++;
 
 		atomicAdd(&deltaPs[nIndex].x, dp.x);
 		atomicAdd(&deltaPs[nIndex].y, dp.y);
 		atomicAdd(&deltaPs[nIndex].z, dp.z);
-		atomicAdd(&buffer3[nIndex], 1);
+		atomicAdd(&buffer0[nIndex], 1);
 	}
 }
 
-__global__ void calcDensities(Particle* particles, int* neighbors, int* numNeighbors, float* densities) {
+__global__ void calcDensities(glm::vec4* newPos, int* phases, int* neighbors, int* numNeighbors, float* densities) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
+	if (index >= sp.numParticles || phases[index] != 0) return;
 
 	float rhoSum = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 0)
-			rhoSum += WPoly6(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos);
+		if (phases[neighbors[(index * MAX_NEIGHBORS) + i]] == 0)
+			rhoSum += WPoly6(glm::vec3(newPos[index]), glm::vec3(newPos[neighbors[(index * MAX_NEIGHBORS) + i]]));
 	}
 
 	densities[index] = rhoSum;
 }
 
-__global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbors, float* densities, float* buffer3) {
+__global__ void calcLambda(glm::vec4* newPos, int* phases, int* neighbors, int* numNeighbors, float* densities, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
+	if (index >= sp.numParticles || phases[index] != 0) return;
 
-	float densityConstraint = (densities[index] / REST_DENSITY) - 1;
+	float densityConstraint = (densities[index] / sp.restDensity) - 1;
 	glm::vec3 gradientI = glm::vec3(0.0f);
 	float sumGradients = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 0) {
+		if (phases[neighbors[(index * MAX_NEIGHBORS) + i]] == 0) {
 			//Calculate gradient with respect to j
-			glm::vec3 gradientJ = WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos) / REST_DENSITY;
+			glm::vec3 gradientJ = WSpiky(glm::vec3(newPos[index]), glm::vec3(newPos[neighbors[(index * MAX_NEIGHBORS) + i]])) / sp.restDensity;
 
 			//Add magnitude squared to sum
 			sumGradients += glm::length2(gradientJ);
@@ -307,62 +309,62 @@ __global__ void calcLambda(Particle* particles, int* neighbors, int* numNeighbor
 
 	//Add the particle i gradient magnitude squared to sum
 	sumGradients += glm::length2(gradientI);
-	buffer3[index] = (-1 * densityConstraint) / (sumGradients + EPSILON_LAMBDA);
+	buffer0[index] = (-1 * densityConstraint) / (sumGradients + sp.lambdaEps);
 }
 
-__global__ void calcDeltaP(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* deltaPs, float* buffer3) {
+__global__ void calcDeltaP(glm::vec4* newPos, int* phases, int* neighbors, int* numNeighbors, glm::vec3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
+	if (index >= sp.numParticles || phases[index] != 0) return;
 	deltaPs[index] = glm::vec3(0);
 
 	glm::vec3 deltaP = glm::vec3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (particles[neighbors[(index * MAX_NEIGHBORS) + i]].phase == 0) {
-			float lambdaSum = buffer3[index] + buffer3[neighbors[(index * MAX_NEIGHBORS) + i]];
-			float sCorr = sCorrCalc(particles[index], particles[neighbors[(index * MAX_NEIGHBORS) + i]]);
-			deltaP += WSpiky(particles[index].newPos, particles[neighbors[(index * MAX_NEIGHBORS) + i]].newPos) * (lambdaSum + sCorr);
+		if (phases[neighbors[(index * MAX_NEIGHBORS) + i]] == 0) {
+			float lambdaSum = buffer0[index] + buffer0[neighbors[(index * MAX_NEIGHBORS) + i]];
+			float sCorr = sCorrCalc(newPos[index], newPos[neighbors[(index * MAX_NEIGHBORS) + i]]);
+			deltaP += WSpiky(glm::vec3(newPos[index]), glm::vec3(newPos[neighbors[(index * MAX_NEIGHBORS) + i]])) * (lambdaSum + sCorr);
 
 		}
 	}
 
-	deltaPs[index] = deltaP / REST_DENSITY;
+	deltaPs[index] = deltaP / sp.restDensity;
 }
 
-__global__ void applyDeltaP(Particle* particles, glm::vec3* deltaPs, float* buffer3, int flag) {
+__global__ void applyDeltaP(glm::vec4* newPos, glm::vec3* deltaPs, float* buffer0, int flag) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 
-	if (buffer3[index] > 0 && flag == 1) particles[index].newPos += deltaPs[index] / buffer3[index];
-	else if (flag == 0) particles[index].newPos += deltaPs[index];
+	if (buffer0[index] > 0 && flag == 1) newPos[index] += glm::vec4(deltaPs[index] / buffer0[index], 0);
+	else if (flag == 0) newPos[index] += glm::vec4(deltaPs[index], 0);
 }
 
-__global__ void updateVelocities(Particle* particles, int* neighbors, int* numNeighbors, glm::vec3* deltaPs) {
+__global__ void updateVelocities(glm::vec4* oldPos, glm::vec4* newPos, glm::vec3* velocities, int* phases, int* neighbors, int* numNeighbors, glm::vec3* deltaPs) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
+	if (index >= sp.numParticles || phases[index] != 0) return;
 
-	confineToBox(particles[index]);
+	//confineToBox(particles[index]);
 
 	//set new velocity vi = (x*i - xi) / dt
-	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
+	velocities[index] = (glm::vec3(newPos[index]) - glm::vec3(oldPos[index])) / deltaT;
 
 	//apply vorticity confinement
-	particles[index].velocity += vorticityForce(particles, neighbors, numNeighbors, index) * deltaT;
+	velocities[index] += vorticityForce(newPos, velocities, phases, neighbors, numNeighbors, index) * deltaT;
 
 	//apply XSPH viscosity
-	deltaPs[index] = xsphViscosity(particles, neighbors, numNeighbors, index);
+	deltaPs[index] = xsphViscosity(newPos, velocities, phases, neighbors, numNeighbors, index);
 
 	//update position xi = x*i
-	particles[index].oldPos = particles[index].newPos;
+	oldPos[index] = newPos[index];
 }
 
-__global__ void updateXSPHVelocities(Particle* particles, glm::vec3* deltaPs) {
+__global__ void updateXSPHVelocities(glm::vec4* newPos, glm::vec3* velocities, int* phases, glm::vec3* deltaPs) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 0) return;
+	if (index >= sp.numParticles || phases[index] != 0) return;
 
-	particles[index].velocity += deltaPs[index] * deltaT;
+	velocities[index] += deltaPs[index] * deltaT;
 }
 
-__global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, int* neighbors, int* numNeighbors, float* densities) {
+/*__global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, int* neighbors, int* numNeighbors, float* densities) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= NUM_PARTICLES || foamCount >= NUM_FOAM) return;
 
@@ -402,17 +404,17 @@ __global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, i
 
 __global__ void updateFoam(FoamParticle* foamParticles) {
 
-}
+}*/
 
-__global__ void clearDeltaP(Particle* particles, glm::vec3* deltaPs, float* buffer3) {
+__global__ void clearDeltaP(glm::vec3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	if (index >= sp.numParticles) return;
 
 	deltaPs[index] = glm::vec3(0);
-	buffer3[index] = 0;
+	buffer0[index] = 0;
 }
 
-__global__ void solveDistance(Particle* particles, DistanceConstraint* dConstraints, int numConstraints, glm::vec3* deltaPs, float* buffer3) {
+/*__global__ void solveDistance(Particle* particles, DistanceConstraint* dConstraints, int numConstraints, glm::vec3* deltaPs, float* buffer3) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= numConstraints) return;
 
@@ -449,72 +451,72 @@ __global__ void updateClothVelocity(Particle* particles) {
 
 	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
 	particles[index].oldPos = particles[index].newPos;
-}
+}*/
 
-void updateWater(Buffers* p) {
+void updateWater(solver* s) {
 	//------------------WATER-----------------
-	for (int i = 0; i < PRESSURE_ITERATIONS; i++) {
+	for (int i = 0; i < sp.numIterations; i++) {
 		//Calculate fluid densities and store in densities
-		calcDensities<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->densities);
+		calcDensities<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->densities);
 
-		//Calculate all lambdas and store in buffer3
-		calcLambda<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->densities, p->buffer3);
+		//Calculate all lambdas and store in buffer0
+		calcLambda<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->densities, s->buffer0);
 
 		//calculate deltaP
-		calcDeltaP<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->deltaPs, p->buffer3);
+		calcDeltaP<<<dims, blockSize>>>(s->newPos, s->phases, s->neighbors, s->numNeighbors, s->deltaPs, s->buffer0);
 
 		//update position x*i = x*i + deltaPi
-		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3, 0);
+		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 0);
 	}
 
 	//Update velocity, apply vorticity confinement, apply xsph viscosity, update position
-	updateVelocities<<<dims, blockSize>>>(p->particles, p->neighbors, p->numNeighbors, p->deltaPs);
+	updateVelocities<<<dims, blockSize>>>(s->oldPos, s->newPos, s->velocities, s->phases, s->neighbors, s->numNeighbors, s->deltaPs);
 
 	//Set new velocity
-	updateXSPHVelocities<<<dims, blockSize>>>(p->particles, p->deltaPs);
+	updateXSPHVelocities<<<dims, blockSize>>>(s->newPos, s->velocities, s->phases, s->deltaPs);
 }
 
-void updateCloth(Buffers* p) {
-	static const dim3 constraintDims = int(ceil(p->numConstraints / blockSize));
-	clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
+/*void updateCloth(solver* p) {
+	static const dim3 constraintDims = int(ceil(s->numConstraints / blockSize));
+	clearDeltaP<<<dims, blockSize>>>(s->particles, s->deltaPs, s->buffer3);
 
 	for (int i = 0; i < SOLVER_ITERATIONS; i++) {
-		solveDistance<<<constraintDims, blockSize>>>(p->particles, p->dConstraints, p->numConstraints, p->deltaPs, p->buffer3);
-		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3, 1);
+		solveDistance<<<constraintDims, blockSize>>>(s->particles, s->dConstraints, s->numConstraints, s->deltaPs, s->buffer3);
+		applyDeltaP<<<dims, blockSize>>>(s->particles, s->deltaPs, s->buffer3, 1);
 	}
 
-	updateClothVelocity<<<dims, blockSize>>>(p->particles);
-}
+	updateClothVelocity<<<dims, blockSize>>>(s->particles);
+}*/
 
-void update(Buffers* p) {
+void update(solver* s) {
 	//Predict positions and update velocity
-	predictPositions<<<dims, blockSize>>>(p->particles);
+	predictPositions<<<dims, blockSize>>>(s->newPos, s->velocities);
 
 	//Update neighbors
-	clearNeighbors<<<dims, blockSize>>>(p->numNeighbors, p->numContacts);
-	clearGrid<<<gridDims, blockSize>>>(p->gridCounters);
-	updateGrid<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters);
-	updateNeighbors<<<dims, blockSize>>>(p->particles, p->gridCells, p->gridCounters, p->neighbors, p->numNeighbors, p->contacts, p->numContacts);
+	clearNeighbors<<<dims, blockSize>>>(s->numNeighbors, s->numContacts);
+	clearGrid<<<gridDims, blockSize>>>(s->gridCounters);
+	updateGrid<<<dims, blockSize>>>(s->newPos, s->gridCells, s->gridCounters);
+	updateNeighbors<<<dims, blockSize>>>(s->newPos, s->phases, s->gridCells, s->gridCounters, s->neighbors, s->numNeighbors, s->contacts, s->numContacts);
 
 	/*for (int i = 0; i < 4; i++) {
-		clearDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3);
-		particleCollisions<<<dims, blockSize>>>(p->particles, p->contacts, p->numContacts, p->deltaPs, p->buffer3);
-		applyDeltaP<<<dims, blockSize>>>(p->particles, p->deltaPs, p->buffer3, 1);
+		clearDeltaP<<<dims, blockSize>>>(s->particles, s->deltaPs, s->buffer3);
+		particleCollisions<<<dims, blockSize>>>(s->particles, s->contacts, s->numContacts, s->deltaPs, s->buffer3);
+		applyDeltaP<<<dims, blockSize>>>(s->particles, s->deltaPs, s->buffer3, 1);
 	}*/
 
 	//Solve constraints
-	updateWater(p);
+	updateWater(s);
 	//updateCloth(p);
 }
 
-__global__ void updateVBO(Particle* particles, float* fluidPositions, float* clothPositions) {
+__global__ void updateVBO(glm::vec4* oldPos, int* phases, float* fluidPositions, float* clothPositions) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES) return;
+	//if (index >= numParticles) return;
 
-	if (particles[index].phase == 0) {
-		fluidPositions[3 * index] = particles[index].oldPos.x;
-		fluidPositions[3 * index + 1] = particles[index].oldPos.y;
-		fluidPositions[3 * index + 2] = particles[index].oldPos.z;
+	if (phases[index] == 0) {
+		fluidPositions[3 * index] = oldPos[index].x;
+		fluidPositions[3 * index + 1] = oldPos[index].y;
+		fluidPositions[3 * index + 2] = oldPos[index].z;
 	} else {
 		//clothPositions[3 * index] = particles[index].oldPos.x;
 		//clothPositions[3 * index + 1] = particles[index].oldPos.y;
@@ -522,8 +524,45 @@ __global__ void updateVBO(Particle* particles, float* fluidPositions, float* clo
 	}
 }
 
-void setVBO(Particle* particles, float* fluidPositions, float* clothPositions) {
-	updateVBO<<<dims, blockSize>>>(particles, fluidPositions, clothPositions);
+void setVBO(glm::vec4* oldPos, int* phases, float* fluidPositions, float* clothPositions) {
+	updateVBO<<<dims, blockSize>>>(oldPos, phases, fluidPositions, clothPositions);
+}
+
+void initParams(solver* s, int numParticles, int gridSize) {
+	dims = int(ceil(numParticles / blockSize));
+	cudaCheck(cudaMalloc((void**)&s->oldPos, numParticles * sizeof(glm::vec4)));
+	cudaCheck(cudaMalloc((void**)&s->newPos, numParticles * sizeof(glm::vec4)));
+	cudaCheck(cudaMalloc((void**)&s->velocities, numParticles * sizeof(glm::vec3)));
+	cudaCheck(cudaMalloc((void**)&s->densities, numParticles * sizeof(float)));
+	cudaCheck(cudaMalloc((void**)&s->phases, numParticles * sizeof(int)));
+	//diffuse goes here
+	cudaCheck(cudaMalloc((void**)&s->neighbors, MAX_NEIGHBORS * numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->numNeighbors, numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->gridCells, MAX_PARTICLES * gridSize * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->gridCounters, gridSize * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->contacts, MAX_CONTACTS * numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->numContacts, numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->deltaPs, numParticles * sizeof(glm::vec3)));
+
+	cudaCheck(cudaMalloc((void**)&s, sizeof(solver)));
+	cudaCheck(cudaMalloc((void**)&sp, sizeof(solverParams)));
+}
+
+void freeParams(solver* s) {
+	cudaCheck(cudaFree(s->oldPos));
+	cudaCheck(cudaFree(s->newPos));
+	cudaCheck(cudaFree(s->velocities));
+	cudaCheck(cudaFree(s->densities));
+	cudaCheck(cudaFree(s->phases));
+	//diffuse goes here
+	cudaCheck(cudaFree(s->neighbors));
+	cudaCheck(cudaFree(s->numNeighbors));
+	cudaCheck(cudaFree(s->gridCells));
+	cudaCheck(cudaFree(s->gridCounters));
+	cudaCheck(cudaFree(s->contacts));
+	cudaCheck(cudaFree(s->numContacts));
+	cudaCheck(cudaFree(s->deltaPs));
+	cudaCheck(cudaFree(s));
 }
 
 #endif

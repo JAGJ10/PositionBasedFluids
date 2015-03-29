@@ -184,6 +184,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="DistanceConstraint.hpp" />
     <ClInclude Include="FoamParticle.hpp" />
+    <ClInclude Include="parameters.h" />
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="ParticleSystem.h" />
     <None Include="clothMesh.frag" />
