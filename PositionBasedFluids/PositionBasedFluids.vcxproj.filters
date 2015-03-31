@@ -72,6 +72,9 @@
     <Filter Include="Header Files\Scene">
       <UniqueIdentifier>{d9045f5a-e7cf-4fdd-b21c-394ee2da3b3b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\cudaMath">
+      <UniqueIdentifier>{8a7b7d95-be78-4f0b-9a7b-c3eab3c382dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -117,6 +120,12 @@
     </ClInclude>
     <ClInclude Include="parameters.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="helper_math.h">
+      <Filter>Header Files\cudaMath</Filter>
+    </ClInclude>
+    <ClInclude Include="setupFunctions.h">
+      <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

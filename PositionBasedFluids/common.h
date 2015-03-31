@@ -1,8 +1,13 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define PI 3.14159265358979323846f
+
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+#include "vector_types.h"
+#include "vector_functions.h"
+#include "helper_math.h"
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>

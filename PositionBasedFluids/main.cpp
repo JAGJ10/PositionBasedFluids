@@ -1,8 +1,10 @@
 #define GLEW_DYNAMIC
 #include <GL/glew.h>
-#include "Renderer.h"
 #include <cuda_gl_interop.h>
 #include <GLFW/glfw3.h>
+#include "ParticleSystem.h"
+#include "Renderer.h"
+#include "Scene.hpp"
 
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -11,14 +13,20 @@
 #include <IL\il.h>
 #include <IL\ilut.h>
 
+#define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
+
 static const int width = 1024;
 static const int height = 512;
 static const GLfloat lastX = (width / 2);
 static const GLfloat lastY = (height / 2);
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+static float deltaTime = 0.0f;
+static float lastFrame = 0.0f;
+static int w = 0;
 
-void handleInput(GLFWwindow* window, Renderer &render, Camera &cam);
+int initializeState(ParticleSystem &system);
+void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam);
+void saveVideo();
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles);
 
 int main() {
 	//Checks for memory leaks in debug mode
@@ -50,9 +58,10 @@ int main() {
 	ilutRenderer(ILUT_OPENGL);
 	
 	Camera cam = Camera();
+	ParticleSystem system = ParticleSystem();
 	Renderer render = Renderer();
-
-	int w = 0;
+	int numParticles = initializeState(system);
+	render.initVBO(numParticles);
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
@@ -62,21 +71,10 @@ int main() {
 
 		// Check and call events
 		glfwPollEvents();
-		handleInput(window, render, cam);
+		handleInput(window, system, cam);
 
-		render.run(cam);
-
-		/*ILuint imageID = ilGenImage();
-		ilBindImage(imageID);
-		ilutGLScreen();
-		ilEnable(IL_FILE_OVERWRITE);
-		std::string str = std::to_string(w) + ".png";
-		const char * c = str.c_str();
-		std::cout << c << std::endl;
-		ilSaveImage(c);
-		//ilutGLScreenie();
-		ilDeleteImage(imageID);
-		w++;*/
+		//Update physics and render
+		mainUpdate(system, render, cam, numParticles);
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
@@ -86,10 +84,12 @@ int main() {
 
 	glfwTerminate();
 
+	//cudaDeviceReset();
+
 	return 0;
 }
 
-void handleInput(GLFWwindow* window, Renderer &render, Camera &cam) {
+void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
@@ -112,13 +112,51 @@ void handleInput(GLFWwindow* window, Renderer &render, Camera &cam) {
 		cam.wasdMovement(DOWN, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
-		render.running = false;
+		system.running = false;
 
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
-		render.running = true;
+		system.running = true;
 
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 		cam.mouseMovement((float(xpos) - lastX), (lastY - float(ypos)), deltaTime);
+}
+
+void saveVideo() {
+	/*ILuint imageID = ilGenImage();
+	ilBindImage(imageID);
+	ilutGLScreen();
+	ilEnable(IL_FILE_OVERWRITE);
+	std::string str = std::to_string(w) + ".png";
+	const char * c = str.c_str();
+	std::cout << c << std::endl;
+	ilSaveImage(c);
+	//ilutGLScreenie();
+	ilDeleteImage(imageID);
+	w++;*/
+}
+
+int initializeState(ParticleSystem &system) {
+	tempSolver tp;
+	solverParams tempParams;
+	DamBreak scene("DamBreak");
+	scene.init(&tp, &tempParams);
+	system.initialize(tp, tempParams);
+	return tempParams.numParticles;
+}
+
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles) {
+	system.updateWrapper();
+
+	//Update the VBO
+	void* positionsPtr;
+	cudaCheck(cudaGraphicsMapResources(1, &render.resource, 0));
+	size_t size;
+	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resource);
+	system.getPositionsWrapper((float*)positionsPtr);
+	cudaGraphicsUnmapResources(1, &render.resource, 0);
+
+	//Render
+	render.run(numParticles, cam);
 }

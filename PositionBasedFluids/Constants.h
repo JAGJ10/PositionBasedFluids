@@ -4,18 +4,18 @@
 #include "common.h"
 
 //---------------------Fluid Constants----------------------
-#define gridWidth 50
-#define gridHeight 50
-#define gridDepth 30
+//#define gridWidth 50
+//#define gridHeight 50
+//#define gridDepth 30
 
-static const int gridSize = gridWidth * gridHeight * gridDepth;
+//static const int gridSize = gridWidth * gridHeight * gridDepth;
 
-#define GRID_SIZE gridSize
+//#define GRID_SIZE gridSize
 
 //static const dim3 dims = int(NUM_PARTICLES / blockSize);
 //static const dim3 gridDims = int(ceil(gridSize / blockSize));
 
-#define PI 3.14159265358979323846f
+
 //#define GRAVITY glm::vec3(0, -9.8f, 0)
 //#define H 0.1f
 //#define KPOLY (315.0f / (64.0f * PI * glm::pow(H, 9)))

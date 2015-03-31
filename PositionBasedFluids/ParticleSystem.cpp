@@ -7,26 +7,7 @@ static float t = 0.0f;
 static int flag = 1;
 static int frameCounter = 0;
 
-ParticleSystem::ParticleSystem() {
-	s = new solver;
-	sp = new solverParams;
-
-	int count = 0;
-	for (int i = 1; i < 33; i += 1) {
-		for (int j = 1; j < 65; j += 1) {
-			for (int k = 1; k < 33; k += 1) {
-				//tempParticles[count].invMass = 1;
-				//tempParticles[count].newPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
-				//tempParticles[count].oldPos = glm::vec3(float(i) / 20, float(j) / 20, float(k) / 20);
-				//tempParticles[count].velocity = glm::vec3(0.0f);
-				//tempParticles[count].phase = 0;
-				//count++;
-			}
-		}
-	}
-	
-	//srand((unsigned int)time(0));
-
+ParticleSystem::ParticleSystem() : running(false), s(new solver) {
 	//Initialize cloth particles
 	/*float stretchStiffness = 0.9f;
 	float bendStiffness = 1.0f;
@@ -121,19 +102,64 @@ ParticleSystem::ParticleSystem() {
 			p->numConstraints += 4;
 		}
 	}*/
-	
-	//gpuErrchk(cudaMemcpy(p->particles, tempParticles, NUM_PARTICLES * sizeof(Particle), cudaMemcpyHostToDevice));
-	//gpuErrchk(cudaMalloc((void**)&p->dConstraints, p->numConstraints * sizeof(DistanceConstraint)));
-	//gpuErrchk(cudaMemcpy(p->dConstraints, tempdConstraints.data(), p->numConstraints * sizeof(DistanceConstraint), cudaMemcpyHostToDevice));
-	//tempdConstraints.clear();
+
 }
 
 ParticleSystem::~ParticleSystem() {
-	freeParams(s, sp);
+	cudaCheck(cudaFree(s->oldPos));
+	cudaCheck(cudaFree(s->newPos));
+	cudaCheck(cudaFree(s->velocities));
+	cudaCheck(cudaFree(s->densities));
+	cudaCheck(cudaFree(s->phases));
+	//diffuse goes here
+	cudaCheck(cudaFree(s->neighbors));
+	cudaCheck(cudaFree(s->numNeighbors));
+	cudaCheck(cudaFree(s->gridCells));
+	cudaCheck(cudaFree(s->gridCounters));
+	cudaCheck(cudaFree(s->contacts));
+	cudaCheck(cudaFree(s->numContacts));
+	cudaCheck(cudaFree(s->deltaPs));
+	cudaCheck(cudaFree(s->buffer0));
+	//cudaCheck(cudaFree(sp));
+	delete s;
+}
+
+void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
+	cudaCheck(cudaMalloc((void**)&s->oldPos, tempParams.numParticles * sizeof(float4)));
+	cudaCheck(cudaMalloc((void**)&s->newPos, tempParams.numParticles * sizeof(float4)));
+	cudaCheck(cudaMalloc((void**)&s->velocities, tempParams.numParticles * sizeof(float3)));
+	cudaCheck(cudaMalloc((void**)&s->densities, tempParams.numParticles * sizeof(float)));
+	cudaCheck(cudaMalloc((void**)&s->phases, tempParams.numParticles * sizeof(int)));
+	//diffuse goes here
+	cudaCheck(cudaMalloc((void**)&s->neighbors, tempParams.MAX_NEIGHBORS * tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->numNeighbors, tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->gridCells, tempParams.MAX_PARTICLES * tempParams.gridSize * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->gridCounters, tempParams.gridSize * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->contacts, tempParams.MAX_CONTACTS * tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->numContacts, tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->deltaPs, tempParams.numParticles * sizeof(float3)));
+	cudaCheck(cudaMalloc((void**)&s->buffer0, tempParams.numParticles * sizeof(float)));
+	//cudaCheck(cudaMalloc((void**)&s, sizeof(solver)));
+
+	cudaCheck(cudaMemset(s->oldPos, 0, tempParams.numParticles * sizeof(float4)));
+	cudaCheck(cudaMemset(s->newPos, 0, tempParams.numParticles * sizeof(float4)));
+	cudaCheck(cudaMemset(s->velocities, 0, tempParams.numParticles * sizeof(float3)));
+	cudaCheck(cudaMemset(s->densities, 0, tempParams.numParticles * sizeof(float)));
+	cudaCheck(cudaMemset(s->phases, 0, tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMemset(s->neighbors, 0, tempParams.MAX_NEIGHBORS * tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMemset(s->numNeighbors, 0, tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMemset(s->gridCells, 0, tempParams.MAX_PARTICLES * tempParams.gridSize * sizeof(int)));
+	cudaCheck(cudaMemset(s->gridCounters, 0, tempParams.gridSize * sizeof(int)));
+
+	cudaCheck(cudaMemcpy(s->oldPos, &tp.positions[0], tempParams.numParticles * sizeof(float4), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->newPos, &tp.positions[0], tempParams.numParticles * sizeof(float4), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->velocities, &tp.velocities[0], tempParams.numParticles * sizeof(float3), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->phases, &tp.phases[0], tempParams.numParticles * sizeof(int), cudaMemcpyHostToDevice));
+	setParams(&tempParams);
 }
 
 void ParticleSystem::updateWrapper() {
-	//update(p);
+	update(s);
 	//Move wall
 	/*if (frameCounter >= 500) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
@@ -151,8 +177,8 @@ void ParticleSystem::updateWrapper() {
 	frameCounter++;*/
 }
 
-void ParticleSystem::setVBOWrapper(float* fluidPositions, float* clothPositions) {
-	//setVBO(p->particles, fluidPositions, clothPositions);
+void ParticleSystem::getPositionsWrapper(float* positionsPtr) {
+	getPositions(s->oldPos, positionsPtr);
 }
 
 void ParticleSystem::updatePositions2() {

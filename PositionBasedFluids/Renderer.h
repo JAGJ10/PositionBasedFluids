@@ -2,27 +2,18 @@
 #define RENDERER_H
 
 #include "common.h"
-#include "ParticleSystem.h"
 #include "Shader.hpp"
-#include <GLFW/glfw3.h>
 #include "Camera.hpp"
 
 class Renderer {
 public:
 	Renderer();
 	~Renderer();
-	void run(Camera &cam);
+	void initVBO(int size);
+	void run(int numParticles, Camera &cam);
 
-	ParticleSystem system;
-
-	cudaGraphicsResource *resource1;
-	cudaGraphicsResource *resource2;
-	float* fluidPositions;
-	float* clothPositions;
-	GLuint fluidVBO;
-	GLuint clothVBO;
-
-	bool running;
+	cudaGraphicsResource *resource;
+	GLuint positionVBO;
 
 	Shader plane;
 	Shader cloth;
@@ -37,7 +28,7 @@ public:
 	Shader finalFS;
 
 private:
-	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
+	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, size_t size);
 	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam);
 	void initFramebuffers();
 	void setInt(Shader &shader, const int &x, const GLchar* name);

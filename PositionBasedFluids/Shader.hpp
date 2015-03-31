@@ -130,7 +130,7 @@ public:
 		glBindVertexArray(vao);
 
 		glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
 		//glBindBuffer(GL_ARRAY_BUFFER, 0);
