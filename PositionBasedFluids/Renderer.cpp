@@ -1,5 +1,4 @@
 #include "Renderer.h"
-#include "Constants.h"
 #include <cuda_gl_interop.h>
 
 using namespace std;

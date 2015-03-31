@@ -53,9 +53,9 @@ int main() {
 	// Define the viewport dimensions
 	glViewport(0, 0, width, height);
 
-	ilutInit();
-	ilInit();
-	ilutRenderer(ILUT_OPENGL);
+	//ilutInit();
+	//ilInit();
+	//ilutRenderer(ILUT_OPENGL);
 	
 	Camera cam = Camera();
 	ParticleSystem system = ParticleSystem();

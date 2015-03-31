@@ -21,8 +21,8 @@ public:
 
 	virtual void init(tempSolver* tp, solverParams* sp) {
 		const float radius = 0.1f;
-		const float restDistance = radius * 0.55f;
-		float3 lower = make_float3(0.2f, 0.2f, 0);
+		const float restDistance = radius * 0.5f;
+		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
 		int3 dims = make_int3(40, 40, 40);
 		createParticleGrid(tp, sp, lower, dims, restDistance);
 		
