@@ -6,11 +6,13 @@
 
 #define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
 static dim3 dims;
+static dim3 diffuseDims;
 static dim3 gridDims;
 static const int blockSize = 128;
 
 __constant__ solverParams sp;
 __constant__ float deltaT = 0.0083f;
+__device__ int foamCount = 0;
 __constant__ float distr[] =
 {
 	-0.34828757091811f, -0.64246175794046f, -0.15712936555833f, -0.28922267225069f, 0.70090742209037f,
@@ -334,47 +336,97 @@ __global__ void updateXSPHVelocities(float4* newPos, float3* velocities, int* ph
 	velocities[index] += deltaPs[index] * deltaT;
 }
 
-/*__global__ void generateFoam(Particle* particles, FoamParticle* foamParticles, int* neighbors, int* numNeighbors, float* densities) {
+__global__ void generateFoam(float4* newPos, float3* velocities, int* phases, float4* diffusePos, float3* diffuseVelocities, int* neighbors, int* numNeighbors, float* densities) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || foamCount >= NUM_FOAM) return;
+	if (index >= sp.numParticles || phases[index] != 0 || foamCount >= sp.numDiffuse) return;
 
 	float velocityDiff = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
 		int nIndex = neighbors[(index * sp.MAX_NEIGHBORS) + i];
 		if (index != nIndex) {
-			float wAir = WAirPotential(particles[index].newPos, particles[nIndex].newPos);
-			float3 xij = glm::normalize(particles[index].newPos - particles[nIndex].newPos);
-			float3 vijHat = glm::normalize(particles[index].velocity - particles[nIndex].velocity);
-			velocityDiff += glm::length(particles[index].velocity - particles[nIndex].velocity) * (1 - glm::dot(vijHat, xij)) * wAir;
+			float wAir = WAirPotential(make_float3(newPos[index]), make_float3(newPos[nIndex]));
+			float3 xij = normalize(make_float3(newPos[index] - newPos[nIndex]));
+			float3 vijHat = normalize(velocities[index] - velocities[nIndex]);
+			velocityDiff += length(velocities[index] - velocities[nIndex]) * (1 - dot(vijHat, xij)) * wAir;
 		}
 	}
 
-	float ek = 0.5f * glm::length2(particles[index].velocity);
-	float potential = velocityDiff * ek * max(1.0f - (1.0f * densities[index] / REST_DENSITY), 0.0f);
+	float ek = 0.5f * pow(length(velocities[index]), 2);
+	float potential = velocityDiff * ek * max(1.0f - (1.0f * densities[index] / sp.restDensity), 0.0f);
 	int nd = 0;
-	if (potential > 0.7f) nd = min(20, (NUM_FOAM - 1 - foamCount));
-	nd = atomicAdd(&foamCount, nd);
+	if (potential > 0.7f) nd = min(20, (sp.numDiffuse - 1 - foamCount));
+	if (nd <= 0) return;
+	atomicAdd(&foamCount, nd);
 	for (int i = 0; i < nd; i++) {
-		float rx = distr[i % 30] * H;
-		float ry = distr[(i + 1) % 30] * H;
-		float rz = distr[(i + 2) % 30] * H;
+		float rx = distr[i % 30] * sp.radius;
+		float ry = distr[(i + 1) % 30] * sp.radius;
+		float rz = distr[(i + 2) % 30] * sp.radius;
 		int rd = distr[index % 30] > 0.5f ? 1 : -1;
 
-		float3 xd = particles[index].newPos + float3(rx * rd, ry * rd, rz * rd);
+		float3 xd = make_float3(newPos[index]) + make_float3(rx * rd, ry * rd, rz * rd);
 		int type;
 		if (numNeighbors[index] + 1 < 8) type = 1;
 		else type = 2;
-		foamParticles[foamCount + i].pos = xd;
-		foamParticles[foamCount + i].velocity = particles[index].velocity;
-		foamParticles[foamCount + i].ttl = 1.0f;
-		foamParticles[foamCount + i].type = type;
-		confineToBox(foamParticles[foamCount + i]);
+		diffusePos[foamCount + i] = make_float4(xd, (type * 1000) + 1);
+		diffuseVelocities[foamCount + i] = velocities[index];
+		confineToBox(diffusePos[foamCount + i]);
 	}
 }
 
-__global__ void updateFoam(FoamParticle* foamParticles) {
+__global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePos, float3* diffuseVelocities, int* gridCells, int* gridCounters) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= sp.numDiffuse || diffusePos[index].w == 1000 || diffusePos[index].w == 2000) return;
 
-}*/
+	confineToBox(diffusePos[index]);
+
+	int lifetime;
+	if (diffusePos[index].w > 0) lifetime = diffusePos[index].w -= deltaT;
+	else lifetime = 0;
+
+	int3 pos = getGridPos(diffusePos[index]);
+	int pIndex;
+	int fluidNeighbors = 0;
+	float3 vfSum = make_float3(0.0f);
+	float kSum = 0;
+
+	for (int z = -1; z < 2; z++) {
+		for (int y = -1; y < 2; y++) {
+			for (int x = -1; x < 2; x++) {
+				int3 n = make_int3(pos.x + x, pos.y + y, pos.z + z);
+				if (n.x >= 0 && n.x < sp.gridWidth && n.y >= 0 && n.y < sp.gridHeight && n.z >= 0 && n.z < sp.gridDepth) {
+					int gIndex = getGridIndex(n);
+					int cellParticles = min(gridCounters[gIndex], sp.MAX_PARTICLES - 1);
+					for (int i = 0; i < cellParticles; i++) {
+						pIndex = gridCells[gIndex * sp.MAX_PARTICLES + i];
+						if (length(make_float3(diffusePos[index] - newPos[pIndex])) <= sp.radius) {
+							fluidNeighbors++;
+							float k = WPoly6(make_float3(diffusePos[index]), make_float3(newPos[pIndex]));
+							vfSum += velocities[pIndex] * k;
+							kSum += k;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	int type;
+	if (fluidNeighbors >= 8) type = 2;
+	else type = 1;
+
+	if (type == 1) {
+		//Spray
+		diffuseVelocities[index].x *= 0.8f;
+		diffuseVelocities[index].z *= 0.8f;
+		diffuseVelocities[index] += sp.gravity * deltaT;
+		diffusePos[index] += make_float4(diffuseVelocities[index] * deltaT, 0);
+	} else if (type == 2) {
+		//Foam
+		diffusePos[index] += make_float4((1.0f * (vfSum / kSum)) * deltaT, 0);
+	}
+
+	diffusePos[index].w = (type * 1000) + lifetime;
+}
 
 __global__ void clearDeltaP(float3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
@@ -444,6 +496,9 @@ void updateWater(solver* s) {
 
 	//Set new velocity
 	updateXSPHVelocities<<<dims, blockSize>>>(s->newPos, s->velocities, s->phases, s->deltaPs);
+
+	generateFoam<<<dims, blockSize>>>(s->newPos, s->velocities, s->phases, s->diffusePos, s->diffuseVelocities, s->neighbors, s->numNeighbors, s->densities);
+	updateFoam<<<diffuseDims, blockSize>>>(s->newPos, s->velocities, s->diffusePos, s->diffuseVelocities, s->gridCells, s->gridCounters);
 }
 
 /*void updateCloth(solver* p) {
@@ -489,12 +544,31 @@ __global__ void getParticlePositions(float4* oldPos, float* positions) {
 	positions[4 * index + 3] = oldPos[index].w;
 }
 
+__global__ void getDiffuseValues(float4* diffusePos, float3* diffuseVelocities, float* diffusePosPtr, float* diffuseVelPtr) {
+	int index = threadIdx.x + (blockIdx.x * blockDim.x);
+	if (index >= sp.numDiffuse) return;
+
+	diffusePosPtr[4 * index] = diffusePos[index].x;
+	diffusePosPtr[4 * index + 1] = diffusePos[index].y;
+	diffusePosPtr[4 * index + 2] = diffusePos[index].z;
+	diffusePosPtr[4 * index + 3] = diffusePos[index].w;
+
+	diffuseVelPtr[3 * index] = diffuseVelocities[index].x;
+	diffuseVelPtr[3 * index + 1] = diffuseVelocities[index].y;
+	diffuseVelPtr[3 * index + 2] = diffuseVelocities[index].z;
+}
+
 void getPositions(float4* oldPos, float* positions) {
 	getParticlePositions<<<dims, blockSize>>>(oldPos, positions);
 }
 
+void getDiffuse(float4* diffusePos, float3* diffuseVelocities, float* diffusePosPtr, float* diffuseVelPtr) {
+
+}
+
 void setParams(solverParams *tempParams) {
 	dims = int(ceil(tempParams->numParticles / blockSize));
+	diffuseDims = int(ceil(tempParams->numDiffuse / blockSize));
 	gridDims = int(ceil(tempParams->gridSize / blockSize));
 	cudaCheck(cudaMemcpyToSymbol(sp, tempParams, sizeof(solverParams)));
 }

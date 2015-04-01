@@ -136,6 +136,17 @@ public:
 		//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
+	void shaderDiffuseVelVAOCuda(GLuint &cudaVBO) {
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
 	void shaderVAOPointsFoam(std::vector<glm::vec4> &points) {
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);

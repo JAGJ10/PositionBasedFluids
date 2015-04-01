@@ -7,6 +7,9 @@ struct tempSolver {
 	std::vector<float4> positions;
 	std::vector<float3> velocities;
 	std::vector<int> phases;
+
+	std::vector<float4> diffusePos;
+	std::vector<float3> diffuseVelocities;
 };
 
 struct solver {
@@ -17,8 +20,8 @@ struct solver {
 	int* phases;
 	//int* indices;
 
-	//float4* diffusePos;
-	//float3* diffuseVelocities;
+	float4* diffusePos;
+	float3* diffuseVelocities;
 
 	int* neighbors;
 	int* numNeighbors;

@@ -23,10 +23,10 @@ static float deltaTime = 0.0f;
 static float lastFrame = 0.0f;
 static int w = 0;
 
-int initializeState(ParticleSystem &system);
+int2 initializeState(ParticleSystem &system);
 void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam);
 void saveVideo();
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles);
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse);
 
 int main() {
 	//Checks for memory leaks in debug mode
@@ -60,8 +60,8 @@ int main() {
 	Camera cam = Camera();
 	ParticleSystem system = ParticleSystem();
 	Renderer render = Renderer();
-	int numParticles = initializeState(system);
-	render.initVBO(numParticles);
+	int2 counts = initializeState(system);
+	render.initVBOS(counts.x, counts.y);
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
@@ -74,7 +74,7 @@ int main() {
 		handleInput(window, system, cam);
 
 		//Update physics and render
-		mainUpdate(system, render, cam, numParticles);
+		mainUpdate(system, render, cam, counts.x, counts.y);
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
@@ -137,26 +137,31 @@ void saveVideo() {
 	w++;*/
 }
 
-int initializeState(ParticleSystem &system) {
+int2 initializeState(ParticleSystem &system) {
 	tempSolver tp;
 	solverParams tempParams;
 	DamBreak scene("DamBreak");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
-	return tempParams.numParticles;
+	return make_int2(tempParams.numParticles, tempParams.numDiffuse);
 }
 
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles) {
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse) {
 	system.updateWrapper();
 
 	//Update the VBO
 	void* positionsPtr;
-	cudaCheck(cudaGraphicsMapResources(1, &render.resource, 0));
+	void* diffusePosPtr;
+	void* diffuseVelPtr;
+	cudaCheck(cudaGraphicsMapResources(3, render.resources));
 	size_t size;
-	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resource);
+	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resources[0]);
+	cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]);
+	cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]);
 	system.getPositionsWrapper((float*)positionsPtr);
-	cudaGraphicsUnmapResources(1, &render.resource, 0);
+	system.getDiffuseWrapper((float*)diffusePosPtr, (float*)diffuseVelPtr);
+	cudaGraphicsUnmapResources(3, render.resources, 0);
 
 	//Render
-	render.run(numParticles, cam);
+	render.run(numParticles, numDiffuse, cam);
 }

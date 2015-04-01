@@ -111,7 +111,8 @@ ParticleSystem::~ParticleSystem() {
 	cudaCheck(cudaFree(s->velocities));
 	cudaCheck(cudaFree(s->densities));
 	cudaCheck(cudaFree(s->phases));
-	//diffuse goes here
+	cudaCheck(cudaFree(s->diffusePos));
+	cudaCheck(cudaFree(s->diffuseVelocities));
 	cudaCheck(cudaFree(s->neighbors));
 	cudaCheck(cudaFree(s->numNeighbors));
 	cudaCheck(cudaFree(s->gridCells));
@@ -120,7 +121,6 @@ ParticleSystem::~ParticleSystem() {
 	cudaCheck(cudaFree(s->numContacts));
 	cudaCheck(cudaFree(s->deltaPs));
 	cudaCheck(cudaFree(s->buffer0));
-	//cudaCheck(cudaFree(sp));
 	delete s;
 }
 
@@ -130,7 +130,8 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMalloc((void**)&s->velocities, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMalloc((void**)&s->densities, tempParams.numParticles * sizeof(float)));
 	cudaCheck(cudaMalloc((void**)&s->phases, tempParams.numParticles * sizeof(int)));
-	//diffuse goes here
+	cudaCheck(cudaMalloc((void**)&s->diffusePos, tempParams.numDiffuse * sizeof(float4)));
+	cudaCheck(cudaMalloc((void**)&s->diffuseVelocities, tempParams.numDiffuse * sizeof(float3)));
 	cudaCheck(cudaMalloc((void**)&s->neighbors, tempParams.MAX_NEIGHBORS * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->numNeighbors, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->gridCells, tempParams.MAX_PARTICLES * tempParams.gridSize * sizeof(int)));
@@ -139,13 +140,14 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMalloc((void**)&s->numContacts, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->deltaPs, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMalloc((void**)&s->buffer0, tempParams.numParticles * sizeof(float)));
-	//cudaCheck(cudaMalloc((void**)&s, sizeof(solver)));
 
 	cudaCheck(cudaMemset(s->oldPos, 0, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMemset(s->newPos, 0, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMemset(s->velocities, 0, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMemset(s->densities, 0, tempParams.numParticles * sizeof(float)));
 	cudaCheck(cudaMemset(s->phases, 0, tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMemset(s->diffusePos, 0, tempParams.numDiffuse * sizeof(float4)));
+	cudaCheck(cudaMemset(s->diffuseVelocities, 0, tempParams.numDiffuse * sizeof(float3)));
 	cudaCheck(cudaMemset(s->neighbors, 0, tempParams.MAX_NEIGHBORS * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->numNeighbors, 0, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->gridCells, 0, tempParams.MAX_PARTICLES * tempParams.gridSize * sizeof(int)));
@@ -155,11 +157,16 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMemcpy(s->newPos, &tp.positions[0], tempParams.numParticles * sizeof(float4), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->velocities, &tp.velocities[0], tempParams.numParticles * sizeof(float3), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->phases, &tp.phases[0], tempParams.numParticles * sizeof(int), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->diffusePos, &tp.diffusePos[0], tempParams.numDiffuse * sizeof(float4), cudaMemcpyHostToDevice));
+	cudaCheck(cudaMemcpy(s->diffuseVelocities, &tp.diffuseVelocities[0], tempParams.numDiffuse * sizeof(float3), cudaMemcpyHostToDevice));
 	setParams(&tempParams);
 }
 
 void ParticleSystem::updateWrapper() {
 	update(s);
+	vector<float4> temp;
+	temp.resize(25600);
+	cudaCheck(cudaMemcpy(&temp[0], s->diffusePos, 25600 * sizeof(float4), cudaMemcpyDeviceToHost));
 	//Move wall
 	/*if (frameCounter >= 500) {
 		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
@@ -181,168 +188,9 @@ void ParticleSystem::getPositionsWrapper(float* positionsPtr) {
 	getPositions(s->oldPos, positionsPtr);
 }
 
-void ParticleSystem::updatePositions2() {
-	/*#pragma omp parallel for num_threads(8)
-	for (int i = 0; i < particles.size(); i++) {
-		Particle &p = particles.at(i);
-		//p.sumWeight = 0.0f;
-		//p.weightedPos = glm::vec3(0.0f);
-	}*/
-
-	//for (auto &p : particles) fluidPositions.push_back(getWeightedPosition(p));
-	//for (auto &p : particles) fluidPositions.push_back(p.oldPos);
-	
-	//for (int i = 0; i < foam.size(); i++) {
-		//FoamParticle &p = foam.at(i);
-		//int r = rand() % foam.size();
-		//foamPositions.push_back(glm::vec4(p.pos.x, p.pos.y, p.pos.z, (p.type * 1000) + float(i) + abs(p.lifetime - lifetime) / lifetime));
-	//}
+void ParticleSystem::getDiffuseWrapper(float* diffusePosPtr, float* diffuseVelPtr) {
+	getDiffuse(s->diffusePos, s->diffuseVelocities, diffusePosPtr, diffuseVelPtr);
 }
-
-void ParticleSystem::updateFoam() {
-	//Kill dead foam
-	/*for (int i = 0; i < foam.size(); i++) {
-		FoamParticle &p = foam.at(i);
-		if (p.type == 2) {
-			p.lifetime -= deltaT;
-			if (p.lifetime <= 0) {
-				foam.erase(foam.begin() + i);
-				i--;
-			}
-		}
-	}
-
-	//Update velocities
-	#pragma omp parallel for num_threads(8)
-	for (int i = 0; i < foam.size(); i++) {
-		FoamParticle &p = foam.at(i);
-		confineToBox(p);
-
-		glm::ivec3 pos = p.pos; //* 10;
-		glm::vec3 vfSum = glm::vec3(0.0f);
-		float kSum = 0;
-		int numNeighbors = 0;
-		for (auto &c : grid.cells[pos.x][pos.y][pos.z].neighbors) {
-			for (auto &n : c->particles) {
-				if (glm::distance(p.pos, n->newPos) <= H) {
-					numNeighbors++;
-					float k = WPoly6(p.pos, n->newPos);
-					vfSum += n->velocity * k;
-					kSum += k;
-				}
-			}
-		}
-
-		if (numNeighbors >= 8) p.type = 2;
-		else p.type = 1;
-
-		if (p.type == 1) {
-			//Spray
-			p.velocity.x *= 0.8f;
-			p.velocity.z *= 0.8f;
-			p.velocity += GRAVITY * deltaT;
-			p.pos += p.velocity * deltaT;
-		} else if (p.type == 2) {
-			//Foam
-			p.pos += (1.0f * (vfSum / kSum)) * deltaT;
-		}
-	}*/
-}
-
-/*void ParticleSystem::clothUpdate() {
-	updateClothPositions();
-	for (auto &p : clothParticles) {
-		//update velocity vi = vi + dt * wi * fext
-		p.velocity += deltaT * p.invMass * GRAVITY;
-	}
-	//Dampening
-	glm::vec3 xcm = glm::vec3(0.0f);
-	glm::vec3 vcm = glm::vec3(0.0f);
-	float sumM = 0.0f;
-	for (auto &p : clothParticles) {
-		if (p.invMass != 0) {
-			xcm += p.oldPos * (1 / p.invMass);
-			vcm += p.velocity * (1 / p.invMass);
-			sumM += (1 / p.invMass);
-		}
-	}
-	xcm /= sumM;
-	vcm /= sumM;
-	glm::mat3 I = glm::mat3(1.0f);
-	glm::vec3 L = glm::vec3(0.0f);
-	glm::vec3 omega = glm::vec3(0.0f);
-	for (int i = 0; i < clothParticles.size(); i++) {
-		Particle &p = clothParticles.at(i);
-		if (p.invMass > 0) {
-			buffer1[i] = p.oldPos - xcm; //ri
-			L += glm::cross(buffer1[i], (1 / p.invMass) * p.velocity);
-			glm::mat3 temp = glm::mat3(0, buffer1[i].z, -buffer1[i].y,
-				-buffer1[i].z, 0, buffer1[i].x,
-				buffer1[i].y, -buffer1[i].x, 0);
-			I += (temp*glm::transpose(temp)) * (1 / p.invMass);
-		}
-	}
-	omega = glm::inverse(I) * L;
-	// deltaVi = vcm + (omega x ri) - vi
-	// vi <- vi + kDamp * deltaVi
-	for (int i = 0; i < clothParticles.size(); i++) {
-		Particle &p = clothParticles.at(i);
-		if (p.invMass > 0) {
-			glm::vec3 deltaVi = vcm + glm::cross(omega, buffer1[i]) - p.velocity;
-			p.velocity += kDamp * deltaVi;
-		}
-	}
-	//Predict new positions -> pi = xi + dt * vi
-	for (int i = 0; i < clothParticles.size(); i++) {
-		Particle &p = clothParticles.at(i);
-		if (p.invMass == 0) {
-			p.newPos = p.oldPos;
-		}
-		else {
-			p.newPos = p.oldPos + (p.velocity * deltaT);
-		}
-	}
-	//Collision with ground
-	for (int i = 0; i < clothParticles.size(); i++) {
-		Particle &p = clothParticles.at(i);
-		if (p.newPos.y < 0) {
-			p.newPos.y = 0;
-		}
-	}
-	for (int si = 0; si < SOLVER_ITERATIONS; si++) {
-		//Stretching/Distance constraints
-		for (auto &c : dConstraints) {
-			glm::vec3 dir = c.p1->newPos - c.p2->newPos;
-			float length = glm::length(dir);
-			float invMass = c.p1->invMass + c.p2->invMass;
-			glm::vec3 deltaP = (1 / invMass) * (length - c.restLength) * (dir / length) * kLin;
-			if (c.p1->invMass > 0) c.p1->newPos -= deltaP * c.p1->invMass;
-			if (c.p2->invMass > 0) c.p2->newPos += deltaP * c.p2->invMass;
-		}
-		//Bending constraints
-		for (auto &c : bConstraints) {
-			glm::vec3 center = (1.0f / 3.0f) * (c.p1->newPos + c.p2->newPos + c.p3->newPos);
-			glm::vec3 dir = c.p2->newPos - center;
-			float d = glm::length(dir);
-			float diff;
-			if (d != 0.0f) diff = 1.0f - ((globalK + c.restLength) / d);
-			else diff = 0;
-			glm::vec3 force = dir * diff;
-			glm::vec3 b0 = kLin * ((2.0f * c.p1->invMass) / c.w) * force;
-			glm::vec3 b1 = kLin * ((2.0f * c.p3->invMass) / c.w) * force;
-			glm::vec3 delV = kLin * ((-4.0f * c.p2->invMass) / c.w) * force;
-			if (c.p1->invMass > 0) c.p1->newPos += b0;
-			if (c.p2->invMass > 0) c.p2->newPos += delV;
-			if (c.p3->invMass > 0) c.p3->newPos += b1;
-		}
-	}
-	for (auto &p : clothParticles) {
-		// vi <- (pi - xi) / dt
-		p.velocity = (p.newPos - p.oldPos) / deltaT;
-		// xi <- pi
-		p.oldPos = p.newPos;
-	}
-}*/
 
 int ParticleSystem::getIndex(float i, float j) {
 	return int(i * 20 + j);
