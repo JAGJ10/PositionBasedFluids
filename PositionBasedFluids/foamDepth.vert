@@ -17,14 +17,14 @@ void main() {
 
 	float trl = vertexPos.w;
 
-	if (trl < 1500) {
-		trl -= 1000;
-	} else if (trl < 2500) {
-		trl -= 2000;
-		ri /= 2;
-	} else {
-		trl -= 3000;
-	}
+//	if (trl < 1500) {
+//		trl -= 1000;
+//	} else if (trl < 2500) {
+//		trl -= 2000;
+//		ri /= 2;
+//	} else {
+//		trl -= 3000;
+//	}
 
 	ri /= ((int(trl) % 5) + 1);
 

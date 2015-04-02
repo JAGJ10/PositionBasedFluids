@@ -106,9 +106,6 @@
     <ClInclude Include="FoamParticle.hpp">
       <Filter>Header Files\foam</Filter>
     </ClInclude>
-    <ClInclude Include="Constants.h">
-      <Filter>Header Files\water</Filter>
-    </ClInclude>
     <ClInclude Include="ParticleSystem.h">
       <Filter>Header Files\water</Filter>
     </ClInclude>

@@ -23,7 +23,7 @@ public:
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
 		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
-		int3 dims = make_int3(20, 20, 20);
+		int3 dims = make_int3(30, 30, 30);
 		createParticleGrid(tp, sp, lower, dims, restDistance);
 		
 		sp->radius = radius;

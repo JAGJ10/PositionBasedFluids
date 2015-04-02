@@ -356,7 +356,10 @@ __global__ void generateFoam(float4* newPos, float3* velocities, int* phases, fl
 	int nd = 0;
 	if (potential > 0.7f) nd = min(20, (sp.numDiffuse - 1 - foamCount));
 	if (nd <= 0) return;
-	atomicAdd(&foamCount, nd);
+	
+	int count = atomicAdd(&foamCount, nd);
+	count = min(count, sp.numDiffuse - 1);
+
 	for (int i = 0; i < nd; i++) {
 		float rx = distr[i % 30] * sp.radius;
 		float ry = distr[(i + 1) % 30] * sp.radius;
@@ -364,24 +367,24 @@ __global__ void generateFoam(float4* newPos, float3* velocities, int* phases, fl
 		int rd = distr[index % 30] > 0.5f ? 1 : -1;
 
 		float3 xd = make_float3(newPos[index]) + make_float3(rx * rd, ry * rd, rz * rd);
-		int type;
-		if (numNeighbors[index] + 1 < 8) type = 1;
-		else type = 2;
-		diffusePos[foamCount + i] = make_float4(xd, (type * 1000) + 1);
-		diffuseVelocities[foamCount + i] = velocities[index];
-		confineToBox(diffusePos[foamCount + i]);
+		//int type;
+		//if (numNeighbors[index] + 1 < 8) type = 1;
+		//else type = 2;
+		diffusePos[count + i] = make_float4(xd, 1);
+		diffuseVelocities[count + i] = velocities[index];
+		confineToBox(diffusePos[count + i]);
 	}
 }
 
 __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePos, float3* diffuseVelocities, int* gridCells, int* gridCounters) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= sp.numDiffuse || diffusePos[index].w == 1000 || diffusePos[index].w == 2000) return;
+	if (index >= sp.numDiffuse || diffusePos[index].w <= 0) return;
 
 	confineToBox(diffusePos[index]);
 
-	int lifetime;
-	if (diffusePos[index].w > 0) lifetime = diffusePos[index].w -= deltaT;
-	else lifetime = 0;
+	//int lifetime;
+	//if (diffusePos[index].w > 0) lifetime = diffusePos[index].w - deltaT;
+	//else lifetime = 0;
 
 	int3 pos = getGridPos(diffusePos[index]);
 	int pIndex;
@@ -410,22 +413,23 @@ __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePo
 		}
 	}
 
-	int type;
-	if (fluidNeighbors >= 8) type = 2;
-	else type = 1;
+	//int type;
+	//if (fluidNeighbors >= 8) type = 2;
+	//else type = 1;
 
-	if (type == 1) {
+	if (fluidNeighbors < 8) {
 		//Spray
 		diffuseVelocities[index].x *= 0.8f;
 		diffuseVelocities[index].z *= 0.8f;
 		diffuseVelocities[index] += sp.gravity * deltaT;
 		diffusePos[index] += make_float4(diffuseVelocities[index] * deltaT, 0);
-	} else if (type == 2) {
+	} else {
 		//Foam
 		diffusePos[index] += make_float4((1.0f * (vfSum / kSum)) * deltaT, 0);
 	}
 
-	diffusePos[index].w = (type * 1000) + lifetime;
+	diffusePos[index].w -= deltaT;
+	if (diffusePos[index].w <= 0.0f) atomicSub(&foamCount, 1);
 }
 
 __global__ void clearDeltaP(float3* deltaPs, float* buffer0) {
@@ -474,6 +478,13 @@ __global__ void updateClothVelocity(Particle* particles) {
 	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
 	particles[index].oldPos = particles[index].newPos;
 }*/
+
+struct OBCmp {
+	__host__ __device__
+	bool operator()(const float4& o1, const float4& o2) {
+		return o1.w > o2.w;
+	}
+};
 
 void updateWater(solver* s) {
 	//------------------WATER-----------------
@@ -531,6 +542,8 @@ void update(solver* s) {
 
 	//Solve constraints
 	updateWater(s);
+	thrust::device_ptr<float4> devPtr = thrust::device_pointer_cast(s->diffusePos);
+	thrust::sort(devPtr, devPtr + 25600, OBCmp());
 	//updateCloth(p);
 }
 
@@ -563,7 +576,7 @@ void getPositions(float4* oldPos, float* positions) {
 }
 
 void getDiffuse(float4* diffusePos, float3* diffuseVelocities, float* diffusePosPtr, float* diffuseVelPtr) {
-
+	getDiffuseValues<<<diffuseDims, blockSize>>>(diffusePos, diffuseVelocities, diffusePosPtr, diffuseVelPtr);
 }
 
 void setParams(solverParams *tempParams) {

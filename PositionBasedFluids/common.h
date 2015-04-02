@@ -4,6 +4,8 @@
 #define PI 3.14159265358979323846f
 
 #include <cuda_runtime.h>
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
 #include <device_launch_parameters.h>
 #include "vector_types.h"
 #include "vector_functions.h"

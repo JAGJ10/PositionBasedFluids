@@ -10,20 +10,20 @@ uniform float pointScale;
 
 out vec3 pos;
 out float lifetime;
-out float type;
+//out float type;
 
 void main() {
 	float ri = pointRadius;
 
 	float trl = vertexPos.w;
 
-	if (trl < 1500) {
-		trl -= 1000;
-		type = 1;
-	} else if (trl < 2500) {
-		trl -= 2000;
-		type = 2;
-	}
+//	if (trl < 1500) {
+//		trl -= 1000;
+//		type = 1;
+//	} else if (trl < 2500) {
+//		trl -= 2000;
+//		type = 2;
+//	}
 
 	ri /= ((int(trl) % 5) + 1);
 

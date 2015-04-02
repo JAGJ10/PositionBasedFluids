@@ -2,7 +2,7 @@
 
 in vec3 pos;
 in float lifetime;
-in float type;
+//in float type;
 
 uniform sampler2D foamDepthMap;
 uniform sampler2D fluidDepthMap;
@@ -31,11 +31,11 @@ void main() {
 	float r = sqrt(r2);
 
 	if (r <= 1) {
-		if (type == 1) {
+		//if (type == 1) {
 			fThickness = 1 - pow(r, 1.5);
-		} else {
-			fThickness = 1 - pow(r, 2.25);
-		}
+		//} else {
+			//fThickness = 1 - pow(r, 2.25);
+	//	}
 	} else {
 		fThickness = 0;
 		return;
