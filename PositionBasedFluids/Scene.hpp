@@ -23,13 +23,13 @@ public:
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
 		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
-		int3 dims = make_int3(30, 30, 30);
+		int3 dims = make_int3(60, 40, 20);
 		createParticleGrid(tp, sp, lower, dims, restDistance);
 		
 		sp->radius = radius;
 		sp->restDistance = restDistance;
-		sp->numIterations = 4;
-		sp->numDiffuse = 160 * 160;
+		sp->numIterations = 2;
+		sp->numDiffuse = 1024 * 1024;
 		sp->numParticles = int(tp->positions.size());
 		sp->gravity = make_float3(0, -9.8f, 0);
 		sp->bounds = make_float3(dims) * radius;
@@ -43,11 +43,11 @@ public:
 		sp->restDensity = 6378.0f;
 		sp->lambdaEps = 600.0f;
 		sp->vorticityEps = 0.0001f;
-		sp->C = 0.01f;
+		sp->C = 0.01f; //0.0025f;
 		sp->K = 0.00001f;
 		sp->KPOLY = 315.0f / (64.0f * PI * pow(radius, 9));
 		sp->SPIKY = 45.0f / (PI * pow(radius, 6));
-		sp->dqMag = 0.3f * radius;
+		sp->dqMag = 0.2f * radius;
 		sp->wQH = sp->KPOLY * pow((radius * radius - sp->dqMag * sp->dqMag), 3);
 
 		tp->diffusePos.resize(sp->numDiffuse);

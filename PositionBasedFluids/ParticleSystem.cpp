@@ -6,6 +6,7 @@ using namespace std;
 static float t = 0.0f;
 static int flag = 1;
 static int frameCounter = 0;
+static const float deltaT = 0.0083f;
 
 ParticleSystem::ParticleSystem() : running(false), s(new solver) {
 	//Initialize cloth particles
@@ -162,34 +163,37 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	setParams(&tempParams);
 }
 
-void ParticleSystem::updateWrapper() {
-	update(s);
-	vector<float4> temp;
-	temp.resize(25600);
-	cudaCheck(cudaMemcpy(&temp[0], s->diffusePos, 25600 * sizeof(float4), cudaMemcpyDeviceToHost));
-	//Move wall
-	/*if (frameCounter >= 500) {
-		//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
-		t += flag * deltaT / 1.5f;
-		if (t >= 1) {
-			t = 1;
-			flag *= -1;
-		} else if (t <= 0) {
-			t = 0;
-			flag *= -1;
-		}
+void ParticleSystem::updateWrapper(solverParams &tempParams) {
+	if (running) {
+		//Move wall
+		if (frameCounter >= 300) {
+			//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
+			t += flag * deltaT / 1.0f;
+			if (t >= 1) {
+				t = 1;
+				flag *= -1;
+			} else if (t <= 0) {
+				t = 0;
+				flag *= -1;
+			}
 		
-		width = easeInOutQuad(t, 8, -3.0f, 1.5f);
+			tempParams.bounds.x = easeInOutQuad(t, tempParams.gridWidth * tempParams.radius, -2.0f, 1.0f);
+		}
+		frameCounter++;
+		setParams(&tempParams);
+
+		update(s, &tempParams);
 	}
-	frameCounter++;*/
 }
 
-void ParticleSystem::getPositionsWrapper(float* positionsPtr) {
-	getPositions(s->oldPos, positionsPtr);
+void ParticleSystem::getPositions(float* positionsPtr, int numParticles) {
+	cudaCheck(cudaMemcpy(positionsPtr, s->oldPos, numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
 }
 
-void ParticleSystem::getDiffuseWrapper(float* diffusePosPtr, float* diffuseVelPtr) {
-	getDiffuse(s->diffusePos, s->diffuseVelocities, diffusePosPtr, diffuseVelPtr);
+void ParticleSystem::getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int numDiffuse) {
+	cudaCheck(cudaMemset(diffusePosPtr, 0, numDiffuse * sizeof(float4)));
+	cudaCheck(cudaMemcpy(diffusePosPtr, s->diffusePos, numDiffuse * sizeof(float4), cudaMemcpyDeviceToHost));
+	cudaCheck(cudaMemcpy(diffuseVelPtr, s->diffuseVelocities, numDiffuse * sizeof(float3), cudaMemcpyDeviceToHost));
 }
 
 int ParticleSystem::getIndex(float i, float j) {

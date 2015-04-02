@@ -41,7 +41,7 @@ void main() {
 		return;
 	}
 
-	fThickness *= pow(1 - pow(lifetime, 2), 0.4);
+	fThickness *= pow(pow(lifetime, 2), 0.4);
 
 	vec2 coord = vec2(gl_FragCoord.x / screenSize.x, gl_FragCoord.y / screenSize.y);
 
@@ -51,8 +51,8 @@ void main() {
 	zFoam = linearizeDepth(zFoam);
 
 	if (zFoam > zFluid) {
-		if ((zFoam - zFluid) / .01 <= 1) {
-			fThickness *= pow(1 - pow((zFoam - zFluid) / .01, 2), 4);
+		if ((zFoam - zFluid) / .1 <= 1) {
+			fThickness *= pow(1 - pow((zFoam - zFluid) / .1, 2), 4);
 		} else {
 			fThickness = 0;
 		}

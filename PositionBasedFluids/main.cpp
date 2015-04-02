@@ -22,11 +22,12 @@ static const GLfloat lastY = (height / 2);
 static float deltaTime = 0.0f;
 static float lastFrame = 0.0f;
 static int w = 0;
+static bool ss = false;
 
-int2 initializeState(ParticleSystem &system);
+int2 initializeState(ParticleSystem &system, solverParams &tempParams);
 void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam);
 void saveVideo();
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse);
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse, solverParams &tempParams);
 
 int main() {
 	//Checks for memory leaks in debug mode
@@ -53,14 +54,15 @@ int main() {
 	// Define the viewport dimensions
 	glViewport(0, 0, width, height);
 
-	//ilutInit();
-	//ilInit();
-	//ilutRenderer(ILUT_OPENGL);
+	ilutInit();
+	ilInit();
+	ilutRenderer(ILUT_OPENGL);
 	
 	Camera cam = Camera();
-	ParticleSystem system = ParticleSystem();
 	Renderer render = Renderer();
-	int2 counts = initializeState(system);
+	ParticleSystem system = ParticleSystem();
+	solverParams tempParams;
+	int2 counts = initializeState(system, tempParams);
 	render.initVBOS(counts.x, counts.y);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -74,7 +76,8 @@ int main() {
 		handleInput(window, system, cam);
 
 		//Update physics and render
-		mainUpdate(system, render, cam, counts.x, counts.y);
+		mainUpdate(system, render, cam, counts.x, counts.y, tempParams);
+		saveVideo();
 
 		// Swap the buffers
 		glfwSwapBuffers(window);
@@ -117,6 +120,9 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
 		system.running = true;
 
+	if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS)
+		ss = true;
+
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
@@ -124,30 +130,32 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 }
 
 void saveVideo() {
-	/*ILuint imageID = ilGenImage();
-	ilBindImage(imageID);
-	ilutGLScreen();
-	ilEnable(IL_FILE_OVERWRITE);
-	std::string str = std::to_string(w) + ".png";
-	const char * c = str.c_str();
-	std::cout << c << std::endl;
-	ilSaveImage(c);
-	//ilutGLScreenie();
-	ilDeleteImage(imageID);
-	w++;*/
+	if (ss == true) {
+		ILuint imageID = ilGenImage();
+		ilBindImage(imageID);
+		ilutGLScreen();
+		ilEnable(IL_FILE_OVERWRITE);
+		std::string str = std::to_string(w) + ".png";
+		const char * c = str.c_str();
+		std::cout << c << std::endl;
+		ilSaveImage(c);
+		//ilutGLScreenie();
+		ilDeleteImage(imageID);
+		w++;
+	}
 }
 
-int2 initializeState(ParticleSystem &system) {
+int2 initializeState(ParticleSystem &system, solverParams &tempParams) {
 	tempSolver tp;
-	solverParams tempParams;
 	DamBreak scene("DamBreak");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
 	return make_int2(tempParams.numParticles, tempParams.numDiffuse);
 }
 
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse) {
-	system.updateWrapper();
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse, solverParams &tempParams) {
+	//Step physics
+	system.updateWrapper(tempParams);
 
 	//Update the VBO
 	void* positionsPtr;
@@ -158,8 +166,8 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numPa
 	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resources[0]);
 	cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]);
 	cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]);
-	system.getPositionsWrapper((float*)positionsPtr);
-	system.getDiffuseWrapper((float*)diffusePosPtr, (float*)diffuseVelPtr);
+	system.getPositions((float*)positionsPtr, numParticles);
+	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, numDiffuse);
 	cudaGraphicsUnmapResources(3, render.resources, 0);
 
 	//Render

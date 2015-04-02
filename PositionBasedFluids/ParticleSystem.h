@@ -16,9 +16,9 @@ public:
 	~ParticleSystem();
 
 	void initialize(tempSolver &tp, solverParams &tempParams);
-	void updateWrapper();
-	void getPositionsWrapper(float* positionsPtr);
-	void getDiffuseWrapper(float* diffusePosPtr, float* diffuseVelPtr);
+	void updateWrapper(solverParams &tempParams);
+	void getPositions(float* positionsPtr, int numParticles);
+	void getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int numDiffuse);
 
 private:
 	int getIndex(float i, float j);

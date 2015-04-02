@@ -4,6 +4,7 @@ in vec2 coord;
 
 uniform mat4 mView;
 uniform mat4 projection;
+uniform mat4 inverseProjection;
 uniform float zNear;
 uniform float zFar;
 uniform sampler2D foamDepthMap;
@@ -20,10 +21,6 @@ float rand(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float linearizeDepth(float depth) {
-	return (2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear));
-}
-
 void main() {
 	float hfrag = texture(foamNormalHMap, coord).w;
 	float foamDepth = texture(foamDepthMap, coord).x;
@@ -38,27 +35,31 @@ void main() {
 	
 	float irr = abs(dot(l, nfrag));
 
-	for (float p = 0; p < 3; p+=1) {
+	vec4 eyeCoord = vec4(((vec3(coord, foamDepth) * 2.0f) - 1.0f), 1);
+	eyeCoord = inverseProjection * eyeCoord;
+	eyeCoord /= eyeCoord.w;
+
+	for (float p = 0; p < 1; p+=1) {
 		hpass = hfrag * (1 + 7 * p);
-		float v = clamp(0.75 * PI * pow(hpass, 3) * 0.5, 16, 512);
+		float v = clamp(0.75 * PI * pow(hpass, 3) * 0.5, 16, 256);
 		
 		for (float i = 0; i < v; i+=1) {
 			vec3 s = vec3(rand(vec2(10 * v, 10 * v)), rand(vec2(20 * v, 20 * v)), rand(vec2(30 * v, 30 * v)));
-			
+			s = (s * 2.0f) - 1.0f;
 			if (length(s) > 1) continue;
 			float lambda = pow(1 - length(s), 2);
-			s *= hpass;
-			vec4 projectedS = projection * vec4(s, 1);
+			s += eyeCoord.xyz;
+			vec4 sproj = projection * vec4(s, 1);
+			sproj /= sproj.w;
+			sproj = sproj * 0.5f + 0.5f;
 			
-			float sampleFoamDepth = texture(foamDepthMap, coord + vec2(projectedS.x, projectedS.y)).x;
-			sampleFoamDepth = linearizeDepth(sampleFoamDepth);
-			float sampleFluidDepth = texture(fluidDepthMap, coord + vec2(projectedS.x, projectedS.y)).x;
-			sampleFluidDepth = linearizeDepth(sampleFluidDepth);
-			float sampleIntensity = texture(foamIntensityMap, coord + vec2(projectedS.x, projectedS.y)).x;
+			float sampleFoamDepth = texture(foamDepthMap, sproj.xy).x;
+			float sampleFluidDepth = texture(fluidDepthMap, sproj.xy).x;
+			float sampleIntensity = texture(foamIntensityMap, sproj.xy).x;
 
-			float delta = pow(max(1 - (abs(sampleFoamDepth - projectedS.z) / 5), 0), 2);
+			float delta = pow(max(1 - (abs(sampleFoamDepth - sproj.z) / 5), 0), 2);
 
-			float k = ((projectedS.z > sampleFoamDepth || projectedS.z > sampleFluidDepth) && (delta > 0.0 && delta < 1.0)) ? 1.0 : 0.0;
+			float k = ((sproj.z > sampleFoamDepth || sproj.z > sampleFluidDepth) && (delta > 0.0 && delta < 1.0)) ? 1.0 : 0.0;
 	
 			omega += lambda * delta * k * sampleIntensity;
 			omegaBottom += lambda;

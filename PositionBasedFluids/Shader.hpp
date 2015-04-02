@@ -110,21 +110,6 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void shaderVAOPoints(std::vector<glm::vec3> &points) {
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-
-		glGenBuffers(1, &vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		if (points.size() > 0) {
-			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * points.size(), &points[0], GL_STATIC_DRAW);
-		}
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
-
 	void shaderVAOCuda(GLuint &cudaVBO) {
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -133,7 +118,7 @@ public:
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void shaderDiffuseVelVAOCuda(GLuint &cudaVBO) {
@@ -142,21 +127,6 @@ public:
 
 		glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
-
-	void shaderVAOPointsFoam(std::vector<glm::vec4> &points) {
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-
-		glGenBuffers(1, &vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		if (points.size() > 0) {
-			glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * points.size(), &points[0], GL_STATIC_DRAW);
-		}
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

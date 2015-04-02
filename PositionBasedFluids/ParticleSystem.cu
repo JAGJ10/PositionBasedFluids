@@ -79,7 +79,6 @@ __device__ float3 eta(float4* newPos, int* phases, int* neighbors, int* numNeigh
 	return eta;
 }
 
-//Calculates the vorticity force for a particle
 __device__ float3 vorticityForce(float4* newPos, float3* velocities, int* phases, int* neighbors, int* numNeighbors, int index) {
 	//Calculate omega_i
 	float3 omega = make_float3(0.0f);
@@ -131,16 +130,30 @@ __device__ float3 xsphViscosity(float4* newPos, float3* velocities, int* phases,
 	return visc * sp.C;
 }
 
-__device__ void confineToBox(float4 &pos) {
-	if (pos.x < 0) pos.x = 0.001f;
-	else if (pos.x > sp.bounds.x) pos.x = sp.bounds.x - 0.001f;
+__device__ void confineToBox(float4 &pos, float3 &vel) {
+	if (pos.x < 0) {
+		vel.x = 0;
+		pos.x = 0.001f;
+	} else if (pos.x > sp.bounds.x) {
+		vel.x = 0;
+		pos.x = sp.bounds.x - 0.001f;
+	}
 
+	if (pos.y < 0) {
+		vel.y = 0;
+		pos.y = 0.001f;
+	} else if (pos.y > sp.bounds.y) {
+		vel.y = 0;
+		pos.y = sp.bounds.y - 0.001f;
+	}
 
-	if (pos.y < 0) pos.y = 0.001f;
-	else if (pos.y > sp.bounds.y) pos.y = sp.bounds.y - 0.001f;
-
-	if (pos.z < 0) pos.z = 0.001f;
-	else if (pos.z > sp.bounds.z) pos.z = sp.bounds.z - 0.001f;
+	if (pos.z < 0) {
+		vel.z = 0;
+		pos.z = 0.001f;
+	} else if (pos.z > sp.bounds.z) {
+		vel.z = 0;
+		pos.z = sp.bounds.z - 0.001f;
+	}
 }
 
 __device__ int3 getGridPos(float4 pos) {
@@ -161,7 +174,7 @@ __global__ void predictPositions(float4* newPos, float3* velocities) {
 	//predict position x* = xi + dt * vi
 	newPos[index] += make_float4(velocities[index] * deltaT, 0);
 
-	confineToBox(newPos[index]);
+	confineToBox(newPos[index], velocities[index]);
 }
 
 __global__ void clearNeighbors(int* numNeighbors, int* numContacts) {
@@ -314,7 +327,7 @@ __global__ void updateVelocities(float4* oldPos, float4* newPos, float3* velocit
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numParticles || phases[index] != 0) return;
 
-	confineToBox(newPos[index]);
+	//confineToBox(newPos[index], velocities[index]);
 
 	//set new velocity vi = (x*i - xi) / dt
 	velocities[index] = (make_float3(newPos[index]) - make_float3(oldPos[index])) / deltaT;
@@ -354,37 +367,33 @@ __global__ void generateFoam(float4* newPos, float3* velocities, int* phases, fl
 	float ek = 0.5f * pow(length(velocities[index]), 2);
 	float potential = velocityDiff * ek * max(1.0f - (1.0f * densities[index] / sp.restDensity), 0.0f);
 	int nd = 0;
-	if (potential > 0.7f) nd = min(20, (sp.numDiffuse - 1 - foamCount));
+	if (potential > 0.5f) nd = min(20, (sp.numDiffuse - 1 - foamCount));
 	if (nd <= 0) return;
 	
 	int count = atomicAdd(&foamCount, nd);
 	count = min(count, sp.numDiffuse - 1);
+	int cap = min(count + nd, sp.numDiffuse - 1);
 
-	for (int i = 0; i < nd; i++) {
-		float rx = distr[i % 30] * sp.radius;
-		float ry = distr[(i + 1) % 30] * sp.radius;
-		float rz = distr[(i + 2) % 30] * sp.radius;
+	for (int i = count; i < cap; i++) {
+		float rx = distr[i % 30] * sp.restDistance;
+		float ry = distr[(i + 1) % 30] * sp.restDistance;
+		float rz = distr[(i + 2) % 30] * sp.restDistance;
 		int rd = distr[index % 30] > 0.5f ? 1 : -1;
 
 		float3 xd = make_float3(newPos[index]) + make_float3(rx * rd, ry * rd, rz * rd);
-		//int type;
-		//if (numNeighbors[index] + 1 < 8) type = 1;
-		//else type = 2;
-		diffusePos[count + i] = make_float4(xd, 1);
-		diffuseVelocities[count + i] = velocities[index];
-		confineToBox(diffusePos[count + i]);
+
+		diffusePos[i] = make_float4(xd, 1);
+		diffuseVelocities[i] = velocities[index];
 	}
+
+	if (foamCount >= sp.numDiffuse) atomicExch(&foamCount, sp.numDiffuse - 1);
 }
 
 __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePos, float3* diffuseVelocities, int* gridCells, int* gridCounters) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numDiffuse || diffusePos[index].w <= 0) return;
 
-	confineToBox(diffusePos[index]);
-
-	//int lifetime;
-	//if (diffusePos[index].w > 0) lifetime = diffusePos[index].w - deltaT;
-	//else lifetime = 0;
+	confineToBox(diffusePos[index], diffuseVelocities[index]);
 
 	int3 pos = getGridPos(diffusePos[index]);
 	int pIndex;
@@ -413,14 +422,10 @@ __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePo
 		}
 	}
 
-	//int type;
-	//if (fluidNeighbors >= 8) type = 2;
-	//else type = 1;
-
 	if (fluidNeighbors < 8) {
 		//Spray
-		diffuseVelocities[index].x *= 0.8f;
-		diffuseVelocities[index].z *= 0.8f;
+		//diffuseVelocities[index].x *= 0.8f;
+		//diffuseVelocities[index].z *= 0.8f;
 		diffuseVelocities[index] += sp.gravity * deltaT;
 		diffusePos[index] += make_float4(diffuseVelocities[index] * deltaT, 0);
 	} else {
@@ -429,7 +434,11 @@ __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePo
 	}
 
 	diffusePos[index].w -= deltaT;
-	if (diffusePos[index].w <= 0.0f) atomicSub(&foamCount, 1);
+	if (diffusePos[index].w <= 0.0f) {
+		atomicSub(&foamCount, 1);
+		diffusePos[index] = make_float4(0);
+		diffuseVelocities[index] = make_float3(0);
+	}
 }
 
 __global__ void clearDeltaP(float3* deltaPs, float* buffer0) {
@@ -481,8 +490,8 @@ __global__ void updateClothVelocity(Particle* particles) {
 
 struct OBCmp {
 	__host__ __device__
-	bool operator()(const float4& o1, const float4& o2) {
-		return o1.w > o2.w;
+	bool operator()(const float4& a, const float4& b) const {
+		return a.w > b.w;
 	}
 };
 
@@ -524,7 +533,7 @@ void updateWater(solver* s) {
 	updateClothVelocity<<<dims, blockSize>>>(s->particles);
 }*/
 
-void update(solver* s) {
+void update(solver* s, solverParams* sp) {
 	//Predict positions and update velocity
 	predictPositions<<<dims, blockSize>>>(s->newPos, s->velocities);
 
@@ -543,46 +552,14 @@ void update(solver* s) {
 	//Solve constraints
 	updateWater(s);
 	thrust::device_ptr<float4> devPtr = thrust::device_pointer_cast(s->diffusePos);
-	thrust::sort(devPtr, devPtr + 25600, OBCmp());
+	thrust::sort(devPtr, devPtr + sp->numDiffuse, OBCmp());
 	//updateCloth(p);
 }
 
-__global__ void getParticlePositions(float4* oldPos, float* positions) {
-	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= sp.numParticles) return;
-
-	positions[4 * index] = oldPos[index].x;
-	positions[4 * index + 1] = oldPos[index].y;
-	positions[4 * index + 2] = oldPos[index].z;
-	positions[4 * index + 3] = oldPos[index].w;
-}
-
-__global__ void getDiffuseValues(float4* diffusePos, float3* diffuseVelocities, float* diffusePosPtr, float* diffuseVelPtr) {
-	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= sp.numDiffuse) return;
-
-	diffusePosPtr[4 * index] = diffusePos[index].x;
-	diffusePosPtr[4 * index + 1] = diffusePos[index].y;
-	diffusePosPtr[4 * index + 2] = diffusePos[index].z;
-	diffusePosPtr[4 * index + 3] = diffusePos[index].w;
-
-	diffuseVelPtr[3 * index] = diffuseVelocities[index].x;
-	diffuseVelPtr[3 * index + 1] = diffuseVelocities[index].y;
-	diffuseVelPtr[3 * index + 2] = diffuseVelocities[index].z;
-}
-
-void getPositions(float4* oldPos, float* positions) {
-	getParticlePositions<<<dims, blockSize>>>(oldPos, positions);
-}
-
-void getDiffuse(float4* diffusePos, float3* diffuseVelocities, float* diffusePosPtr, float* diffuseVelPtr) {
-	getDiffuseValues<<<diffuseDims, blockSize>>>(diffusePos, diffuseVelocities, diffusePosPtr, diffuseVelPtr);
-}
-
 void setParams(solverParams *tempParams) {
-	dims = int(ceil(tempParams->numParticles / blockSize));
-	diffuseDims = int(ceil(tempParams->numDiffuse / blockSize));
-	gridDims = int(ceil(tempParams->gridSize / blockSize));
+	dims = int(ceil(tempParams->numParticles / blockSize + 0.5f));
+	diffuseDims = int(ceil(tempParams->numDiffuse / blockSize + 0.5f));
+	gridDims = int(ceil(tempParams->gridSize / blockSize + 0.5f));
 	cudaCheck(cudaMemcpyToSymbol(sp, tempParams, sizeof(solverParams)));
 }
 

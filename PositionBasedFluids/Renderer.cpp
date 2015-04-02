@@ -5,7 +5,7 @@ using namespace std;
 
 static const int width = 1024;
 static const int height = 512;
-static const float zFar = 200.0f;
+static const float zFar = 20.0f;
 static const float zNear = 1.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
@@ -13,7 +13,7 @@ static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static float filterRadius = 3;
-static const float radius = 0.03f;
+static const float radius = 0.05f;
 static const float clothRadius = 0.01f;
 static const float foamRadius = 0.01f;
 
@@ -34,10 +34,13 @@ Renderer::Renderer() :
 }
 
 Renderer::~Renderer() {
+	cudaDeviceSynchronize();
 	cudaGraphicsUnregisterResource(resources[0]);
 	cudaGraphicsUnregisterResource(resources[1]);
 	cudaGraphicsUnregisterResource(resources[2]);
 	glDeleteBuffers(1, &positionVBO);
+	glDeleteBuffers(1, &diffusePosVBO);
+	glDeleteBuffers(1, &diffuseVelVBO);
 }
 
 void Renderer::initVBOS(int numParticles, int numDiffuse) {
@@ -394,14 +397,13 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//foamDepth.shaderVAOPointsFoam(foamPositions);
 	foamDepth.shaderVAOCuda(diffusePosVBO);
 
 	setMatrix(foamDepth, projection, "projection");
 	setMatrix(foamDepth, mView, "mView");
 	setFloat(foamDepth, foamRadius, "pointRadius");
 	setFloat(foamDepth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-	setFloat(foamDepth, tanf(cam.zoom / 2), "fov");
+	setFloat(foamDepth, tanf(cam.zoom * 0.5f), "fov");
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -420,7 +422,6 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//foamThickness.shaderVAOPointsFoam(foamPositions);
 	foamThickness.shaderVAOCuda(diffusePosVBO);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -437,7 +438,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	setMatrix(foamThickness, mView, "mView");
 	setFloat(foamThickness, foamRadius, "pointRadius");
 	setFloat(foamThickness, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-	setFloat(foamThickness, tanf(cam.zoom / 2), "fov");
+	setFloat(foamThickness, tanf(cam.zoom * 0.5f), "fov");
 	setVec2(foamThickness, screenSize, "screenSize");
 	setFloat(foamThickness, zNear, "zNear");
 	setFloat(foamThickness, zFar, "zFar");

@@ -32,5 +32,5 @@ void main() {
 	pos = viewPos.xyz;
 	gl_PointSize = pointScale * (ri / gl_Position.w);
 
-	lifetime = trl - int(trl);
+	lifetime = trl;
 }

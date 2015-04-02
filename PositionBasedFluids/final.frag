@@ -19,15 +19,19 @@ void main() {
 	vec4 fluid = texture(fluidMap, coord).xyzw;
 
 	float sum = 0;
+	float totalWeight = 0;
 	hPass *= 3 / 2;
 
 	for (float x = -hPass; x < hPass; x+=1) {
 		for (float y = -hPass; y < hPass; y+=1) {
 			vec2 cxy = vec2(x / screenSize.x, y / screenSize.y);
-			sum += texture(foamRadianceMap, coord + cxy).x * exp(-pow(length(vec2(x, y)), 2) / (pow(hPass, 2) * 2)) * (1 / (2 * PI * pow(hPass, 2)));
+			float weight = exp(-pow(length(vec2(x, y)), 2) / (pow(hPass, 2) * 2)) * (1 / (2 * PI * pow(hPass, 2)));
+			sum += texture(foamRadianceMap, coord + cxy).x * weight;
+			totalWeight += weight;
 		}
 	}
+	sum /= totalWeight;
 
 	float squiggly = clamp(sum * (vec3(1, 1, 1) - vec3(0, 0.2, 0.6)), 0, 1);
-	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (1 - squiggly));
+	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (0.9 - squiggly));
 }
