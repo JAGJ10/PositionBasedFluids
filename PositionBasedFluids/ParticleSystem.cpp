@@ -177,7 +177,7 @@ void ParticleSystem::updateWrapper(solverParams &tempParams) {
 				flag *= -1;
 			}
 		
-			tempParams.bounds.x = easeInOutQuad(t, tempParams.gridWidth * tempParams.radius, -2.0f, 1.0f);
+			tempParams.bounds.x = easeInOutQuad(t, tempParams.gridWidth * tempParams.radius, -1.5f, 1.0f);
 		}
 		frameCounter++;
 		setParams(&tempParams);
@@ -187,13 +187,13 @@ void ParticleSystem::updateWrapper(solverParams &tempParams) {
 }
 
 void ParticleSystem::getPositions(float* positionsPtr, int numParticles) {
-	cudaCheck(cudaMemcpy(positionsPtr, s->oldPos, numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
+	cudaCheck(cudaMemcpy(positionsPtr, s->oldPos, numParticles * sizeof(float4), cudaMemcpyDeviceToDevice));
 }
 
 void ParticleSystem::getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int numDiffuse) {
 	cudaCheck(cudaMemset(diffusePosPtr, 0, numDiffuse * sizeof(float4)));
-	cudaCheck(cudaMemcpy(diffusePosPtr, s->diffusePos, numDiffuse * sizeof(float4), cudaMemcpyDeviceToHost));
-	cudaCheck(cudaMemcpy(diffuseVelPtr, s->diffuseVelocities, numDiffuse * sizeof(float3), cudaMemcpyDeviceToHost));
+	cudaCheck(cudaMemcpy(diffusePosPtr, s->diffusePos, numDiffuse * sizeof(float4), cudaMemcpyDeviceToDevice));
+	cudaCheck(cudaMemcpy(diffuseVelPtr, s->diffuseVelocities, numDiffuse * sizeof(float3), cudaMemcpyDeviceToDevice));
 }
 
 int ParticleSystem::getIndex(float i, float j) {

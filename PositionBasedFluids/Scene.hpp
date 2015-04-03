@@ -67,7 +67,7 @@ public:
 
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
-		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
+		float3 lower = make_float3(0.0f, 1.0f, 0.0f);
 		int3 dims = make_int3(32, 1, 32);
 		createCloth(tp, sp, lower, dims, radius * 0.25f, 1, stretch, bend, shear, 0.25f);
 		sp->numCloth = int(tp->positions.size());
@@ -85,7 +85,7 @@ public:
 
 		//Tethers
 		for (int i = 0; i < int(tp->positions.size()); i++) {
-			tp->positions[i].y = sinf(25.0f * 180.0f / PI) * tp->positions[i].x;
+			tp->positions[i].y = 1.5f - sinf(25.0f * 180.0f / PI) * tp->positions[i].x;
 			tp->positions[i].x *= cosf(25.0f * 180.0f / PI);
 
 			if (i != c1 && i != c2 && i != c3 && i != c4) {
