@@ -216,6 +216,7 @@
     <None Include="thickness.frag" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="cloth.png" />
     <Image Include="fluid.png" />
   </ItemGroup>
   <ItemGroup>
