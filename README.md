@@ -17,3 +17,8 @@ Dependencies for the project include:
   - CUDA 7
   - GLM
   - DevIL
+
+
+Screenshots:
+![Alt text](/relative/path/to/img.jpg?raw=true "Fluid Scene")
+![Alt text](/relative/path/to/img.jpg?raw=true "Cloth Scene")
