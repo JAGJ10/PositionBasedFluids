@@ -3,15 +3,12 @@
 
 #include "common.h"
 #include "parameters.h"
-#include "DistanceConstraint.hpp"
 
 class ParticleSystem {
 public:
 	bool running;
 	bool moveWall;
 	solver* s;
-
-	std::vector<DistanceConstraint> tempdConstraints;
 
 	ParticleSystem();
 	~ParticleSystem();

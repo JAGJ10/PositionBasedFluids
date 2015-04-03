@@ -191,9 +191,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="cloth.png">
-      <Filter>screenshots</Filter>
-    </Image>
     <Image Include="fluid.png">
       <Filter>screenshots</Filter>
     </Image>
