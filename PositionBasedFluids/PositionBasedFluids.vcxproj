@@ -216,14 +216,8 @@
     <None Include="thickness.frag" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="back.jpg" />
-    <Image Include="bottom.jpg" />
     <Image Include="cloth.png" />
     <Image Include="fluid.png" />
-    <Image Include="front.jpg" />
-    <Image Include="left.jpg" />
-    <Image Include="right.jpg" />
-    <Image Include="top.jpg" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="ParticleSystem.cu" />

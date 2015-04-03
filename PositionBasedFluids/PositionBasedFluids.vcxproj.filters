@@ -191,24 +191,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="right.jpg">
-      <Filter>resources</Filter>
-    </Image>
-    <Image Include="bottom.jpg">
-      <Filter>resources</Filter>
-    </Image>
-    <Image Include="left.jpg">
-      <Filter>resources</Filter>
-    </Image>
-    <Image Include="front.jpg">
-      <Filter>resources</Filter>
-    </Image>
-    <Image Include="top.jpg">
-      <Filter>resources</Filter>
-    </Image>
-    <Image Include="back.jpg">
-      <Filter>resources</Filter>
-    </Image>
     <Image Include="cloth.png">
       <Filter>screenshots</Filter>
     </Image>
