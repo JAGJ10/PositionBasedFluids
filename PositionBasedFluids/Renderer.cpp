@@ -19,7 +19,7 @@ static const float foamRadius = 0.01f;
 
 Renderer::Renderer() :
 	plane(Shader("plane.vert", "plane.frag")),
-	cloth(Shader("cloth.vert", "cloth.frag")),
+	cloth(Shader("clothMesh.vert", "clothMesh.frag")),
 	depth(Shader("depth.vert", "depth.frag")),
 	blur(BlurShader("blur.vert", "blur.frag")),
 	thickness(Shader("depth.vert", "thickness.frag")),
@@ -250,21 +250,19 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	depth.bindPositionVAO(positionVBO, numCloth);
-
+	
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
 	setFloat(depth, radius, "pointRadius");
 	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
-
+	
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
-
+	
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
 
 	//--------------------Particle Blur-------------------------
 	glUseProgram(blur.program);
@@ -275,9 +273,9 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glReadBuffer(GL_NONE);
 
 	glClear(GL_DEPTH_BUFFER_BIT);
-
+	
 	blur.shaderVAOQuad();
-
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depth.tex);
 	GLint depthMap = glGetUniformLocation(blur.program, "depthMap");
@@ -338,12 +336,10 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glDepthMask(GL_FALSE);
 	//glEnable(GL_DEPTH_TEST);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
@@ -401,7 +397,6 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_POINT_SPRITE);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numDiffuse);
 
@@ -442,7 +437,6 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numDiffuse);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glDisable(GL_POINT_SPRITE);
 	glDisable(GL_BLEND);
 
 	//--------------------Foam Intensity----------------------
@@ -506,7 +500,7 @@ void Renderer::renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	setMatrix(cloth, projection, "projection");
 	setMatrix(cloth, mView, "mView");
-
+	
 	glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_INT, 0);
 	//glDrawArrays(GL_POINTS, 0, (GLsizei)numCloth);
 }

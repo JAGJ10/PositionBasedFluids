@@ -62,8 +62,8 @@ public:
 
 	virtual void init(tempSolver* tp, solverParams* sp) {
 		float stretch = 1.0f;
-		float bend = 0.5f;
-		float shear = 0.5f;
+		float bend = 1.0f;
+		float shear = 1.0f;
 
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
