@@ -63,9 +63,6 @@
     <Filter Include="shaders\general">
       <UniqueIdentifier>{645086ed-259e-4ee8-adcd-3982bd34807d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\cloth">
-      <UniqueIdentifier>{d9ba68e2-da2a-4503-a821-3a4cbb863e76}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\cloth">
       <UniqueIdentifier>{f7164201-4158-43a6-981a-df6e36e6cf99}</UniqueIdentifier>
     </Filter>
@@ -74,6 +71,9 @@
     </Filter>
     <Filter Include="Header Files\cudaMath">
       <UniqueIdentifier>{8a7b7d95-be78-4f0b-9a7b-c3eab3c382dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="screenshots">
+      <UniqueIdentifier>{62bffc6b-6130-4266-9f57-37ef967baca0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -108,9 +108,6 @@
     </ClInclude>
     <ClInclude Include="ParticleSystem.h">
       <Filter>Header Files\water</Filter>
-    </ClInclude>
-    <ClInclude Include="DistanceConstraint.hpp">
-      <Filter>Header Files\cloth</Filter>
     </ClInclude>
     <ClInclude Include="Scene.hpp">
       <Filter>Header Files\Scene</Filter>
@@ -211,6 +208,12 @@
     </Image>
     <Image Include="back.jpg">
       <Filter>resources</Filter>
+    </Image>
+    <Image Include="cloth.png">
+      <Filter>screenshots</Filter>
+    </Image>
+    <Image Include="fluid.png">
+      <Filter>screenshots</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

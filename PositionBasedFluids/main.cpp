@@ -153,8 +153,8 @@ void saveVideo() {
 }
 
 void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
-	DamBreak scene("DamBreak");
-	//FluidCloth scene("FluidCloth");
+	//DamBreak scene("DamBreak");
+	FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
 }
