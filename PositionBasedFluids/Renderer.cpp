@@ -14,7 +14,7 @@ static const glm::vec2 blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static float filterRadius = 3;
 static const float radius = 0.05f;
-static const float clothRadius = 0.01f;
+static const float clothRadius = 0.03f;
 static const float foamRadius = 0.01f;
 
 Renderer::Renderer() :
@@ -43,7 +43,7 @@ Renderer::~Renderer() {
 	glDeleteBuffers(1, &diffuseVelVBO);
 }
 
-void Renderer::initVBOS(int numParticles, int numDiffuse) {
+void Renderer::initVBOS(int numParticles, int numDiffuse, vector<int> triangles) {
 	glGenBuffers(1, &positionVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, positionVBO);
 	glBufferData(GL_ARRAY_BUFFER, numParticles * 4 * sizeof(float), 0, GL_DYNAMIC_DRAW);
@@ -64,9 +64,14 @@ void Renderer::initVBOS(int numParticles, int numDiffuse) {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	cudaGraphicsGLRegisterBuffer(&resources[2], diffuseVelVBO, cudaGraphicsRegisterFlagsWriteDiscard);
+
+	glGenBuffers(1, &indicesVBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * triangles.size(), &triangles[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Renderer::run(int numParticles, int numDiffuse, Camera &cam) {
+void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> triangles, Camera &cam) {
 	//Set camera
 	glm::mat4 mView = cam.getMView();
 	glm::mat4 normalMatrix = glm::inverseTranspose(mView);
@@ -88,17 +93,18 @@ void Renderer::run(int numParticles, int numDiffuse, Camera &cam) {
 	setMatrix(plane, mView, "mView");
 	setMatrix(plane, projection, "projection");
 
-	glBindVertexArray(plane.vao);
-
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	//--------------------CLOTH-------------------------
+	renderCloth(projection, mView, cam, numCloth, triangles);
+
 	//--------------------WATER-------------------------
-	renderWater(projection, mView, cam, numParticles);
+	renderWater(projection, mView, cam, numParticles - numCloth, numCloth);
 
 	//--------------------FOAM--------------------------
-	renderFoam(projection, mView, cam, numDiffuse);
+	//renderFoam(projection, mView, cam, numDiffuse);
 
-	//--------------------Final-------------------------
+	//--------------------Final - WATER & DIFFUSE-------------------------
 	glUseProgram(finalFS.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -122,8 +128,6 @@ void Renderer::run(int numParticles, int numDiffuse, Camera &cam) {
 	glUniform1i(foamRadianceMap, 2);
 
 	setVec2(foamRadiance, screenSize, "screenSize");
-
-	glBindVertexArray(finalFS.vao);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -236,7 +240,7 @@ void Renderer::setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name)
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m));
 }
 
-void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles) {
+void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth) {
 	//----------------------Particle Depth----------------------
 	glUseProgram(depth.program);
 	glBindFramebuffer(GL_FRAMEBUFFER, depth.fbo);
@@ -245,7 +249,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	depth.shaderVAOCuda(positionVBO);
+	depth.bindPositionVAO(positionVBO, numCloth);
 
 	setMatrix(depth, mView, "mView");
 	setMatrix(depth, projection, "projection");
@@ -256,8 +260,6 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glEnable(GL_POINT_SPRITE);
-
-	glBindVertexArray(depth.vao);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
 
@@ -290,8 +292,6 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	glEnable(GL_DEPTH_TEST);
 
-	glBindVertexArray(blur.vao);
-
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//Horizontal blur
@@ -315,8 +315,6 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	glEnable(GL_DEPTH_TEST);
 
-	glBindVertexArray(blur.vao);
-
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	glDisable(GL_DEPTH_TEST);
@@ -327,8 +325,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//thickness.shaderVAOPoints(fluidPositions);
-	thickness.shaderVAOCuda(positionVBO);
+	thickness.bindPositionVAO(positionVBO, numCloth);
 
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
@@ -342,8 +339,6 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	//glEnable(GL_DEPTH_TEST);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glEnable(GL_POINT_SPRITE);
-
-	glBindVertexArray(thickness.vao);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
 
@@ -383,8 +378,6 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	glBindVertexArray(fluidFinal.vao);
-
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	glDisable(GL_DEPTH_TEST);
@@ -397,7 +390,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foamDepth.shaderVAOCuda(diffusePosVBO);
+	foamDepth.bindPositionVAO(diffusePosVBO, 0);
 
 	setMatrix(foamDepth, projection, "projection");
 	setMatrix(foamDepth, mView, "mView");
@@ -410,8 +403,6 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glEnable(GL_POINT_SPRITE);
 
-	glBindVertexArray(foamDepth.vao);
-
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numDiffuse);
 
 	glDisable(GL_DEPTH_TEST);
@@ -422,7 +413,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	foamThickness.shaderVAOCuda(diffusePosVBO);
+	foamThickness.bindPositionVAO(diffusePosVBO, 0);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, foamDepth.tex2);
@@ -448,8 +439,6 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	glBlendEquation(GL_FUNC_ADD);
 	glDepthMask(GL_FALSE);
 
-	glBindVertexArray(foamThickness.vao);
-
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numDiffuse);
 
 	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -468,8 +457,6 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	glBindTexture(GL_TEXTURE_2D, foamThickness.tex);
 	GLint thickness = glGetUniformLocation(foamIntensity.program, "thickness");
 	glUniform1i(thickness, 0);
-
-	glBindVertexArray(foamIntensity.vao);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -506,7 +493,20 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	setFloat(foamRadiance, zNear, "zNear");
 	setFloat(foamRadiance, zFar, "zFar");
 
-	glBindVertexArray(foamRadiance.vao);
-
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void Renderer::renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles) {
+	glUseProgram(cloth.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, plane.fbo);
+
+	cloth.bindPositionVAO(positionVBO, 0);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVBO);
+
+	setMatrix(cloth, projection, "projection");
+	setMatrix(cloth, mView, "mView");
+
+	glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_POINTS, 0, (GLsizei)numCloth);
 }

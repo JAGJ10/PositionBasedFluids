@@ -8,6 +8,7 @@
 class ParticleSystem {
 public:
 	bool running;
+	bool moveWall;
 	solver* s;
 
 	std::vector<DistanceConstraint> tempdConstraints;

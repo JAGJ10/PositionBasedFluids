@@ -9,11 +9,12 @@ class Renderer {
 public:
 	Renderer();
 	~Renderer();
-	void initVBOS(int numParticles, int numDiffuse);
-	void run(int numParticles, int numDiffuse, Camera &cam);
+	void initVBOS(int numParticles, int numDiffuse, std::vector<int> triangles);
+	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam);
 
 	cudaGraphicsResource *resources[3];
 	GLuint positionVBO;
+	GLuint indicesVBO;
 	GLuint diffusePosVBO;
 	GLuint diffuseVelVBO;
 
@@ -30,8 +31,9 @@ public:
 	Shader finalFS;
 
 private:
-	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles);
+	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
 	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse);
+	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
 	void initFramebuffers();
 	void setInt(Shader &shader, const int &x, const GLchar* name);
 	void setFloat(Shader &shader, const float &x, const GLchar* name);

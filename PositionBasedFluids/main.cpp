@@ -24,10 +24,10 @@ static float lastFrame = 0.0f;
 static int w = 0;
 static bool ss = false;
 
-int2 initializeState(ParticleSystem &system, solverParams &tempParams);
+void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams);
 void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam);
 void saveVideo();
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse, solverParams &tempParams);
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams);
 
 int main() {
 	//Checks for memory leaks in debug mode
@@ -61,9 +61,10 @@ int main() {
 	Camera cam = Camera();
 	Renderer render = Renderer();
 	ParticleSystem system = ParticleSystem();
+	tempSolver tp;
 	solverParams tempParams;
-	int2 counts = initializeState(system, tempParams);
-	render.initVBOS(counts.x, counts.y);
+	initializeState(system, tp, tempParams);
+	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tp.triangles);
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
@@ -76,7 +77,7 @@ int main() {
 		handleInput(window, system, cam);
 
 		//Update physics and render
-		mainUpdate(system, render, cam, counts.x, counts.y, tempParams);
+		mainUpdate(system, render, cam, tp, tempParams);
 		saveVideo();
 
 		// Swap the buffers
@@ -120,6 +121,12 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
 		system.running = true;
 
+	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+		system.moveWall = true;
+
+	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+		system.moveWall = false;
+
 	if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS)
 		ss = true;
 
@@ -145,15 +152,14 @@ void saveVideo() {
 	}
 }
 
-int2 initializeState(ParticleSystem &system, solverParams &tempParams) {
-	tempSolver tp;
-	DamBreak scene("DamBreak");
+void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
+	//DamBreak scene("DamBreak");
+	FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
-	return make_int2(tempParams.numParticles, tempParams.numDiffuse);
 }
 
-void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numParticles, int numDiffuse, solverParams &tempParams) {
+void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolver &tp, solverParams &tempParams) {
 	//Step physics
 	system.updateWrapper(tempParams);
 
@@ -166,10 +172,10 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, int numPa
 	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resources[0]);
 	cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]);
 	cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]);
-	system.getPositions((float*)positionsPtr, numParticles);
-	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, numDiffuse);
+	system.getPositions((float*)positionsPtr, tempParams.numParticles);
+	//system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
 	cudaGraphicsUnmapResources(3, render.resources, 0);
 
 	//Render
-	render.run(numParticles, numDiffuse, cam);
+	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam);
 }

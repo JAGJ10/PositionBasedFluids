@@ -95,6 +95,9 @@ public:
 	}
 
 	void initFBO(GLuint &fbo) {
+		glGenBuffers(1, &ebo);
+		glGenBuffers(1, &vbo);
+		glGenVertexArrays(1, &vao);
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	}
@@ -110,26 +113,20 @@ public:
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void shaderVAOCuda(GLuint &cudaVBO) {
-		glGenVertexArrays(1, &vao);
+	void bindPositionVAO(GLuint &posVBO, int offset) {
 		glBindVertexArray(vao);
 
-		glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, posVBO);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(offset*sizeof(float4)));
 		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	void shaderDiffuseVelVAOCuda(GLuint &cudaVBO) {
-		glGenVertexArrays(1, &vao);
+	void bindVelocityVAO(GLuint &diffuseVBO) {
 		glBindVertexArray(vao);
 
-		glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, diffuseVBO);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void shaderVAOQuad() {
@@ -144,21 +141,16 @@ public:
 			1, 2, 3	// Second Triangle
 		};
 
-		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 		
-		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-		glGenBuffers(1, &ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
-
-		glBindVertexArray(0);
 	}
 
 	void shaderVAOInfinitePlane() {
@@ -173,21 +165,16 @@ public:
 			1, 2, 3
 		};
 
-		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 
-		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-		glGenBuffers(1, &ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
 		glEnableVertexAttribArray(0);
-
-		glBindVertexArray(0);
 	}
 };
 
