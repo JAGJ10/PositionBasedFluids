@@ -21,4 +21,4 @@ Dependencies for the project include:
 
 Screenshots:
 ![Alt text](/PositionBasedFluids/fluid.png?raw=true "Fluid Scene")
-![Alt text](/PositionBasedFluids/cloth.pn?raw=true "Cloth Scene")
+![Alt text](/PositionBasedFluids/cloth.png?raw=true "Cloth Scene")
