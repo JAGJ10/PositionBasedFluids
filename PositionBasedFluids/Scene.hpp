@@ -32,6 +32,7 @@ public:
 		sp->numDiffuse = 1024 * 1024;
 		sp->numParticles = int(tp->positions.size());
 		sp->numCloth = 0;
+		sp->numConstraints = 0;
 		sp->gravity = make_float3(0, -9.8f, 0);
 		sp->bounds = make_float3(dims) * radius;
 		sp->gridWidth = int(sp->bounds.x / radius);

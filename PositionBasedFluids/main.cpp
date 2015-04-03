@@ -153,8 +153,8 @@ void saveVideo() {
 }
 
 void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
-	//DamBreak scene("DamBreak");
-	FluidCloth scene("FluidCloth");
+	DamBreak scene("DamBreak");
+	//FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
 }
@@ -173,7 +173,7 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]);
 	cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]);
 	system.getPositions((float*)positionsPtr, tempParams.numParticles);
-	//system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
+	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
 	cudaGraphicsUnmapResources(3, render.resources, 0);
 
 	//Render

@@ -521,8 +521,8 @@ void updateWater(solver* s, int numIterations) {
 	//Set new velocity
 	updateXSPHVelocities<<<dims, blockSize>>>(s->newPos, s->velocities, s->phases, s->deltaPs);
 
-	//generateFoam<<<dims, blockSize>>>(s->newPos, s->velocities, s->phases, s->diffusePos, s->diffuseVelocities, s->neighbors, s->numNeighbors, s->densities);
-	//updateFoam<<<diffuseDims, blockSize>>>(s->newPos, s->velocities, s->diffusePos, s->diffuseVelocities, s->gridCells, s->gridCounters);
+	generateFoam<<<dims, blockSize>>>(s->newPos, s->velocities, s->phases, s->diffusePos, s->diffuseVelocities, s->neighbors, s->numNeighbors, s->densities);
+	updateFoam<<<diffuseDims, blockSize>>>(s->newPos, s->velocities, s->diffusePos, s->diffuseVelocities, s->gridCells, s->gridCounters);
 }
 
 void updateCloth(solver* s, int numIterations) {
@@ -554,8 +554,8 @@ void update(solver* s, solverParams* sp) {
 
 	//Solve constraints
 	updateWater(s, sp->numIterations);
-	//thrust::device_ptr<float4> devPtr = thrust::device_pointer_cast(s->diffusePos);
-	//thrust::sort(devPtr, devPtr + sp->numDiffuse, OBCmp());
+	thrust::device_ptr<float4> devPtr = thrust::device_pointer_cast(s->diffusePos);
+	thrust::sort(devPtr, devPtr + sp->numDiffuse, OBCmp());
 	updateCloth(s, sp->numIterations);
 }
 

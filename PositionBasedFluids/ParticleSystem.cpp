@@ -179,7 +179,7 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 void ParticleSystem::updateWrapper(solverParams &tempParams) {
 	if (running) {
 		if (moveWall) {
-			if (frameCounter >= 300) {
+			if (frameCounter >= 0) {
 				//width = (1 - abs(sin((frameCounter - 400) * (deltaT / 1.25f)  * 0.5f * PI)) * 1) + 4;
 				t += flag * deltaT / 1.0f;
 				if (t >= 1) {

@@ -102,7 +102,7 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 	renderWater(projection, mView, cam, numParticles - numCloth, numCloth);
 
 	//--------------------FOAM--------------------------
-	//renderFoam(projection, mView, cam, numDiffuse);
+	renderFoam(projection, mView, cam, numDiffuse);
 
 	//--------------------Final - WATER & DIFFUSE-------------------------
 	glUseProgram(finalFS.program);
@@ -395,7 +395,7 @@ void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, 
 	setFloat(foamDepth, tanf(cam.zoom * 0.5f), "fov");
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	//glDepthMask(GL_TRUE);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numDiffuse);
@@ -502,5 +502,4 @@ void Renderer::renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	setMatrix(cloth, mView, "mView");
 	
 	glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_INT, 0);
-	//glDrawArrays(GL_POINTS, 0, (GLsizei)numCloth);
 }
