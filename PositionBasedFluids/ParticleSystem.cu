@@ -7,6 +7,7 @@
 #define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
 static dim3 dims;
 static dim3 diffuseDims;
+static dim3 clothDims;
 static dim3 gridDims;
 static const int blockSize = 128;
 
@@ -72,8 +73,8 @@ __device__ float WAirPotential(float3 const &pi, float3 const &pj) {
 __device__ float3 eta(float4* newPos, int* phases, int* neighbors, int* numNeighbors, int &index, float &vorticityMag) {
 	float3 eta = make_float3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.MAX_NEIGHBORS) + i]] == 0)
-			eta += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]])) * vorticityMag;
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0)
+			eta += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) * vorticityMag;
 	}
 
 	return eta;
@@ -86,9 +87,9 @@ __device__ float3 vorticityForce(float4* newPos, float3* velocities, int* phases
 	float3 gradient;
 
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.MAX_NEIGHBORS) + i]] == 0) {
-			velocityDiff = velocities[neighbors[(index * sp.MAX_NEIGHBORS) + i]] - velocities[index];
-			gradient = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]]));
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+			velocityDiff = velocities[neighbors[(index * sp.maxNeighbors) + i]] - velocities[index];
+			gradient = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 			omega += cross(velocityDiff, gradient);
 		}
 	}
@@ -120,9 +121,9 @@ __device__ float sCorrCalc(float4 &pi, float4 &pj) {
 __device__ float3 xsphViscosity(float4* newPos, float3* velocities, int* phases, int* neighbors, int* numNeighbors, int index) {
 	float3 visc = make_float3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.MAX_NEIGHBORS) + i]] == 0) {
-			float3 velocityDiff = velocities[neighbors[(index * sp.MAX_NEIGHBORS) + i]] - velocities[index];
-			velocityDiff *= WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]]));
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+			float3 velocityDiff = velocities[neighbors[(index * sp.maxNeighbors) + i]] - velocities[index];
+			velocityDiff *= WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 			visc += velocityDiff;
 		}
 	}
@@ -200,8 +201,8 @@ __global__ void updateGrid(float4* newPos, int* gridCells, int* gridCounters) {
 	int gIndex = getGridIndex(pos);
 
 	int i = atomicAdd(&gridCounters[gIndex], 1);
-	i = min(i, sp.MAX_PARTICLES - 1);
-	gridCells[gIndex * sp.MAX_PARTICLES + i] = index;
+	i = min(i, sp.maxParticles - 1);
+	gridCells[gIndex * sp.maxParticles + i] = index;
 }
 
 __global__ void updateNeighbors(float4* newPos, int* phases, int* gridCells, int* gridCounters, int* neighbors, int* numNeighbors, int* contacts, int* numContacts) {
@@ -217,16 +218,16 @@ __global__ void updateNeighbors(float4* newPos, int* phases, int* gridCells, int
 				int3 n = make_int3(pos.x + x, pos.y + y, pos.z + z);
 				if (n.x >= 0 && n.x < sp.gridWidth && n.y >= 0 && n.y < sp.gridHeight && n.z >= 0 && n.z < sp.gridDepth) {
 					int gIndex = getGridIndex(n);
-					int cellParticles = min(gridCounters[gIndex], sp.MAX_PARTICLES - 1);
+					int cellParticles = min(gridCounters[gIndex], sp.maxParticles - 1);
 					for (int i = 0; i < cellParticles; i++) {
-						if (numNeighbors[index] >= sp.MAX_NEIGHBORS) return;
+						if (numNeighbors[index] >= sp.maxNeighbors) return;
 
-						pIndex = gridCells[gIndex * sp.MAX_PARTICLES + i];
+						pIndex = gridCells[gIndex * sp.maxParticles + i];
 						if (length(make_float3(newPos[index]) - make_float3(newPos[pIndex])) <= sp.radius) {
-							neighbors[(index * sp.MAX_NEIGHBORS) + numNeighbors[index]] = pIndex;
+							neighbors[(index * sp.maxNeighbors) + numNeighbors[index]] = pIndex;
 							numNeighbors[index]++;
-							//if (phases[index] == 0 && phases[pIndex] == 1 && numContacts[index] < sp.MAX_CONTACTS) {
-							//	contacts[index * sp.MAX_CONTACTS + numContacts[index]] = pIndex;
+							//if (phases[index] == 0 && phases[pIndex] == 1 && numContacts[index] < sp.maxContacts) {
+							//	contacts[index * sp.maxContacts + numContacts[index]] = pIndex;
 							//	numContacts[index]++;
 							//}
 						}
@@ -242,7 +243,7 @@ __global__ void particleCollisions(float4* newPos, int* contacts, int* numContac
 	if (index >= sp.numParticles) return;
 
 	for (int i = 0; i < numContacts[index]; i++) {
-		int nIndex = contacts[index * sp.MAX_CONTACTS + i];
+		int nIndex = contacts[index * sp.maxContacts + i];
 		if (newPos[nIndex].w == 0) continue;
 		float3 dir = make_float3(newPos[index]) - make_float3(newPos[nIndex]);
 		float len = length(dir);
@@ -266,8 +267,8 @@ __global__ void calcDensities(float4* newPos, int* phases, int* neighbors, int* 
 
 	float rhoSum = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.MAX_NEIGHBORS) + i]] == 0)
-			rhoSum += WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]]));
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0)
+			rhoSum += WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 	}
 
 	densities[index] = rhoSum;
@@ -281,9 +282,9 @@ __global__ void calcLambda(float4* newPos, int* phases, int* neighbors, int* num
 	float3 gradientI = make_float3(0.0f);
 	float sumGradients = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.MAX_NEIGHBORS) + i]] == 0) {
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
 			//Calculate gradient with respect to j
-			float3 gradientJ = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]])) / sp.restDensity;
+			float3 gradientJ = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) / sp.restDensity;
 
 			//Add magnitude squared to sum
 			sumGradients += pow(length(gradientJ), 2);
@@ -303,10 +304,10 @@ __global__ void calcDeltaP(float4* newPos, int* phases, int* neighbors, int* num
 
 	float3 deltaP = make_float3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.MAX_NEIGHBORS) + i]] == 0) {
-			float lambdaSum = buffer0[index] + buffer0[neighbors[(index * sp.MAX_NEIGHBORS) + i]];
-			float sCorr = sCorrCalc(newPos[index], newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]]);
-			deltaP += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.MAX_NEIGHBORS) + i]])) * (lambdaSum + sCorr);
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+			float lambdaSum = buffer0[index] + buffer0[neighbors[(index * sp.maxNeighbors) + i]];
+			float sCorr = sCorrCalc(newPos[index], newPos[neighbors[(index * sp.maxNeighbors) + i]]);
+			deltaP += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) * (lambdaSum + sCorr);
 
 		}
 	}
@@ -355,7 +356,7 @@ __global__ void generateFoam(float4* newPos, float3* velocities, int* phases, fl
 
 	float velocityDiff = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		int nIndex = neighbors[(index * sp.MAX_NEIGHBORS) + i];
+		int nIndex = neighbors[(index * sp.maxNeighbors) + i];
 		if (index != nIndex) {
 			float wAir = WAirPotential(make_float3(newPos[index]), make_float3(newPos[nIndex]));
 			float3 xij = normalize(make_float3(newPos[index] - newPos[nIndex]));
@@ -407,9 +408,9 @@ __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePo
 				int3 n = make_int3(pos.x + x, pos.y + y, pos.z + z);
 				if (n.x >= 0 && n.x < sp.gridWidth && n.y >= 0 && n.y < sp.gridHeight && n.z >= 0 && n.z < sp.gridDepth) {
 					int gIndex = getGridIndex(n);
-					int cellParticles = min(gridCounters[gIndex], sp.MAX_PARTICLES - 1);
+					int cellParticles = min(gridCounters[gIndex], sp.maxParticles - 1);
 					for (int i = 0; i < cellParticles; i++) {
-						pIndex = gridCells[gIndex * sp.MAX_PARTICLES + i];
+						pIndex = gridCells[gIndex * sp.maxParticles + i];
 						if (length(make_float3(diffusePos[index] - newPos[pIndex])) <= sp.radius) {
 							fluidNeighbors++;
 							float k = WPoly6(make_float3(diffusePos[index]), make_float3(newPos[pIndex]));
@@ -449,44 +450,47 @@ __global__ void clearDeltaP(float3* deltaPs, float* buffer0) {
 	buffer0[index] = 0;
 }
 
-/*__global__ void solveDistance(Particle* particles, DistanceConstraint* dConstraints, int numConstraints, float3* deltaPs, float* buffer3) {
+__global__ void solveDistance(float4* newPos, int* clothIndices, float* restLengths, float* stiffness, float3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= numConstraints) return;
+	if (index >= sp.numConstraints) return;
 
-	DistanceConstraint &c = dConstraints[index];
-	float3 dir = particles[c.p1].newPos - particles[c.p2].newPos;
-	float length = glm::length(dir);
-	float invMass = particles[c.p1].invMass + particles[c.p2].invMass;
+	int p1 = clothIndices[2 * index];
+	int p2 = clothIndices[2 * index + 1];
+
+	float3 dir = make_float3(newPos[p1] - newPos[p2]);
+	float len = length(dir);
+	float invMass = newPos[p1].w + newPos[p2].w;
 	float3 dp;
-	if (length == 0.0f || invMass == 0.0f) dp = float3(0);
+	if (len == 0.0f || invMass == 0.0f) dp = make_float3(0);
 	else {
-		if (c.stiffness > 0) dp = (1 / invMass) * (length - c.restLength) * (dir / length) * (1.0f - glm::pow(1.0f - c.stiffness, 1.0f / 4));
-		else if (length > c.restLength) {
-			dp += (1 / invMass) * (length - c.restLength) * (dir / length) * (1.0f - glm::pow(1.0f + c.stiffness, 1.0f / 4));
+		if (stiffness[index] > 0) dp = (1 / invMass) * (len - restLengths[index]) * (dir / len) * (1.0f - pow(1.0f - stiffness[index], 1.0f / sp.numIterations));
+		else if (len > restLengths[index]) {
+			dp += (1 / invMass) * (len - restLengths[index]) * (dir / len) * (1.0f - pow(1.0f + stiffness[index], 1.0f / sp.numIterations));
 		}
 	}
-	if (particles[c.p1].invMass > 0) {
-		atomicAdd(&deltaPs[c.p1].x, -dp.x);
-		atomicAdd(&deltaPs[c.p1].y, -dp.y);
-		atomicAdd(&deltaPs[c.p1].z, -dp.z);
-		atomicAdd(&buffer3[c.p1], 1);
+
+	if (newPos[p1].w > 0) {
+		atomicAdd(&deltaPs[p1].x, -dp.x);
+		atomicAdd(&deltaPs[p1].y, -dp.y);
+		atomicAdd(&deltaPs[p1].z, -dp.z);
+		atomicAdd(&buffer0[p1], 1);
 	}
 
-	if (particles[c.p2].invMass > 0) {
-		atomicAdd(&deltaPs[c.p2].x, dp.x);
-		atomicAdd(&deltaPs[c.p2].y, dp.y);
-		atomicAdd(&deltaPs[c.p2].z, dp.z);
-		atomicAdd(&buffer3[c.p2], 1);
+	if (newPos[p2].w > 0) {
+		atomicAdd(&deltaPs[p2].x, dp.x);
+		atomicAdd(&deltaPs[p2].y, dp.y);
+		atomicAdd(&deltaPs[p2].z, dp.z);
+		atomicAdd(&buffer0[p2], 1);
 	}
 }
 
-__global__ void updateClothVelocity(Particle* particles) {
+__global__ void updateClothVelocity(float4* oldPos, float4* newPos, float3* velocities, int* phases) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= NUM_PARTICLES || particles[index].phase != 1) return;
+	if (index >= sp.numCloth || phases[index] != 1) return;
 
-	particles[index].velocity = (particles[index].newPos - particles[index].oldPos) / deltaT;
-	particles[index].oldPos = particles[index].newPos;
-}*/
+	velocities[index] = make_float3(newPos[index] - oldPos[index]) / deltaT;
+	oldPos[index] = newPos[index];
+}
 
 struct OBCmp {
 	__host__ __device__
@@ -521,17 +525,16 @@ void updateWater(solver* s) {
 	updateFoam<<<diffuseDims, blockSize>>>(s->newPos, s->velocities, s->diffusePos, s->diffuseVelocities, s->gridCells, s->gridCounters);
 }
 
-/*void updateCloth(solver* p) {
-	static const dim3 constraintDims = int(ceil(s->numConstraints / blockSize));
-	clearDeltaP<<<dims, blockSize>>>(s->particles, s->deltaPs, s->buffer3);
+void updateCloth(solver* s) {
+	clearDeltaP<<<clothDims, blockSize>>>(s->deltaPs, s->buffer0);
 
-	for (int i = 0; i < SOLVER_ITERATIONS; i++) {
-		solveDistance<<<constraintDims, blockSize>>>(s->particles, s->dConstraints, s->numConstraints, s->deltaPs, s->buffer3);
-		applyDeltaP<<<dims, blockSize>>>(s->particles, s->deltaPs, s->buffer3, 1);
+	for (int i = 0; i < 4; i++) {
+		solveDistance<<<clothDims, blockSize>>>(s->newPos, s->clothIndices, s->restLengths, s->stiffness, s->deltaPs, s->buffer0);
+		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 1);
 	}
 
-	updateClothVelocity<<<dims, blockSize>>>(s->particles);
-}*/
+	updateClothVelocity<<<clothDims, blockSize>>>(s->oldPos, s->newPos, s->velocities, s->phases);
+}
 
 void update(solver* s, solverParams* sp) {
 	//Predict positions and update velocity
@@ -559,6 +562,7 @@ void update(solver* s, solverParams* sp) {
 void setParams(solverParams *tempParams) {
 	dims = int(ceil(tempParams->numParticles / blockSize + 0.5f));
 	diffuseDims = int(ceil(tempParams->numDiffuse / blockSize + 0.5f));
+	clothDims = int(ceil(tempParams->numConstraints / blockSize + 0.5f));
 	gridDims = int(ceil(tempParams->gridSize / blockSize + 0.5f));
 	cudaCheck(cudaMemcpyToSymbol(sp, tempParams, sizeof(solverParams)));
 }

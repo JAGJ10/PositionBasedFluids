@@ -133,11 +133,11 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMalloc((void**)&s->phases, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->diffusePos, tempParams.numDiffuse * sizeof(float4)));
 	cudaCheck(cudaMalloc((void**)&s->diffuseVelocities, tempParams.numDiffuse * sizeof(float3)));
-	cudaCheck(cudaMalloc((void**)&s->neighbors, tempParams.MAX_NEIGHBORS * tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->neighbors, tempParams.maxNeighbors * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->numNeighbors, tempParams.numParticles * sizeof(int)));
-	cudaCheck(cudaMalloc((void**)&s->gridCells, tempParams.MAX_PARTICLES * tempParams.gridSize * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->gridCells, tempParams.maxParticles * tempParams.gridSize * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->gridCounters, tempParams.gridSize * sizeof(int)));
-	cudaCheck(cudaMalloc((void**)&s->contacts, tempParams.MAX_CONTACTS * tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMalloc((void**)&s->contacts, tempParams.maxContacts * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->numContacts, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->deltaPs, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMalloc((void**)&s->buffer0, tempParams.numParticles * sizeof(float)));
@@ -149,9 +149,9 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMemset(s->phases, 0, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->diffusePos, 0, tempParams.numDiffuse * sizeof(float4)));
 	cudaCheck(cudaMemset(s->diffuseVelocities, 0, tempParams.numDiffuse * sizeof(float3)));
-	cudaCheck(cudaMemset(s->neighbors, 0, tempParams.MAX_NEIGHBORS * tempParams.numParticles * sizeof(int)));
+	cudaCheck(cudaMemset(s->neighbors, 0, tempParams.maxNeighbors * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->numNeighbors, 0, tempParams.numParticles * sizeof(int)));
-	cudaCheck(cudaMemset(s->gridCells, 0, tempParams.MAX_PARTICLES * tempParams.gridSize * sizeof(int)));
+	cudaCheck(cudaMemset(s->gridCells, 0, tempParams.maxParticles * tempParams.gridSize * sizeof(int)));
 	cudaCheck(cudaMemset(s->gridCounters, 0, tempParams.gridSize * sizeof(int)));
 
 	cudaCheck(cudaMemcpy(s->oldPos, &tp.positions[0], tempParams.numParticles * sizeof(float4), cudaMemcpyHostToDevice));

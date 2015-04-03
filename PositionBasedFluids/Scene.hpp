@@ -28,18 +28,19 @@ public:
 		
 		sp->radius = radius;
 		sp->restDistance = restDistance;
-		sp->numIterations = 2;
+		sp->numIterations = 4;
 		sp->numDiffuse = 1024 * 1024;
 		sp->numParticles = int(tp->positions.size());
+		sp->numCloth = 0;
 		sp->gravity = make_float3(0, -9.8f, 0);
 		sp->bounds = make_float3(dims) * radius;
 		sp->gridWidth = int(sp->bounds.x / radius);
 		sp->gridHeight = int(sp->bounds.y / radius);
 		sp->gridDepth = int(sp->bounds.z / radius);
 		sp->gridSize = sp->gridWidth * sp->gridHeight * sp->gridDepth;
-		sp->MAX_CONTACTS = 10;
-		sp->MAX_NEIGHBORS = 50;
-		sp->MAX_PARTICLES = 50;
+		sp->maxContacts = 10;
+		sp->maxNeighbors = 50;
+		sp->maxParticles = 50;
 		sp->restDensity = 6378.0f;
 		sp->lambdaEps = 600.0f;
 		sp->vorticityEps = 0.0001f;
@@ -57,7 +58,75 @@ public:
 
 class FluidCloth : public Scene {
 public:
+	FluidCloth(std::string name) : Scene(name) {}
 
+	virtual void init(tempSolver* tp, solverParams* sp) {
+		float stretch = 1.0f;
+		float bend = 0.4f;
+		float shear = 0.4f;
+
+		const float radius = 0.1f;
+		const float restDistance = radius * 0.5f;
+		float3 lower = make_float3(0.0f, 0.1f, 0.0f);
+		int3 dims = make_int3(32, 1, 32);
+		createCloth(tp, sp, lower, dims, radius * 0.25f, 1, stretch, bend, shear, 0.25f);
+		sp->numCloth = int(tp->positions.size());
+
+		//Pinned vertices
+		int c1 = 0;
+		int c2 = dims.x - 1;
+		int c3 = dims.x * (dims.z - 1);
+		int c4 = (dims.x * dims.z) - 1;
+
+		tp->positions[c1].w = 0;
+		tp->positions[c2].w = 0;
+		tp->positions[c3].w = 0;
+		tp->positions[c4].w = 0;
+
+		//Tethers
+		for (int i = 0; i < int(tp->positions.size()); i++) {
+			tp->positions[i].y = sinf(25.0f * 180.0f / PI) * tp->positions[i].x;
+			tp->positions[i].x *= cosf(25.0f * 180.0f / PI);
+
+			if (i != c1 && i != c2 && i != c3 && i != c4) {
+				float tether = -0.5f;
+				addConstraint(tp, sp, c1, i, tether);
+				addConstraint(tp, sp, c2, i, tether);
+				addConstraint(tp, sp, c3, i, tether);
+				addConstraint(tp, sp, c4, i, tether);
+			}
+		}
+
+		//move corners closer together?
+
+		sp->radius = radius;
+		sp->restDistance = restDistance;
+		sp->numIterations = 4;
+		sp->numDiffuse = 1024 * 1024;
+		sp->numParticles = int(tp->positions.size());
+		sp->numConstraints = int(tp->restLengths.size());
+		sp->gravity = make_float3(0, -9.8f, 0);
+		sp->bounds = make_float3(dims) * radius;
+		sp->gridWidth = int(sp->bounds.x / radius);
+		sp->gridHeight = int(sp->bounds.y / radius);
+		sp->gridDepth = int(sp->bounds.z / radius);
+		sp->gridSize = sp->gridWidth * sp->gridHeight * sp->gridDepth;
+		sp->maxContacts = 10;
+		sp->maxNeighbors = 50;
+		sp->maxParticles = 50;
+		sp->restDensity = 6378.0f;
+		sp->lambdaEps = 600.0f;
+		sp->vorticityEps = 0.0001f;
+		sp->C = 0.01f; //0.0025f;
+		sp->K = 0.00001f;
+		sp->KPOLY = 315.0f / (64.0f * PI * pow(radius, 9));
+		sp->SPIKY = 45.0f / (PI * pow(radius, 6));
+		sp->dqMag = 0.2f * radius;
+		sp->wQH = sp->KPOLY * pow((radius * radius - sp->dqMag * sp->dqMag), 3);
+
+		tp->diffusePos.resize(sp->numDiffuse);
+		tp->diffuseVelocities.resize(sp->numDiffuse);
+	}
 };
 
 class Lighthouse : public Scene {

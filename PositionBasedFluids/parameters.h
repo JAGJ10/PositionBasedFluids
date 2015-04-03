@@ -10,18 +10,26 @@ struct tempSolver {
 
 	std::vector<float4> diffusePos;
 	std::vector<float3> diffuseVelocities;
+
+	std::vector<int> clothIndices;
+	std::vector<float> restLengths;
+	std::vector<float> stiffness;
+	std::vector<int> triangles;
 };
 
 struct solver {
 	float4* oldPos;
 	float4* newPos;
 	float3* velocities;
-	float* densities;
 	int* phases;
-	//int* indices;
+	float* densities;
 
 	float4* diffusePos;
 	float3* diffuseVelocities;
+
+	int* clothIndices;
+	float* restLengths;
+	float* stiffness;
 
 	int* neighbors;
 	int* numNeighbors;
@@ -33,28 +41,30 @@ struct solver {
 	float3* deltaPs;
 
 	float* buffer0;
-
-	//DistanceConstraint* dConstraints;
-	//int numConstraints;
 };
 
 struct solverParams {
 public:
-	int MAX_NEIGHBORS;
-	int MAX_PARTICLES;
-	int MAX_CONTACTS;
+	int maxNeighbors;
+	int maxParticles;
+	int maxContacts;
 	int gridWidth, gridHeight, gridDepth;
+	int gridSize;
 
 	int numParticles;
 	int numDiffuse;
+
+	int numCloth;
+	int numConstraints;
+
 	float3 gravity;
 	float3 bounds;
+
 	int numIterations;
 	float radius;
 	float restDistance;
 	//float sor;
 	//float vorticity;
-	int gridSize;
 
 	float KPOLY;
 	float SPIKY;
