@@ -3,10 +3,10 @@
 
 using namespace std;
 
-static const int width = 1024;
-static const int height = 512;
-static const float zFar = 20.0f;
-static const float zNear = 1.0f;
+static const int width = 1280;
+static const int height = 720;
+static const float zFar = 200.0f;
+static const float zNear = 5.0f;
 static const float aspectRatio = width / height;
 static const glm::vec2 screenSize = glm::vec2(width, height);
 static const glm::vec2 blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
@@ -327,7 +327,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	setMatrix(thickness, mView, "mView");
 	setMatrix(thickness, projection, "projection");
-	setFloat(depth, radius * 4.0f, "pointRadius");
+	setFloat(depth, radius * 2.0f, "pointRadius");
 	setFloat(depth, width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)), "pointScale");
 
 	glEnable(GL_BLEND);

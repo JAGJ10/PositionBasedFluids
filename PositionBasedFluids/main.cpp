@@ -15,8 +15,8 @@
 
 #define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }
 
-static const int width = 1024;
-static const int height = 512;
+static const int width = 1280;
+static const int height = 720;
 static const GLfloat lastX = (width / 2);
 static const GLfloat lastY = (height / 2);
 static float deltaTime = 0.0f;
@@ -153,8 +153,8 @@ void saveVideo() {
 }
 
 void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
-	//DamBreak scene("DamBreak");
-	FluidCloth scene("FluidCloth");
+	DamBreak scene("DamBreak");
+	//FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
 }
