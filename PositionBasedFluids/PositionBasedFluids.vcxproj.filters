@@ -1,31 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Source Files\rendering">
-      <UniqueIdentifier>{9ae4adbf-a7d7-4759-9087-3619d143f24e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\rendering">
-      <UniqueIdentifier>{8da3c21d-52fe-45ad-921d-d529fd534080}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{17ce82f0-0425-44d4-9bed-9cc4186650e2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\foam">
-      <UniqueIdentifier>{a4ba35b4-ce25-4384-9167-1e6f3593e2cc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\water">
-      <UniqueIdentifier>{381dbecf-1c77-49d2-b571-896309c6caaa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\physics">
-      <UniqueIdentifier>{a5ad0b92-87b0-4995-bf77-a727e528b232}</UniqueIdentifier>
     </Filter>
     <Filter Include="shaders\water">
       <UniqueIdentifier>{35e0aedf-75f8-43ab-adc2-aeeb5eae332a}</UniqueIdentifier>
@@ -57,69 +34,73 @@
     <Filter Include="shaders\foam\radiance">
       <UniqueIdentifier>{ed66c811-3f5b-462c-beea-6ef221105850}</UniqueIdentifier>
     </Filter>
-    <Filter Include="resources">
-      <UniqueIdentifier>{1f64b718-df0f-4235-918c-a1a841c12f5b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\general">
       <UniqueIdentifier>{645086ed-259e-4ee8-adcd-3982bd34807d}</UniqueIdentifier>
     </Filter>
     <Filter Include="shaders\cloth">
       <UniqueIdentifier>{f7164201-4158-43a6-981a-df6e36e6cf99}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Scene">
-      <UniqueIdentifier>{d9045f5a-e7cf-4fdd-b21c-394ee2da3b3b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\cudaMath">
-      <UniqueIdentifier>{8a7b7d95-be78-4f0b-9a7b-c3eab3c382dc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="screenshots">
       <UniqueIdentifier>{62bffc6b-6130-4266-9f57-37ef967baca0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\rendering">
+      <UniqueIdentifier>{9ae4adbf-a7d7-4759-9087-3619d143f24e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\physics">
+      <UniqueIdentifier>{a5ad0b92-87b0-4995-bf77-a727e528b232}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Scene">
+      <UniqueIdentifier>{d9045f5a-e7cf-4fdd-b21c-394ee2da3b3b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="Renderer.cpp">
-      <Filter>Source Files\rendering</Filter>
+      <Filter>src\rendering</Filter>
     </ClCompile>
     <ClCompile Include="ParticleSystem.cpp">
-      <Filter>Source Files\physics</Filter>
+      <Filter>src\physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.h">
-      <Filter>Header Files\rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Particle.hpp">
-      <Filter>Header Files\water</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.hpp">
-      <Filter>Header Files\rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Camera.hpp">
-      <Filter>Source Files\rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="FoamParticle.hpp">
-      <Filter>Header Files\foam</Filter>
-    </ClInclude>
-    <ClInclude Include="ParticleSystem.h">
-      <Filter>Header Files\water</Filter>
+      <Filter>src\rendering</Filter>
     </ClInclude>
     <ClInclude Include="Scene.hpp">
-      <Filter>Header Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="parameters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="helper_math.h">
-      <Filter>Header Files\cudaMath</Filter>
+      <Filter>src\Scene</Filter>
     </ClInclude>
     <ClInclude Include="setupFunctions.h">
-      <Filter>Header Files\Scene</Filter>
+      <Filter>src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Particle.hpp">
+      <Filter>src\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h">
+      <Filter>src\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.hpp">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="parameters.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="FoamParticle.hpp">
+      <Filter>src\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="helper_math.h">
+      <Filter>src\physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -180,14 +161,14 @@
     <None Include="plane.frag">
       <Filter>shaders\general</Filter>
     </None>
-    <None Include="ParticleSystem.cuh">
-      <Filter>Header Files\water</Filter>
-    </None>
     <None Include="clothMesh.vert">
       <Filter>shaders\cloth</Filter>
     </None>
     <None Include="clothMesh.frag">
       <Filter>shaders\cloth</Filter>
+    </None>
+    <None Include="ParticleSystem.cuh">
+      <Filter>src\physics</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -200,7 +181,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="ParticleSystem.cu">
-      <Filter>Source Files\physics</Filter>
+      <Filter>src\physics</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

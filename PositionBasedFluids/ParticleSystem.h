@@ -19,7 +19,6 @@ public:
 	void getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int numDiffuse);
 
 private:
-	int getIndex(float i, float j);
 	float easeInOutQuad(float t, float b, float c, float d);
 
 	#define cudaCheck(x) { cudaError_t err = x; if (err != cudaSuccess) { printf("Cuda error: %d in %s at %s:%d\n", err, #x, __FILE__, __LINE__); assert(0); } }

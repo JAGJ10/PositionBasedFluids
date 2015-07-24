@@ -12,8 +12,7 @@ uniform vec2 invTexScale;
 
 out vec4 fragColor;
 
-const vec3 lightDir = vec3(0, 1, 0);
-const vec3 lightPos = vec3(0, 1000, 0);
+const vec3 lightDir = vec3(1, 1, 1);
 const float shininess = 1000.0;
 const float fresPower = 5.0f;
 const float fresScale = 0.9;
@@ -81,8 +80,7 @@ void main() {
 
 	vec3 refract = texture(sceneMap, refractCoord).xyz*transmission;
     
-	vec3 lVec = normalize(worldPos.xyz-lightPos);
-	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(lVec, -lightDir))), 0.05);
+	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(l, -lightDir))), 0.05);
 
 	float ln = dot(l, normal)*attenuation;
 

@@ -32,6 +32,6 @@ void main() {
 	}
 	sum /= totalWeight;
 
-	float squiggly = clamp(sum * (vec3(1, 1, 1) - vec3(0, 0.2, 0.6)), 0, 1);
+	vec4 squiggly = vec4(clamp(sum * (vec3(1, 1, 1) - vec3(0, 0.2, 0.6)), 0, 1), 0);
 	fragColor = (1 - foamIntensity) * fluid + (foamIntensity * (0.9 - squiggly));
 }

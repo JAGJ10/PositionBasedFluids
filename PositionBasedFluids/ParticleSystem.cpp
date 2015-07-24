@@ -115,10 +115,6 @@ void ParticleSystem::getDiffuse(float* diffusePosPtr, float* diffuseVelPtr, int 
 	cudaCheck(cudaMemcpy(diffuseVelPtr, s->diffuseVelocities, numDiffuse * sizeof(float3), cudaMemcpyDeviceToDevice));
 }
 
-int ParticleSystem::getIndex(float i, float j) {
-	return int(i * 20 + j);
-}
-
 float ParticleSystem::easeInOutQuad(float t, float b, float c, float d) {
 	t /= d / 2;
 	if (t < 1) return c / 2 * t*t + b;
