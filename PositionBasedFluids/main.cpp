@@ -1,5 +1,5 @@
 #define GLEW_DYNAMIC
-#include <GL/glew.h>
+#include "common.h"
 #include <cuda_gl_interop.h>
 #include <GLFW/glfw3.h>
 #include "ParticleSystem.h"
@@ -62,7 +62,7 @@ int main() {
 	int* buffer = new int[width*height];
 	
 	Camera cam = Camera();
-	Renderer render = Renderer();
+	Renderer render = Renderer(width, height);
 	ParticleSystem system = ParticleSystem();
 	tempSolver tp;
 	solverParams tempParams;

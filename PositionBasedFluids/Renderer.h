@@ -2,12 +2,18 @@
 #define RENDERER_H
 
 #include "common.h"
-#include "Shader.hpp"
+#include "Shader.h"
 #include "Camera.hpp"
+#include "GBuffer.h"
+#include "FullscreenQuad.h"
+
+struct buffers {
+	GLuint vao, vbo, ebo;
+};
 
 class Renderer {
 public:
-	Renderer();
+	Renderer(int width, int height);
 	~Renderer();
 	void initVBOS(int numParticles, int numDiffuse, std::vector<int> triangles);
 	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam);
@@ -18,10 +24,25 @@ public:
 	GLuint diffusePosVBO;
 	GLuint diffuseVelVBO;
 
+private:
+	void renderPlane(buffers &buf);
+	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
+	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse);
+	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
+	void initFramebuffers();
+
+	int width, height;
+	glm::mat4 mView, normalMatrix, projection;
+	float aspectRatio;
+	glm::vec2 screenSize, blurDirX, blurDirY;
+
+	buffers planeBuf;
+	GBuffer gBuffer;
+
 	Shader plane;
 	Shader cloth;
 	Shader depth;
-	BlurShader blur;
+	Shader blur;
 	Shader thickness;
 	Shader fluidFinal;
 	Shader foamDepth;
@@ -29,18 +50,7 @@ public:
 	Shader foamIntensity;
 	Shader foamRadiance;
 	Shader finalFS;
-
-private:
-	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
-	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse);
-	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
-	void initFramebuffers();
-	void setInt(Shader &shader, const int &x, const GLchar* name);
-	void setFloat(Shader &shader, const float &x, const GLchar* name);
-	void setVec2(Shader &shader, const glm::vec2 &v, const GLchar* name);
-	void setVec3(Shader &shader, const glm::vec3 &v, const GLchar* name);
-	void setVec4(Shader &shader, const glm::vec4 &v, const GLchar* name);
-	void setMatrix(Shader &shader, const glm::mat4 &m, const GLchar* name);
+	FullscreenQuad fsQuad;
 };
 
 #endif

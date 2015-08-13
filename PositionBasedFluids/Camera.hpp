@@ -2,7 +2,6 @@
 #define CAMERA_H
 
 #include "common.h"
-#include <GL/glew.h>
 
 enum Movement {
 	FORWARD,

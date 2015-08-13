@@ -17,6 +17,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
+#include <GL/glew.h>
 #include <vector>
 #include <Windows.h>
 

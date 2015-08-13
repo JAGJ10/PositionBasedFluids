@@ -67,6 +67,21 @@
     <ClCompile Include="ParticleSystem.cpp">
       <Filter>src\physics</Filter>
     </ClCompile>
+    <ClCompile Include="FullscreenQuad.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="VBO.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="GBuffer.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.hpp">
@@ -87,9 +102,6 @@
     <ClInclude Include="Renderer.h">
       <Filter>src\rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Shader.hpp">
-      <Filter>src\rendering</Filter>
-    </ClInclude>
     <ClInclude Include="common.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -101,6 +113,21 @@
     </ClInclude>
     <ClInclude Include="helper_math.h">
       <Filter>src\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="FullscreenQuad.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="VBO.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="GBuffer.h">
+      <Filter>src\rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
