@@ -6,7 +6,6 @@ GBuffer::GBuffer(int width, int height) : width(width), height(height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 	//Create GBuffer textures
-	glGenTextures(1, &plane);
 	glGenTextures(1, &cloth);
 	glGenTextures(1, &depth);
 	glGenTextures(1, &thickness);
@@ -18,14 +17,6 @@ GBuffer::GBuffer(int width, int height) : width(width), height(height) {
 	glGenTextures(1, &foamIntensity);
 	glGenTextures(1, &foamRadiance);
 
-	//Plane
-	glBindTexture(GL_TEXTURE_2D, plane);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	//Cloth
 	glBindTexture(GL_TEXTURE_2D, cloth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -36,7 +27,8 @@ GBuffer::GBuffer(int width, int height) : width(width), height(height) {
 
 	//Depth
 	glBindTexture(GL_TEXTURE_2D, depth);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -108,17 +100,16 @@ GBuffer::GBuffer(int width, int height) : width(width), height(height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	//Attach textures to FBO
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, plane, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, cloth, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, thickness, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, blurH, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, blurV, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, fluid, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_2D, foamDepth, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, GL_TEXTURE_2D, foamThickness, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT8, GL_TEXTURE_2D, foamIntensity, 0);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT9, GL_TEXTURE_2D, foamRadiance, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, cloth, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depth, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, thickness, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, blurH, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, blurV, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, fluid, 0);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, foamDepth, 0);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_2D, foamThickness, 0);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, GL_TEXTURE_2D, foamIntensity, 0);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT8, GL_TEXTURE_2D, foamRadiance, 0);
 
 	//Unbind
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -149,49 +140,46 @@ int GBuffer::getHeight() const {
 	return height;
 }
 
-void GBuffer::setDrawPlane() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-}
-
 void GBuffer::setDrawCloth() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT1);
-}
-
-void GBuffer::setDrawDepth() {
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-}
-
-void GBuffer::setDrawThickness() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT2);
-}
-
-void GBuffer::setDrawHorizontalBlur() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT3);
-}
-
-void GBuffer::setDrawVerticalBlur() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT4);
-}
-
-void GBuffer::setDrawFluid() {
 	glDrawBuffer(GL_COLOR_ATTACHMENT5);
 }
 
+void GBuffer::setDrawDepth() {
+	//glDrawBuffer(GL_NONE);
+	//glReadBuffer(GL_NONE);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+}
+
+void GBuffer::setDrawThickness() {
+	glDrawBuffer(GL_COLOR_ATTACHMENT1);
+}
+
+void GBuffer::setDrawHorizontalBlur() {
+	glDrawBuffer(GL_COLOR_ATTACHMENT2);
+}
+
+void GBuffer::setDrawVerticalBlur() {
+	glDrawBuffer(GL_COLOR_ATTACHMENT3);
+}
+
+void GBuffer::setDrawFluid() {
+	glDrawBuffer(GL_COLOR_ATTACHMENT4);
+}
+
 void GBuffer::setDrawFoamDepth() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT6);
+	glDrawBuffer(GL_COLOR_ATTACHMENT5);
 }
 
 void GBuffer::setDrawFoamThickness() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT7);
+	glDrawBuffer(GL_COLOR_ATTACHMENT6);
 }
 
 void GBuffer::setDrawFoamIntensity() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT8);
+	glDrawBuffer(GL_COLOR_ATTACHMENT7);
 }
 
 void GBuffer::setDrawFoamRadiance() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT9);
+	glDrawBuffer(GL_COLOR_ATTACHMENT8);
 }
 
 void GBuffer::bind() {

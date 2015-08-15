@@ -12,11 +12,17 @@ uniform vec2 invTexScale;
 
 out vec4 fragColor;
 
-const vec3 lightDir = vec3(1, 1, 1);
+const vec4 lightDir = vec4(1, 1, 1, 0);
 const float shininess = 1000.0;
 const float fresPower = 5.0f;
 const float fresScale = 0.9;
 const float fresBias = 0.1;
+
+float linearizeDepth(float depth) {
+	float f = 50.0;
+	float n = 1.0;
+	return (2 * n) / (f + n - depth * (f - n));
+}
 
 vec3 uvToEye(vec2 p, float z) {
 	vec2 pos = p * 2.0f - 1.0f;
@@ -30,15 +36,10 @@ void main() {
     float depth = texture(depthMap, coord).x;
 
 	if (depth == 0.0f) {
-		fragColor = vec4(0);
-		return;
-	}
-
-	if (depth == 1.0) {
 		fragColor = scene;
 		return;
 	}
-
+	
 	// reconstruct eye space pos from depth
 	vec3 eyePos = uvToEye(coord, depth);
 
@@ -63,7 +64,7 @@ void main() {
 	vec4 worldPos = inverse(mView) * vec4(eyePos, 1.0);
     
     //Phong specular
-	vec3 l = (mView * vec4(lightDir, 0.0)).xyz;
+	vec3 l = (mView * lightDir).xyz;
     vec3 viewDir = -normalize(eyePos);
     vec3 halfVec = normalize(viewDir + l);
     float specular = pow(max(0.0f, dot(normal, halfVec)), shininess);	
@@ -80,7 +81,7 @@ void main() {
 
 	vec3 refract = texture(sceneMap, refractCoord).xyz*transmission;
     
-	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(l, -lightDir))), 0.05);
+	float attenuation = max(smoothstep(0.95, 1.0, abs(dot(l, -lightDir.xyz))), 0.05);
 
 	float ln = dot(l, normal)*attenuation;
 
@@ -103,6 +104,11 @@ void main() {
     vec3 finalColor = diffuse + (mix(refract, reflect, fresnel) + specular) * color.w;
 
 	fragColor = vec4(finalColor, 1.0);
+	//fragColor = vec4(linearizeDepth(depth));
 
-	gl_FragDepth = depth;
+	//gl_FragDepth = depth;
+	vec4 clipPos = projection*vec4(0.0, 0.0, depth, 1.0);
+	clipPos.z /= clipPos.w;
+
+	gl_FragDepth = clipPos.z*0.5 + 0.5;
 }

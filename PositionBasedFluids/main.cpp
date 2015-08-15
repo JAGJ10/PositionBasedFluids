@@ -67,7 +67,7 @@ int main() {
 	tempSolver tp;
 	solverParams tempParams;
 	initializeState(system, tp, tempParams);
-	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tp.triangles);
+	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles);
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times

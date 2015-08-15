@@ -18,6 +18,8 @@ private:
 	GLuint vao;
 	VBO positionBuffer;
 	VBO indexBuffer;
+
+	void setAttributes();
 };
 
 #endif

@@ -9,6 +9,8 @@ uniform vec2 blurDir;
 uniform float filterRadius;
 uniform float blurScale;
 
+out float fragColor;
+
 const float blurDepthFalloff = 65.0f;
 
 void main() {
@@ -46,5 +48,6 @@ void main() {
 		sum /= wsum;
 	}
 
-	gl_FragDepth = sum;
+	//gl_FragDepth = sum;
+	fragColor = sum;
 }

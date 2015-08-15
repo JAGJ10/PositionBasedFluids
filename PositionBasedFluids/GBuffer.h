@@ -6,7 +6,7 @@
 class GBuffer {
 public:
 	//GLuint position, normal, color, depth, light, effect1, effect2;
-	GLuint plane, cloth, depth, thickness, blurH, blurV, fluid, foamDepth, foamThickness, foamIntensity, foamRadiance;
+	GLuint cloth, depth, thickness, blurH, blurV, fluid, foamDepth, foamThickness, foamIntensity, foamRadiance;
 
 	GBuffer(int widthIn, int heightIn);
 	~GBuffer();

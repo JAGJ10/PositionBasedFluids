@@ -6,6 +6,8 @@ uniform mat4 mView;
 uniform mat4 projection;
 uniform float pointRadius;
 
+out float fragColor;
+
 void main() {
 	//calculate normal
 	vec3 normal;
@@ -22,5 +24,6 @@ void main() {
 	vec4 pixelPos = vec4(pos + normal * pointRadius, 1.0);
 	vec4 clipSpacePos = projection * pixelPos;
 	
-	gl_FragDepth = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
+	//gl_FragDepth = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
+	fragColor = (clipSpacePos.z / clipSpacePos.w) * 0.5f + 0.5f;
 }

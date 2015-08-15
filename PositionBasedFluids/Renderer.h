@@ -8,14 +8,14 @@
 #include "FullscreenQuad.h"
 
 struct buffers {
-	GLuint vao, vbo, ebo;
+	GLuint fbo, vao, vbo, ebo, tex;
 };
 
 class Renderer {
 public:
 	Renderer(int width, int height);
 	~Renderer();
-	void initVBOS(int numParticles, int numDiffuse, std::vector<int> triangles);
+	void initVBOS(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles);
 	void run(int numParticles, int numDiffuse, int numCloth, std::vector<int> triangles, Camera &cam);
 
 	cudaGraphicsResource *resources[3];
@@ -38,6 +38,9 @@ private:
 
 	buffers planeBuf;
 	GBuffer gBuffer;
+	GLuint positionVAO;
+	GLuint diffusePosVAO;
+	GLuint indicesVAO;
 
 	Shader plane;
 	Shader cloth;
