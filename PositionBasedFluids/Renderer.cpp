@@ -217,8 +217,9 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
+	glDisable(GL_CULL_FACE);
 
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	glBindVertexArray(positionVAO);
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
@@ -241,6 +242,9 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	blur.setUniformf("filterRadius", filterRadius);
 	blur.setUniformf("blurScale", 0.1f);
 	//setFloat(blur, width / aspectRatio * (1.0f / (tanf(cam.zoom*0.5f))), "blurScale");
+
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -289,7 +293,7 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	gBuffer.setDrawFluid();
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gBuffer.blurH);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.depth);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, gBuffer.thickness);
 	glActiveTexture(GL_TEXTURE2);
@@ -307,12 +311,9 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	fsQuad.render();
-
-	glDepthMask(GL_FALSE);
-	glDisable(GL_DEPTH_TEST);
 }
 
 void Renderer::renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse) {

@@ -105,6 +105,8 @@ void main() {
 
 	fragColor = vec4(finalColor, 1.0);
 	//fragColor = vec4(linearizeDepth(depth));
+	//fragColor = vec4(depth);
+	fragColor = vec4(normal, 1);
 
 	//gl_FragDepth = depth;
 	vec4 clipPos = projection*vec4(0.0, 0.0, depth, 1.0);
