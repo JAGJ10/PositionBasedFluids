@@ -39,6 +39,11 @@ void main() {
 		fragColor = scene;
 		return;
 	}
+
+	if (depth == 1.0f) {
+		fragColor = scene;
+		return;
+	}
 	
 	// reconstruct eye space pos from depth
 	vec3 eyePos = uvToEye(coord, depth);
@@ -104,13 +109,13 @@ void main() {
     vec3 finalColor = diffuse + (mix(refract, reflect, fresnel) + specular) * color.w;
 
 	fragColor = vec4(finalColor, 1.0);
-	//fragColor = vec4(linearizeDepth(depth));
-	//fragColor = vec4(depth);
-	fragColor = vec4(normal, 1);
+	//fragColor = vec4(vec3(linearizeDepth(depth)), 1);
+	//fragColor = vec4(vec3(depth), 1);
+	//fragColor = vec4(normal, 1);
 
-	//gl_FragDepth = depth;
-	vec4 clipPos = projection*vec4(0.0, 0.0, depth, 1.0);
-	clipPos.z /= clipPos.w;
+	gl_FragDepth = depth;
+	//vec4 clipPos = projection*vec4(0.0, 0.0, depth, 1.0);
+	//clipPos.z /= clipPos.w;
 
-	gl_FragDepth = clipPos.z*0.5 + 0.5;
+	//gl_FragDepth = clipPos.z*0.5 + 0.5;
 }

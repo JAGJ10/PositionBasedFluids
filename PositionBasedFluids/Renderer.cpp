@@ -3,8 +3,8 @@
 
 using namespace std;
 
-static const float zFar = 50.0f;
-static const float zNear = 1.0f;
+static const float zFar = 200.0f;
+static const float zNear = 10.0f;
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static const float filterRadius = 3;
 static const float radius = 0.05f;
@@ -154,7 +154,7 @@ void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> t
 
 	//--------------------WATER-------------------------
 	renderWater(projection, mView, cam, numParticles - numCloth, numCloth);
-
+	return;
 	//--------------------FOAM--------------------------
 	//renderFoam(projection, mView, cam, numDiffuse);
 
@@ -197,7 +197,7 @@ void Renderer::renderPlane(buffers &buf) {
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
 
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	glBindVertexArray(buf.vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -215,11 +215,11 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	
 	glDisable(GL_BLEND);
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 	
 	glBindVertexArray(positionVAO);
 	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
@@ -290,10 +290,10 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	//--------------------Particle fluidFinal-------------------------
 	glUseProgram(fluidFinal.program);
-	gBuffer.setDrawFluid();
-
+//	gBuffer.setDrawFluid();
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gBuffer.depth);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.blurH);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, gBuffer.thickness);
 	glActiveTexture(GL_TEXTURE2);
@@ -308,10 +308,10 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 	fluidFinal.setUniformv4f("color", color);
 	fluidFinal.setUniformv2f("invTexScale", glm::vec2(1.0f / width, 1.0f / height));
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_TRUE);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	fsQuad.render();
 }
