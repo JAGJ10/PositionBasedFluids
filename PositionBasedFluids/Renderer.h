@@ -4,7 +4,7 @@
 #include "common.h"
 #include "Shader.h"
 #include "Camera.hpp"
-#include "GBuffer.h"
+#include "FluidBuffer.h"
 #include "FullscreenQuad.h"
 
 struct buffers {
@@ -37,7 +37,7 @@ private:
 	glm::vec2 screenSize, blurDirX, blurDirY;
 
 	buffers planeBuf;
-	GBuffer gBuffer;
+	FluidBuffer fluidBuffer;
 	GLuint positionVAO;
 	GLuint diffusePosVAO;
 	GLuint indicesVAO;

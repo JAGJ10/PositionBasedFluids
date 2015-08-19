@@ -79,7 +79,7 @@
     <ClCompile Include="VBO.cpp">
       <Filter>src\rendering</Filter>
     </ClCompile>
-    <ClCompile Include="GBuffer.cpp">
+    <ClCompile Include="FluidBuffer.cpp">
       <Filter>src\rendering</Filter>
     </ClCompile>
   </ItemGroup>
@@ -126,7 +126,7 @@
     <ClInclude Include="VBO.h">
       <Filter>src\rendering</Filter>
     </ClInclude>
-    <ClInclude Include="GBuffer.h">
+    <ClInclude Include="FluidBuffer.h">
       <Filter>src\rendering</Filter>
     </ClInclude>
   </ItemGroup>

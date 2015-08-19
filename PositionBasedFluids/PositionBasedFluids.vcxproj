@@ -173,7 +173,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FullscreenQuad.cpp" />
-    <ClCompile Include="GBuffer.cpp" />
+    <ClCompile Include="FluidBuffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="ParticleSystem.cpp">
@@ -187,7 +187,7 @@
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="common.h" />
     <ClInclude Include="FullscreenQuad.h" />
-    <ClInclude Include="GBuffer.h" />
+    <ClInclude Include="FluidBuffer.h" />
     <ClInclude Include="helper_math.h" />
     <ClInclude Include="FoamParticle.hpp" />
     <ClInclude Include="Mesh.h" />

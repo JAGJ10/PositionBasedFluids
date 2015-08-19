@@ -1,15 +1,14 @@
-#ifndef GBUFFER_H
-#define GBUFFER_H
+#ifndef FluidBuffer_H
+#define FluidBuffer_H
 
 #include "Shader.h"
 
-class GBuffer {
+class FluidBuffer {
 public:
-	//GLuint position, normal, color, depth, light, effect1, effect2;
 	GLuint cloth, depth, thickness, blurH, blurV, fluid, foamDepth, foamThickness, foamIntensity, foamRadiance;
 
-	GBuffer(int widthIn, int heightIn);
-	~GBuffer();
+	FluidBuffer(int widthIn, int heightIn);
+	~FluidBuffer();
 
 	GLuint getFBO() const;
 	int getWidth() const;
