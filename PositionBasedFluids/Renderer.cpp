@@ -253,7 +253,7 @@ void Renderer::geometryPass() {
 void Renderer::compositePass() {
 	//Composition pass (directional light + light buffer)
 	glUseProgram(finalPass.program);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, planeBuf.fbo);
 
 	finalPass.setUniformmat4("inverseMView", glm::inverse(mView));
 	finalPass.setUniformv3f("l", glm::vec3(mView * lightDir));

@@ -142,13 +142,13 @@ public:
 	virtual void init(tempSolver* tp, solverParams* sp) {
 		const float radius = 0.1f;
 		const float restDistance = radius * 0.5f;
-		float3 lower = make_float3(0, 0.1f, 0);
+		float3 lower = make_float3(0, 0.f, 0);
 		float3 lower1 = make_float3(1.0f, 2.5f, 0.0f);
 		int3 dims = make_int3(200);
 
-		loadMeshes("meshes/bunny_closed.cobj", tp->meshes);
+		loadMeshes("meshes/bunny_closed_fixed.cobj", tp->meshes);
 
-		createParticleShape("meshes/bunny_closed.sdf", tp, lower1, true);
+		createParticleShape("meshes/bunny_closed_fixed.sdf", tp, lower, true);
 		//sp->numCloth = int(tp->positions.size());
 		//createParticleGrid(tp, sp, lower, dims, restDistance);
 		std::cout << tp->positions.size() << std::endl;

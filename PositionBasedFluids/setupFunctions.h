@@ -26,7 +26,7 @@ void createParticleShape(std::string sdfFile, tempSolver* s, float3 lower, bool 
 		exit(-1);
 	}
 
-	float3 dims, origin, nOrigin = make_float3(0);
+	float3 dims, origin = make_float3(0);
 	std::string dimsString, originString, cellSizeString;
 	std::getline(infile, dimsString);
 	std::stringstream data(dimsString);
@@ -34,9 +34,6 @@ void createParticleShape(std::string sdfFile, tempSolver* s, float3 lower, bool 
 	std::getline(infile, originString);
 	data = std::stringstream(originString);
 	data >> origin.x >> origin.y >> origin.z;
-	nOrigin.y = origin.y*cosf(-90.0f) - origin.z*sinf(-90.0f);
-	nOrigin.z = origin.y*sinf(-90.0f) + origin.z*cosf(-90.0f);
-	nOrigin.x = origin.x;
 	std::getline(infile, cellSizeString);
 	float value;
 	int count = 0;
@@ -46,11 +43,7 @@ void createParticleShape(std::string sdfFile, tempSolver* s, float3 lower, bool 
 			float y = count % (int(dims.y) * int(dims.x)) / (int(dims.x));
 			float x = count % int(dims.x);
 			float3 pos = make_float3(x, y, z) * 0.1f;
-			float3 nPos = make_float3(0);
-			nPos.y = pos.y*cosf(-90.0f) - pos.z*sinf(-90.0f);
-			nPos.z = -1 * (pos.y*sinf(-90.0f) + pos.z*cosf(-90.0f));
-			nPos.x = pos.x;
-			s->positions.push_back(make_float4(lower + nPos + nOrigin, 1.0f));
+			s->positions.push_back(make_float4(lower + pos + origin, 1.0f));
 			s->velocities.push_back(make_float3(0));
 			s->phases.push_back(0);
 		}
