@@ -2,6 +2,7 @@
 #define PARAMETERS_H
 
 #include "common.h"
+#include "Mesh.h"
 
 struct tempSolver {
 	std::vector<float4> positions;
@@ -15,6 +16,8 @@ struct tempSolver {
 	std::vector<float> restLengths;
 	std::vector<float> stiffness;
 	std::vector<int> triangles;
+
+	std::vector<Mesh> meshes;
 };
 
 struct solver {

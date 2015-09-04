@@ -73,7 +73,7 @@ __device__ float WAirPotential(float3 const &pi, float3 const &pj) {
 __device__ float3 eta(float4* newPos, int* phases, int* neighbors, int* numNeighbors, int &index, float &vorticityMag) {
 	float3 eta = make_float3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0)
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0 || phases[neighbors[(index * sp.maxNeighbors) + i]] == 2)
 			eta += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) * vorticityMag;
 	}
 
@@ -87,7 +87,7 @@ __device__ float3 vorticityForce(float4* newPos, float3* velocities, int* phases
 	float3 gradient;
 
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0 || phases[neighbors[(index * sp.maxNeighbors) + i]] == 2) {
 			velocityDiff = velocities[neighbors[(index * sp.maxNeighbors) + i]] - velocities[index];
 			gradient = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 			omega += cross(velocityDiff, gradient);
@@ -121,7 +121,7 @@ __device__ float sCorrCalc(float4 &pi, float4 &pj) {
 __device__ float3 xsphViscosity(float4* newPos, float3* velocities, int* phases, int* neighbors, int* numNeighbors, int index) {
 	float3 visc = make_float3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0 || phases[neighbors[(index * sp.maxNeighbors) + i]] == 2) {
 			float3 velocityDiff = velocities[neighbors[(index * sp.maxNeighbors) + i]] - velocities[index];
 			velocityDiff *= WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 			visc += velocityDiff;
@@ -267,7 +267,7 @@ __global__ void calcDensities(float4* newPos, int* phases, int* neighbors, int* 
 
 	float rhoSum = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0)
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0 || phases[neighbors[(index * sp.maxNeighbors) + i]] == 2)
 			rhoSum += WPoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]]));
 	}
 
@@ -282,7 +282,7 @@ __global__ void calcLambda(float4* newPos, int* phases, int* neighbors, int* num
 	float3 gradientI = make_float3(0.0f);
 	float sumGradients = 0.0f;
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0 || phases[neighbors[(index * sp.maxNeighbors) + i]] == 2) {
 			//Calculate gradient with respect to j
 			float3 gradientJ = WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) / sp.restDensity;
 
@@ -304,11 +304,10 @@ __global__ void calcDeltaP(float4* newPos, int* phases, int* neighbors, int* num
 
 	float3 deltaP = make_float3(0.0f);
 	for (int i = 0; i < numNeighbors[index]; i++) {
-		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0) {
+		if (phases[neighbors[(index * sp.maxNeighbors) + i]] == 0 || phases[neighbors[(index * sp.maxNeighbors) + i]] == 2) {
 			float lambdaSum = buffer0[index] + buffer0[neighbors[(index * sp.maxNeighbors) + i]];
 			float sCorr = sCorrCalc(newPos[index], newPos[neighbors[(index * sp.maxNeighbors) + i]]);
 			deltaP += WSpiky(make_float3(newPos[index]), make_float3(newPos[neighbors[(index * sp.maxNeighbors) + i]])) * (lambdaSum + sCorr);
-
 		}
 	}
 
@@ -442,14 +441,6 @@ __global__ void updateFoam(float4* newPos, float3* velocities, float4* diffusePo
 	}
 }
 
-__global__ void clearDeltaP(float3* deltaPs, float* buffer0) {
-	int index = threadIdx.x + (blockIdx.x * blockDim.x);
-	if (index >= sp.numParticles) return;
-
-	deltaPs[index] = make_float3(0);
-	buffer0[index] = 0;
-}
-
 __global__ void solveDistance(float4* newPos, int* clothIndices, float* restLengths, float* stiffness, float3* deltaPs, float* buffer0) {
 	int index = threadIdx.x + (blockIdx.x * blockDim.x);
 	if (index >= sp.numConstraints) return;
@@ -525,9 +516,12 @@ void updateWater(solver* s, int numIterations) {
 	//updateFoam<<<diffuseDims, blockSize>>>(s->newPos, s->velocities, s->diffusePos, s->diffuseVelocities, s->gridCells, s->gridCounters);
 }
 
-void updateCloth(solver* s, int numIterations) {
-	clearDeltaP<<<dims, blockSize>>>(s->deltaPs, s->buffer0);
+void clearBuffers(solver* s, int numParticles) {
+	cudaCheck(cudaMemset(s->deltaPs, 0, numParticles * sizeof(float3)));
+	cudaCheck(cudaMemset(s->buffer0, 0, numParticles * sizeof(float)));
+}
 
+void updateCloth(solver* s, int numIterations) {
 	for (int i = 0; i < numIterations; i++) {
 		solveDistance<<<clothDims, blockSize>>>(s->newPos, s->clothIndices, s->restLengths, s->stiffness, s->deltaPs, s->buffer0);
 		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 1);
@@ -547,7 +541,7 @@ void update(solver* s, solverParams* sp) {
 	updateNeighbors<<<dims, blockSize>>>(s->newPos, s->phases, s->gridCells, s->gridCounters, s->neighbors, s->numNeighbors, s->contacts, s->numContacts);
 
 	for (int i = 0; i < sp->numIterations; i++) {
-		clearDeltaP<<<dims, blockSize>>>(s->deltaPs, s->buffer0);
+		clearBuffers(s, sp->numParticles);
 		particleCollisions<<<dims, blockSize>>>(s->newPos, s->contacts, s->numContacts, s->deltaPs, s->buffer0);
 		applyDeltaP<<<dims, blockSize>>>(s->newPos, s->deltaPs, s->buffer0, 1);
 	}
@@ -556,6 +550,7 @@ void update(solver* s, solverParams* sp) {
 	updateWater(s, sp->numIterations);
 	thrust::device_ptr<float4> devPtr = thrust::device_pointer_cast(s->diffusePos);
 	thrust::sort(devPtr, devPtr + sp->numDiffuse, OBCmp());
+	clearBuffers(s, sp->numParticles);
 	updateCloth(s, sp->numIterations);
 }
 

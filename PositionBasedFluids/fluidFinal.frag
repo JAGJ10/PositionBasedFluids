@@ -6,13 +6,19 @@ uniform vec4 color;
 uniform sampler2D depthMap;
 uniform sampler2D thicknessMap;
 uniform sampler2D sceneMap;
+uniform sampler2DShadow shadowMap;
 uniform mat4 projection;
+uniform mat4 inverseProjection;
 uniform mat4 mView;
+uniform mat4 inverseMView;
 uniform vec2 invTexScale;
+uniform mat4 shadowMapMVP;
+uniform int shadowMapWidth;
+uniform int shadowMapHeight;
 
 out vec4 fragColor;
 
-const vec4 lightDir = vec4(1, 1, 1, 0);
+const vec4 lightDir = vec4(1, 1, 0, 0);
 const float shininess = 1000.0;
 const float fresPower = 5.0f;
 const float fresScale = 0.9;
@@ -24,21 +30,37 @@ float linearizeDepth(float depth) {
 	return (2 * n) / (f + n - depth * (f - n));
 }
 
+float getShadowFactor(vec3 position) {
+	//vec4 p = inverseMView * vec4(position, 1.0);
+	vec4 p = vec4(position, 1.0);
+	p = shadowMapMVP * p;
+	p /= p.w;
+	p.xyz = p.xyz * 0.5 + 0.5;
+
+	float factor = 0;
+
+	vec2 offset = vec2(1.0 / float(shadowMapWidth), 1.0 / float(shadowMapHeight));
+
+	for (int y = -1; y <= 1; y++) {
+		for (int x = -1; x <= 1; x++) {
+			vec3 uvc = vec3(p.xy + (vec2(x,y) * offset), p.z + 0.005);
+			factor += texture(shadowMap, uvc);
+        }
+    }
+
+	return (0.5 + (factor / 18));
+}
+
 vec3 uvToEye(vec2 p, float z) {
 	vec2 pos = p * 2.0f - 1.0f;
 	vec4 clipPos = vec4(pos, z, 1.0f);
-	vec4 viewPos = inverse(projection) * clipPos;
+	vec4 viewPos = inverseProjection * clipPos;
 	return viewPos.xyz / viewPos.w;
 }
 
 void main() {
 	vec4 scene = texture(sceneMap, coord);
     float depth = texture(depthMap, coord).x;
-
-	if (depth == 0.0f) {
-		fragColor = scene;
-		return;
-	}
 	
 	// reconstruct eye space pos from depth
 	vec3 eyePos = uvToEye(coord, depth);
@@ -61,7 +83,14 @@ void main() {
 
 	vec3 normal = normalize(cross(dx, dy));
     
-	vec4 worldPos = inverse(mView) * vec4(eyePos, 1.0);
+	vec4 worldPos = inverseMView * vec4(eyePos, 1.0);
+	//float shadowFactor = getShadowFactor(worldPos.xyz);
+
+	if (depth == 0.0f) {
+		//fragColor = scene * shadowFactor;
+		fragColor = scene;
+		return;
+	}
     
     //Phong specular
 	vec3 l = (mView * lightDir).xyz;
@@ -96,7 +125,7 @@ void main() {
 	vec3 groundColor = vec3(0.1, 0.1, 0.2);
 
 	vec3 rEye = reflect(viewDir, normal).xyz;
-	vec3 rWorld = (inverse(mView)*vec4(rEye, 0.0)).xyz;
+	vec3 rWorld = (inverseMView*vec4(rEye, 0.0)).xyz;
 
 	vec3 reflect = vec3(1.0) + mix(groundColor, skyColor, smoothstep(0.15, 0.25, rWorld.y));
     
@@ -104,6 +133,9 @@ void main() {
     vec3 finalColor = diffuse + (mix(refract, reflect, fresnel) + specular) * color.w;
 
 	fragColor = vec4(finalColor, 1.0);
+	//fragColor = vec4(finalColor * shadowFactor, 1.0);
+	//fragColor = vec4(shadowFactor);
+	//fragColor = vec4(depth);
 
 	gl_FragDepth = depth;
 }

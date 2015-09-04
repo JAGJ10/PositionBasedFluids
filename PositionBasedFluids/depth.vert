@@ -4,7 +4,6 @@ in vec4 vertexPos;
 
 uniform mat4 projection;
 uniform mat4 mView;
-uniform vec2 screenSize;
 uniform float pointRadius;
 uniform float pointScale;
 

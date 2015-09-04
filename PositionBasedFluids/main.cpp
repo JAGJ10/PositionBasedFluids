@@ -58,7 +58,7 @@ int main() {
 		"-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output\\pbf.mp4";
 
 	//open pipe to ffmpeg's stdin in binary write mode
-	FILE* ffmpeg;
+	FILE* ffmpeg = nullptr;
 	int* buffer = new int[width*height];
 	
 	Camera cam = Camera();
@@ -67,6 +67,7 @@ int main() {
 	tempSolver tp;
 	solverParams tempParams;
 	initializeState(system, tp, tempParams);
+	render.setMeshes(tp.meshes);
 	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -98,7 +99,7 @@ int main() {
 		glfwSetCursorPos(window, lastX, lastY);
 	}
 
-	_pclose(ffmpeg);
+	if (ffmpeg != nullptr) _pclose(ffmpeg);
 
 	glfwTerminate();
 
@@ -156,7 +157,8 @@ void handleInput(GLFWwindow* window, ParticleSystem &system, Camera &cam) {
 }
 
 void initializeState(ParticleSystem &system, tempSolver &tp, solverParams &tempParams) {
-	DamBreak scene("DamBreak");
+	BunnyBath scene("Bunny");
+	//DamBreak scene("DamBreak");
 	//FluidCloth scene("FluidCloth");
 	scene.init(&tp, &tempParams);
 	system.initialize(tp, tempParams);
@@ -172,12 +174,12 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	void* diffuseVelPtr;
 	cudaCheck(cudaGraphicsMapResources(3, render.resources));
 	size_t size;
-	cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resources[0]);
-	cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]);
-	cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]);
+	cudaCheck(cudaGraphicsResourceGetMappedPointer(&positionsPtr, &size, render.resources[0]));
+	cudaCheck(cudaGraphicsResourceGetMappedPointer(&diffusePosPtr, &size, render.resources[1]));
+	cudaCheck(cudaGraphicsResourceGetMappedPointer(&diffuseVelPtr, &size, render.resources[2]));
 	system.getPositions((float*)positionsPtr, tempParams.numParticles);
 	system.getDiffuse((float*)diffusePosPtr, (float*)diffuseVelPtr, tempParams.numDiffuse);
-	cudaGraphicsUnmapResources(3, render.resources, 0);
+	cudaCheck(cudaGraphicsUnmapResources(3, render.resources, 0));
 
 	//Render
 	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam);

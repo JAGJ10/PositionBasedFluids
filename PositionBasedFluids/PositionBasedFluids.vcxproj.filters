@@ -56,6 +56,15 @@
     <Filter Include="src\Scene">
       <UniqueIdentifier>{d9045f5a-e7cf-4fdd-b21c-394ee2da3b3b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\shadow">
+      <UniqueIdentifier>{fe03ac90-bf4e-4534-a146-992dfb55cf5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\gbuffer">
+      <UniqueIdentifier>{4cbb1056-aadf-4520-bdde-ef552e7d98c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\ubershader">
+      <UniqueIdentifier>{58ee42ef-5a30-41fb-bf33-c0d04e21ee51}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -81,6 +90,15 @@
     </ClCompile>
     <ClCompile Include="FluidBuffer.cpp">
       <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMap.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="GBuffer.cpp">
+      <Filter>src\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="tiny_obj_loader.cc">
+      <Filter>src\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,6 +146,15 @@
     </ClInclude>
     <ClInclude Include="FluidBuffer.h">
       <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMap.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="GBuffer.h">
+      <Filter>src\rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_obj_loader.h">
+      <Filter>src\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -196,6 +223,24 @@
     </None>
     <None Include="ParticleSystem.cuh">
       <Filter>src\physics</Filter>
+    </None>
+    <None Include="shadow.vert">
+      <Filter>shaders\shadow</Filter>
+    </None>
+    <None Include="empty.frag">
+      <Filter>shaders\shadow</Filter>
+    </None>
+    <None Include="gbuffer.frag">
+      <Filter>shaders\gbuffer</Filter>
+    </None>
+    <None Include="gbuffer.vert">
+      <Filter>shaders\gbuffer</Filter>
+    </None>
+    <None Include="ubershader.frag">
+      <Filter>shaders\ubershader</Filter>
+    </None>
+    <None Include="ubershader.vert">
+      <Filter>shaders\ubershader</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

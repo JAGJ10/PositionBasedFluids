@@ -3,21 +3,27 @@
 
 using namespace std;
 
-static const float zFar = 200.0f;
+static const float zFar = 2000.0f;
 static const float zNear = 5.0f;
 static const glm::vec4 color = glm::vec4(.275f, 0.65f, 0.85f, 0.9f);
 static const float filterRadius = 3;
 static const float radius = 0.05f;
 static const float clothRadius = 0.03f;
 static const float foamRadius = 0.01f;
+static const glm::vec4 lightDir = glm::vec4(1, 1, 1, 0);
 
 Renderer::Renderer(int width, int height) :
 	width(width),
 	height(height),
 	aspectRatio((float)width / (float)height),
 	screenSize(glm::vec2(width, height)),
+	gBuffer(GBuffer(width, height)),
 	fluidBuffer(FluidBuffer(width, height)),
+	dLightShadow(ShadowMap(width, height)),
 	plane(Shader("plane.vert", "plane.frag")),
+	geometry(Shader("gbuffer.vert", "gbuffer.frag")),
+	finalPass(Shader("ubershader.vert", "ubershader.frag")),
+	shadow(Shader("shadow.vert", "empty.frag")),
 	cloth(Shader("clothMesh.vert", "clothMesh.frag")),
 	depth(Shader("depth.vert", "depth.frag")),
 	blur(Shader("blur.vert", "blur.frag")),
@@ -30,6 +36,9 @@ Renderer::Renderer(int width, int height) :
 	finalFS(Shader("final.vert", "final.frag")),
 	fsQuad(FullscreenQuad())
 {
+	dLightMView = glm::lookAt(glm::vec3(15.0f, 15.0f, 0.0f), glm::vec3(0), glm::vec3(0, 1, 0));
+	dLightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, zNear, zFar);
+
 	blurDirX = glm::vec2(1.0f / screenSize.x, 0.0f);
 	blurDirY = glm::vec2(0.0f, 1.0f / screenSize.y);
 
@@ -80,7 +89,7 @@ Renderer::Renderer(int width, int height) :
 }
 
 Renderer::~Renderer() {
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	cudaGraphicsUnregisterResource(resources[0]);
 	cudaGraphicsUnregisterResource(resources[1]);
 	cudaGraphicsUnregisterResource(resources[2]);
@@ -90,6 +99,10 @@ Renderer::~Renderer() {
 	glDeleteBuffers(1, &positionVBO);
 	glDeleteBuffers(1, &diffusePosVBO);
 	glDeleteBuffers(1, &diffuseVelVBO);
+}
+
+void Renderer::setMeshes(const std::vector<Mesh> &meshes) {
+	this->meshes = meshes;
 }
 
 void Renderer::initVBOS(int numParticles, int numDiffuse, int numCloth, vector<int> triangles) {
@@ -130,11 +143,12 @@ void Renderer::initVBOS(int numParticles, int numDiffuse, int numCloth, vector<i
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	cudaGraphicsGLRegisterBuffer(&resources[2], diffuseVelVBO, cudaGraphicsRegisterFlagsWriteDiscard);
-
-	glGenBuffers(1, &indicesVBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * triangles.size(), &triangles[0], GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	if (numCloth != 0) {
+		glGenBuffers(1, &indicesVBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesVBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)* triangles.size(), &triangles[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
 
 	glBindVertexArray(0);
 }
@@ -142,19 +156,28 @@ void Renderer::initVBOS(int numParticles, int numDiffuse, int numCloth, vector<i
 void Renderer::run(int numParticles, int numDiffuse, int numCloth, vector<int> triangles, Camera &cam) {
 	//Set camera
 	mView = cam.getMView();
-	normalMatrix = glm::inverseTranspose(mView);
+	normalMatrix = glm::mat3(glm::inverseTranspose(mView));
 	projection = glm::perspective(cam.zoom, aspectRatio, zNear, zFar);
 	//glm::mat4 projection = glm::infinitePerspective(cam.zoom, aspectRatio, zNear);
-
+	//Clear buffer
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	//----------------------Infinite Plane---------------------
 	renderPlane(planeBuf);
+
+	//Render geometry to gBuffer
+	geometryPass();
+
+	compositePass();
+	//return;
+	//--------------------SHADOWS-----------------------
+	//shadowPass(cam, numParticles);
 	fluidBuffer.bindDraw();
 	//--------------------CLOTH-------------------------
 	//renderCloth(projection, mView, cam, numCloth, triangles);
 
 	//--------------------WATER-------------------------
 	renderWater(projection, mView, cam, numParticles - numCloth, numCloth);
-
+	return;
 	//--------------------FOAM--------------------------
 	//renderFoam(projection, mView, cam, numDiffuse);
 
@@ -201,6 +224,83 @@ void Renderer::renderPlane(buffers &buf) {
 	
 	glBindVertexArray(buf.vao);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void Renderer::geometryPass() {
+	glUseProgram(geometry.program);
+	gBuffer.bindDraw();
+	gBuffer.setDrawBuffers();
+
+	geometry.setUniformmat4("mView", mView);
+	geometry.setUniformmat4("projection", projection);
+	geometry.setUniformmat3("mNormal", normalMatrix);
+
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	for (auto &i : meshes) {
+		geometry.setUniformv3f("diffuse", glm::vec3(0.5f));
+		geometry.setUniformf("specular", 0.0f);
+		i.render();
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+}
+
+void Renderer::compositePass() {
+	//Composition pass (directional light + light buffer)
+	glUseProgram(finalPass.program);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	finalPass.setUniformmat4("inverseMView", glm::inverse(mView));
+	finalPass.setUniformv3f("l", glm::vec3(mView * lightDir));
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.position);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.normal);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, gBuffer.color);
+
+	finalPass.setUniformi("positionMap", 0);
+	finalPass.setUniformi("normalMap", 1);
+	finalPass.setUniformi("colorMap", 2);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	fsQuad.render();
+}
+
+void Renderer::shadowPass(Camera &cam, int numParticles) {
+	//glViewport(0, 0, 2048, 2048);
+	glUseProgram(depth.program);
+	dLightShadow.bindDraw();
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	depth.setUniformmat4("projection", dLightProjection);
+	depth.setUniformmat4("mView", dLightMView);
+	depth.setUniformf("pointRadius", radius);
+	depth.setUniformf("pointScale", width / aspectRatio * (1.0f / tanf(cam.zoom * 0.5f)));
+
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glBindVertexArray(positionVAO);
+	glDrawArrays(GL_POINTS, 0, (GLsizei)numParticles);
+
+	glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	dLightShadow.unbindDraw();
+	//glViewport(0, 0, width, height);
 }
 
 void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth) {
@@ -282,23 +382,31 @@ void Renderer::renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam,
 
 	//--------------------Particle fluidFinal-------------------------
 	glUseProgram(fluidFinal.program);
-	fluidBuffer.setDrawFluid();
-
+	//fluidBuffer.setDrawFluid();
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fluidBuffer.blurH);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, fluidBuffer.thickness);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, planeBuf.tex);
+	//glActiveTexture(GL_TEXTURE3);
+	//glBindTexture(GL_TEXTURE_2D, dLightShadow.depth);
 
 	fluidFinal.setUniformi("depthMap", 0);
 	fluidFinal.setUniformi("thicknessMap", 1);
 	fluidFinal.setUniformi("sceneMap", 2);
+	//fluidFinal.setUniformi("shadowMap", 3);
 
 	fluidFinal.setUniformmat4("projection", projection);
+	fluidFinal.setUniformmat4("inverseProjection", glm::inverse(projection));
 	fluidFinal.setUniformmat4("mView", mView);
+	fluidFinal.setUniformmat4("inverseMView", glm::inverse(mView));
 	fluidFinal.setUniformv4f("color", color);
 	fluidFinal.setUniformv2f("invTexScale", glm::vec2(1.0f / width, 1.0f / height));
+	fluidFinal.setUniformmat4("shadowMapMVP", dLightProjection * dLightMView);
+	fluidFinal.setUniformi("shadowMapWidth", 2048);
+	fluidFinal.setUniformi("shadowMapHeight", 2048);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 

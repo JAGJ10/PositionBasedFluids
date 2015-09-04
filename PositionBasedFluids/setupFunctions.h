@@ -3,6 +3,8 @@
 
 #include "common.h"
 #include "parameters.h"
+#include "Mesh.h"
+#include "tiny_obj_loader.h"
 
 void createParticleGrid(tempSolver* s, solverParams* sp, float3 lower, int3 dims, float radius) {
 	for (int x = 0; x < dims.x; x++) {
@@ -15,6 +17,47 @@ void createParticleGrid(tempSolver* s, solverParams* sp, float3 lower, int3 dims
 			}
 		}
 	}
+}
+
+void createParticleShape(std::string sdfFile, tempSolver* s, float3 lower, bool rigid) {
+	std::ifstream infile(sdfFile);
+	if (!infile) {
+		std::cerr << "Unable to open file: " << sdfFile;
+		exit(-1);
+	}
+
+	float3 dims, origin, nOrigin = make_float3(0);
+	std::string dimsString, originString, cellSizeString;
+	std::getline(infile, dimsString);
+	std::stringstream data(dimsString);
+	data >> dims.x >> dims.y >> dims.z;
+	std::getline(infile, originString);
+	data = std::stringstream(originString);
+	data >> origin.x >> origin.y >> origin.z;
+	nOrigin.y = origin.y*cosf(-90.0f) - origin.z*sinf(-90.0f);
+	nOrigin.z = origin.y*sinf(-90.0f) + origin.z*cosf(-90.0f);
+	nOrigin.x = origin.x;
+	std::getline(infile, cellSizeString);
+	float value;
+	int count = 0;
+	while (infile >> value) {
+		if (value < 0) {
+			float z = count / (int(dims.y) * int(dims.x));
+			float y = count % (int(dims.y) * int(dims.x)) / (int(dims.x));
+			float x = count % int(dims.x);
+			float3 pos = make_float3(x, y, z) * 0.1f;
+			float3 nPos = make_float3(0);
+			nPos.y = pos.y*cosf(-90.0f) - pos.z*sinf(-90.0f);
+			nPos.z = -1 * (pos.y*sinf(-90.0f) + pos.z*cosf(-90.0f));
+			nPos.x = pos.x;
+			s->positions.push_back(make_float4(lower + nPos + nOrigin, 1.0f));
+			s->velocities.push_back(make_float3(0));
+			s->phases.push_back(0);
+		}
+		count++;
+	}
+
+	infile.close();
 }
 
 int getIndex(int x, int y, int dx) {
@@ -93,4 +136,68 @@ void createCloth(tempSolver* s, solverParams* sp, float3 lower, int3 dims, float
 		}
 	}
 }
+
+std::pair<std::vector<tinyobj::shape_t>, std::vector<tinyobj::material_t>> read(std::istream& stream) {
+	assert(sizeof(float) == sizeof(int));
+	const auto sz = sizeof(int);
+
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+
+	int nMeshes = 0;
+	int nMatProperties = 0;
+	stream.read((char*)&nMeshes, sz);
+	stream.read((char*)&nMatProperties, sz);
+	shapes.resize(nMeshes);
+	materials.resize(nMeshes);
+
+	for (size_t i = 0; i < nMeshes; ++i) {
+		int nVertices = 0, nNormals = 0, nTexcoords = 0, nIndices = 0;
+		stream.read((char*)&nVertices, sz);
+		stream.read((char*)&nNormals, sz);
+		stream.read((char*)&nTexcoords, sz);
+		stream.read((char*)&nIndices, sz);
+
+		shapes[i].mesh.positions.resize(nVertices);
+		shapes[i].mesh.normals.resize(nNormals);
+		shapes[i].mesh.texcoords.resize(nTexcoords);
+		shapes[i].mesh.indices.resize(nIndices);
+
+		stream.read((char*)&shapes[i].mesh.positions[0], nVertices * sz);
+		if (nNormals > 0) stream.read((char*)&shapes[i].mesh.normals[0], nNormals * sz);
+		if (nTexcoords > 0) stream.read((char*)&shapes[i].mesh.texcoords[0], nTexcoords * sz);
+		stream.read((char*)&shapes[i].mesh.indices[0], nIndices * sz);
+		if (materials.size()) {
+			stream.read((char*)&materials[i].ambient[0], 3 * sz);
+			stream.read((char*)&materials[i].diffuse[0], 3 * sz);
+			stream.read((char*)&materials[i].specular[0], 3 * sz);
+		}
+	}
+
+	std::pair<std::vector<tinyobj::shape_t>, std::vector<tinyobj::material_t>> ret(shapes, materials);
+
+	return ret;
+}
+
+void loadMeshes(std::string meshFile, std::vector<Mesh> &meshes) {
+	std::ifstream infile(meshFile, std::ifstream::binary);
+	if (!infile) {
+		std::cerr << "Unable to open file: " << meshFile;
+		exit(-1);
+	}
+
+	std::pair<std::vector<tinyobj::shape_t>, std::vector<tinyobj::material_t>> sm = read(infile);
+
+	meshes.clear();
+	meshes.resize(sm.first.size());
+
+	for (int i = 0; i < sm.first.size(); i++) {
+		meshes[i].create();
+		meshes[i].updateBuffers(sm.first[i].mesh.positions, sm.first[i].mesh.indices, sm.first[i].mesh.normals);
+		meshes[i].ambient = glm::vec3(sm.second[i].ambient[0], sm.second[i].ambient[1], sm.second[i].ambient[2]);
+		meshes[i].diffuse = glm::vec3(sm.second[i].diffuse[0], sm.second[i].diffuse[1], sm.second[i].diffuse[2]);
+		meshes[i].specular = sm.second[i].specular[0];
+	}
+}
+
 #endif

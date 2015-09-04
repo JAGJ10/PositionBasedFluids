@@ -174,6 +174,7 @@
   <ItemGroup>
     <ClCompile Include="FullscreenQuad.cpp" />
     <ClCompile Include="FluidBuffer.cpp" />
+    <ClCompile Include="GBuffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="ParticleSystem.cpp">
@@ -181,6 +182,8 @@
     </ClCompile>
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShadowMap.cpp" />
+    <ClCompile Include="tiny_obj_loader.cc" />
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +191,7 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="FullscreenQuad.h" />
     <ClInclude Include="FluidBuffer.h" />
+    <ClInclude Include="GBuffer.h" />
     <ClInclude Include="helper_math.h" />
     <ClInclude Include="FoamParticle.hpp" />
     <ClInclude Include="Mesh.h" />
@@ -195,13 +199,20 @@
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShadowMap.h" />
+    <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="VBO.h" />
     <None Include="clothMesh.frag" />
     <None Include="clothMesh.vert" />
+    <None Include="empty.frag" />
+    <None Include="gbuffer.frag" />
+    <None Include="gbuffer.vert" />
     <None Include="ParticleSystem.cuh" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="setupFunctions.h" />
+    <None Include="ubershader.frag" />
+    <None Include="ubershader.vert" />
   </ItemGroup>
   <ItemGroup>
     <None Include="blur.frag" />
@@ -222,6 +233,7 @@
     <None Include="plane.vert" />
     <None Include="radiance.frag" />
     <None Include="radiance.vert" />
+    <None Include="shadow.vert" />
     <None Include="thickness.frag" />
   </ItemGroup>
   <ItemGroup>
