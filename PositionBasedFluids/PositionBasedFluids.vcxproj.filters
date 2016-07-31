@@ -65,6 +65,9 @@
     <Filter Include="shaders\ubershader">
       <UniqueIdentifier>{58ee42ef-5a30-41fb-bf33-c0d04e21ee51}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\particles">
+      <UniqueIdentifier>{8eef627b-9425-47d1-ac16-eebe19bcaeca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -156,6 +159,9 @@
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>src\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="voxelizer.h">
+      <Filter>src\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="depth.vert">
@@ -241,6 +247,12 @@
     </None>
     <None Include="ubershader.vert">
       <Filter>shaders\ubershader</Filter>
+    </None>
+    <None Include="particle.frag">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="particle.vert">
+      <Filter>shaders\particles</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

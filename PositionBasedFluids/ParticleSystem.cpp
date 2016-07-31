@@ -15,6 +15,8 @@ ParticleSystem::~ParticleSystem() {
 	cudaCheck(cudaFree(s->newPos));
 	cudaCheck(cudaFree(s->velocities));
 	cudaCheck(cudaFree(s->densities));
+	cudaCheck(cudaFree(s->normals));
+	cudaCheck(cudaFree(s->boundaryPsi));
 	cudaCheck(cudaFree(s->phases));
 	cudaCheck(cudaFree(s->diffusePos));
 	cudaCheck(cudaFree(s->diffuseVelocities));
@@ -34,17 +36,15 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMalloc((void**)&s->oldPos, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMalloc((void**)&s->newPos, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMalloc((void**)&s->velocities, tempParams.numParticles * sizeof(float3)));
+	cudaCheck(cudaMalloc((void**)&s->normals, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMalloc((void**)&s->densities, tempParams.numParticles * sizeof(float)));
+	cudaCheck(cudaMalloc((void**)&s->boundaryPsi, tempParams.numParticles * sizeof(float)));
 	cudaCheck(cudaMalloc((void**)&s->phases, tempParams.numParticles * sizeof(int)));
+	
 	//Diffuse
 	cudaCheck(cudaMalloc((void**)&s->diffusePos, tempParams.numDiffuse * sizeof(float4)));
 	cudaCheck(cudaMalloc((void**)&s->diffuseVelocities, tempParams.numDiffuse * sizeof(float3)));
-	//Cloth
-	if (tempParams.numCloth != 0) {
-		cudaCheck(cudaMalloc((void**)&s->clothIndices, tempParams.numConstraints * 2 * sizeof(int)));
-		cudaCheck(cudaMalloc((void**)&s->restLengths, tempParams.numConstraints * sizeof(int)));
-		cudaCheck(cudaMalloc((void**)&s->stiffness, tempParams.numConstraints * sizeof(int)));
-	}
+
 	//Neighbor finding and buffers
 	cudaCheck(cudaMalloc((void**)&s->neighbors, tempParams.maxNeighbors * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMalloc((void**)&s->numNeighbors, tempParams.numParticles * sizeof(int)));
@@ -58,15 +58,13 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMemset(s->oldPos, 0, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMemset(s->newPos, 0, tempParams.numParticles * sizeof(float4)));
 	cudaCheck(cudaMemset(s->velocities, 0, tempParams.numParticles * sizeof(float3)));
+	cudaCheck(cudaMemset(s->normals, 0, tempParams.numParticles * sizeof(float3)));
 	cudaCheck(cudaMemset(s->densities, 0, tempParams.numParticles * sizeof(float)));
+	cudaCheck(cudaMemset(s->boundaryPsi, 0, tempParams.numParticles * sizeof(float)));
 	cudaCheck(cudaMemset(s->phases, 0, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->diffusePos, 0, tempParams.numDiffuse * sizeof(float4)));
 	cudaCheck(cudaMemset(s->diffuseVelocities, 0, tempParams.numDiffuse * sizeof(float3)));
-	if (tempParams.numCloth != 0) {
-		cudaCheck(cudaMemset(s->clothIndices, 0, tempParams.numConstraints * 2 * sizeof(int)));
-		cudaCheck(cudaMemset(s->restLengths, 0, tempParams.numConstraints * sizeof(int)));
-		cudaCheck(cudaMemset(s->stiffness, 0, tempParams.numConstraints * sizeof(int)));
-	}
+
 	cudaCheck(cudaMemset(s->neighbors, 0, tempParams.maxNeighbors * tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->numNeighbors, 0, tempParams.numParticles * sizeof(int)));
 	cudaCheck(cudaMemset(s->gridCells, 0, tempParams.maxParticles * tempParams.gridSize * sizeof(int)));
@@ -78,12 +76,9 @@ void ParticleSystem::initialize(tempSolver &tp, solverParams &tempParams) {
 	cudaCheck(cudaMemcpy(s->phases, &tp.phases[0], tempParams.numParticles * sizeof(int), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->diffusePos, &tp.diffusePos[0], tempParams.numDiffuse * sizeof(float4), cudaMemcpyHostToDevice));
 	cudaCheck(cudaMemcpy(s->diffuseVelocities, &tp.diffuseVelocities[0], tempParams.numDiffuse * sizeof(float3), cudaMemcpyHostToDevice));
-	if (tempParams.numCloth != 0) {
-		cudaCheck(cudaMemcpy(s->clothIndices, &tp.clothIndices[0], tempParams.numConstraints * 2 * sizeof(int), cudaMemcpyHostToDevice));
-		cudaCheck(cudaMemcpy(s->restLengths, &tp.restLengths[0], tempParams.numConstraints * sizeof(int), cudaMemcpyHostToDevice));
-		cudaCheck(cudaMemcpy(s->stiffness, &tp.stiffness[0], tempParams.numConstraints * sizeof(int), cudaMemcpyHostToDevice));
-	}
+
 	setParams(&tempParams);
+	initBoundaries(s);
 }
 
 void ParticleSystem::updateWrapper(solverParams &tempParams) {

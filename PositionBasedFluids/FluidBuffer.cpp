@@ -16,7 +16,7 @@ FluidBuffer::FluidBuffer(int width, int height) : width(width), height(height) {
 	glGenTextures(1, &foamThickness);
 	glGenTextures(1, &foamIntensity);
 	glGenTextures(1, &foamRadiance);
-
+	
 	//Cloth
 	glBindTexture(GL_TEXTURE_2D, cloth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -56,7 +56,7 @@ FluidBuffer::FluidBuffer(int width, int height) : width(width), height(height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+	
 	//Final Fluid
 	glBindTexture(GL_TEXTURE_2D, fluid);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -88,7 +88,7 @@ FluidBuffer::FluidBuffer(int width, int height) : width(width), height(height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+	
 	//Foam Radiance
 	glBindTexture(GL_TEXTURE_2D, foamRadiance);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -96,19 +96,19 @@ FluidBuffer::FluidBuffer(int width, int height) : width(width), height(height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+	
 	//Attach textures to FBO
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, cloth, 0);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, cloth, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, thickness, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, blurH, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, blurV, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, fluid, 0);
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, foamDepth, 0);
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_2D, foamThickness, 0);
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, GL_TEXTURE_2D, foamIntensity, 0);
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT8, GL_TEXTURE_2D, foamRadiance, 0);
-
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, foamDepth, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, foamThickness, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_2D, foamIntensity, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, GL_TEXTURE_2D, foamRadiance, 0);
+	
 	//Unbind
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -163,19 +163,19 @@ void FluidBuffer::setDrawFluid() {
 }
 
 void FluidBuffer::setDrawFoamDepth() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT5);
+	glDrawBuffer(GL_COLOR_ATTACHMENT4);
 }
 
 void FluidBuffer::setDrawFoamThickness() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT6);
+	glDrawBuffer(GL_COLOR_ATTACHMENT5);
 }
 
 void FluidBuffer::setDrawFoamIntensity() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT7);
+	glDrawBuffer(GL_COLOR_ATTACHMENT6);
 }
 
 void FluidBuffer::setDrawFoamRadiance() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT8);
+	glDrawBuffer(GL_COLOR_ATTACHMENT7);
 }
 
 void FluidBuffer::bind() {

@@ -5,6 +5,8 @@
 #include "parameters.h"
 #include "Mesh.h"
 #include "tiny_obj_loader.h"
+#define VOXELIZER_IMPLEMENTATION
+#include "voxelizer.h"
 
 void createParticleGrid(tempSolver* s, solverParams* sp, float3 lower, int3 dims, float radius) {
 	for (int x = 0; x < dims.x; x++) {
@@ -26,29 +28,38 @@ void createParticleShape(std::string sdfFile, tempSolver* s, float3 lower, bool 
 		exit(-1);
 	}
 
-	float3 dims, origin = make_float3(0);
-	std::string dimsString, originString, cellSizeString;
-	std::getline(infile, dimsString);
-	std::stringstream data(dimsString);
-	data >> dims.x >> dims.y >> dims.z;
-	std::getline(infile, originString);
-	data = std::stringstream(originString);
-	data >> origin.x >> origin.y >> origin.z;
-	std::getline(infile, cellSizeString);
-	float value;
-	int count = 0;
-	while (infile >> value) {
-		if (value < 0) {
-			float z = count / (int(dims.y) * int(dims.x));
-			float y = count % (int(dims.y) * int(dims.x)) / (int(dims.x));
-			float x = count % int(dims.x);
-			float3 pos = make_float3(x, y, z) * 0.1f;
-			s->positions.push_back(make_float4(lower + pos + origin, 1.0f));
-			s->velocities.push_back(make_float3(0));
-			s->phases.push_back(0);
-		}
-		count++;
+	//std::pair<std::vector<tinyobj::shape_t>, std::vector<tinyobj::material_t>> sm = read(infile);
+
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string err;
+	bool ret = tinyobj::LoadObj(shapes, materials, err, sdfFile.c_str());
+
+	vx_mesh_t* mesh;
+	vx_mesh_t* result;
+
+	mesh = vx_mesh_alloc(shapes[0].mesh.positions.size(), shapes[0].mesh.indices.size());
+
+	for (size_t f = 0; f < shapes[0].mesh.indices.size(); f++) {
+		mesh->indices[f] = shapes[0].mesh.indices[f];
 	}
+	for (size_t v = 0; v < shapes[0].mesh.positions.size() / 3; v++) {
+		mesh->vertices[v].x = shapes[0].mesh.positions[3 * v + 0];
+		mesh->vertices[v].y = shapes[0].mesh.positions[3 * v + 1];
+		mesh->vertices[v].z = shapes[0].mesh.positions[3 * v + 2];
+	}
+
+	std::cout << "before voxelize" << std::endl;
+	result = vx_voxelize(mesh, 0.05, 0.05, 0.05, 0.05);
+	std::cout << "after voxelize" << std::endl;
+	for (int i = 0; i < result->nvertices; i++) {
+		s->positions.push_back(make_float4(lower + make_float3(result->vertices[i].x, result->vertices[i].y, result->vertices[i].z), 1.0f));
+		s->velocities.push_back(make_float3(0));
+		s->phases.push_back(2);
+	}
+
+	vx_mesh_free(result);
+	vx_mesh_free(mesh);
 
 	infile.close();
 }
@@ -172,7 +183,7 @@ std::pair<std::vector<tinyobj::shape_t>, std::vector<tinyobj::material_t>> read(
 	return ret;
 }
 
-void loadMeshes(std::string meshFile, std::vector<Mesh> &meshes) {
+void loadMeshes(std::string meshFile, std::vector<Mesh> &meshes, float3 offset, float scale, int s) {
 	std::ifstream infile(meshFile, std::ifstream::binary);
 	if (!infile) {
 		std::cerr << "Unable to open file: " << meshFile;
@@ -181,16 +192,26 @@ void loadMeshes(std::string meshFile, std::vector<Mesh> &meshes) {
 
 	std::pair<std::vector<tinyobj::shape_t>, std::vector<tinyobj::material_t>> sm = read(infile);
 
-	meshes.clear();
-	meshes.resize(sm.first.size());
+	for (int i = 0; i < sm.first.size(); i++) {
+		for (int j = 0; j < sm.first[i].mesh.positions.size(); j+=3) {
+			sm.first[i].mesh.positions[j] *= scale;
+			sm.first[i].mesh.positions[j + 1] *= scale;
+			sm.first[i].mesh.positions[j + 2] *= scale;
+			sm.first[i].mesh.positions[j] += offset.x;
+			sm.first[i].mesh.positions[j+1] += offset.y;
+			sm.first[i].mesh.positions[j+2] += offset.z;
+		}
+	}
 
 	for (int i = 0; i < sm.first.size(); i++) {
-		meshes[i].create();
-		meshes[i].updateBuffers(sm.first[i].mesh.positions, sm.first[i].mesh.indices, sm.first[i].mesh.normals);
-		meshes[i].ambient = glm::vec3(sm.second[i].ambient[0], sm.second[i].ambient[1], sm.second[i].ambient[2]);
-		meshes[i].diffuse = glm::vec3(sm.second[i].diffuse[0], sm.second[i].diffuse[1], sm.second[i].diffuse[2]);
-		meshes[i].specular = sm.second[i].specular[0];
+		meshes[s].create();
+		meshes[s].updateBuffers(sm.first[i].mesh.positions, sm.first[i].mesh.indices, sm.first[i].mesh.normals);
+		meshes[s].ambient = glm::vec3(sm.second[i].ambient[0], sm.second[i].ambient[1], sm.second[i].ambient[2]);
+		meshes[s].diffuse = glm::vec3(sm.second[i].diffuse[0], sm.second[i].diffuse[1], sm.second[i].diffuse[2]);
+		meshes[s].specular = sm.second[i].specular[0];
 	}
+
+	infile.close();
 }
 
 #endif

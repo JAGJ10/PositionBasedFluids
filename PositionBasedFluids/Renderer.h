@@ -40,7 +40,7 @@ private:
 	float aspectRatio;
 	glm::vec2 screenSize, blurDirX, blurDirY;
 
-	buffers planeBuf;
+	buffers scene;
 	GBuffer gBuffer;
 	FluidBuffer fluidBuffer;
 	ShadowMap dLightShadow;
@@ -53,6 +53,7 @@ private:
 	Shader finalPass;
 	Shader shadow;
 	Shader cloth;
+	Shader particles;
 	Shader depth;
 	Shader blur;
 	Shader thickness;
@@ -68,8 +69,9 @@ private:
 	void geometryPass();
 	void compositePass();
 	void shadowPass(Camera &cam, int numParticles);
-	void renderWater(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
-	void renderFoam(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numDiffuse);
+	void renderParticles(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
+	void renderWater(Camera &cam, int numParticles, int numCloth);
+	void renderFoam(Camera &cam, int numDiffuse);
 	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
 	void initFramebuffers();
 };

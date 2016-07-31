@@ -85,7 +85,7 @@ GBuffer::GBuffer(int width, int height) : width(width), height(height) {
 	}
 
 	glDrawBuffers(3, drawBuffers);
-
+	
 	//Unbind
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

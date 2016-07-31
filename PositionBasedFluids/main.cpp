@@ -68,7 +68,7 @@ int main() {
 	solverParams tempParams;
 	initializeState(system, tp, tempParams);
 	render.setMeshes(tp.meshes);
-	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles);
+	render.initVBOS(tempParams.numParticles, tempParams.numDiffuse, tempParams.fluidOffset, tp.triangles);
 
 	while (!glfwWindowShouldClose(window)) {
 		//Set frame times
@@ -182,5 +182,5 @@ void mainUpdate(ParticleSystem &system, Renderer &render, Camera &cam, tempSolve
 	cudaCheck(cudaGraphicsUnmapResources(3, render.resources, 0));
 
 	//Render
-	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.numCloth, tp.triangles, cam);
+	render.run(tempParams.numParticles, tempParams.numDiffuse, tempParams.fluidOffset, tp.triangles, cam);
 }

@@ -7,6 +7,7 @@
 struct tempSolver {
 	std::vector<float4> positions;
 	std::vector<float3> velocities;
+	std::vector<float> boundaryPsi;
 	std::vector<int> phases;
 
 	std::vector<float4> diffusePos;
@@ -24,8 +25,10 @@ struct solver {
 	float4* oldPos;
 	float4* newPos;
 	float3* velocities;
-	int* phases;
+	float3* normals;
 	float* densities;
+	float* boundaryPsi;
+	int* phases;
 
 	float4* diffusePos;
 	float3* diffuseVelocities;
@@ -54,11 +57,9 @@ public:
 	int gridWidth, gridHeight, gridDepth;
 	int gridSize;
 
+	int fluidOffset;
 	int numParticles;
 	int numDiffuse;
-
-	int numCloth;
-	int numConstraints;
 
 	float3 gravity;
 	float3 bounds;
@@ -66,11 +67,14 @@ public:
 	int numIterations;
 	float radius;
 	float restDistance;
+	float samplingDensity;
+	float surfaceTension;
 	//float sor;
 	//float vorticity;
 
 	float KPOLY;
 	float SPIKY;
+	float tension;
 	float restDensity;
 	float lambdaEps;
 	float vorticityEps;

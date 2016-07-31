@@ -1,7 +1,7 @@
-#version 420 core
+#version 450 core
 
-in vec3 fragPos;
-in vec3 fragNormal;
+layout(location = 0) in vec3 fragPos;
+layout(location = 1) in vec3 fragNormal;
 
 uniform vec3 diffuse;
 uniform float specular;
