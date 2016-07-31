@@ -72,7 +72,6 @@ private:
 	void renderParticles(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numParticles, int numCloth);
 	void renderWater(Camera &cam, int numParticles, int numCloth);
 	void renderFoam(Camera &cam, int numDiffuse);
-	void renderCloth(glm::mat4 &projection, glm::mat4 &mView, Camera &cam, int numCloth, std::vector<int> triangles);
 	void initFramebuffers();
 };
 

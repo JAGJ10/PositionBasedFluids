@@ -15,7 +15,6 @@ public:
 	int getHeight() const;
 
 	void setDrawPlane();
-	void setDrawCloth();
 	void setDrawDepth();
 	void setDrawThickness();
 	void setDrawHorizontalBlur();

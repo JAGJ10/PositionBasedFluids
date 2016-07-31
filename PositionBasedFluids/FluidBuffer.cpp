@@ -16,14 +16,6 @@ FluidBuffer::FluidBuffer(int width, int height) : width(width), height(height) {
 	glGenTextures(1, &foamThickness);
 	glGenTextures(1, &foamIntensity);
 	glGenTextures(1, &foamRadiance);
-	
-	//Cloth
-	glBindTexture(GL_TEXTURE_2D, cloth);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	//Depth
 	glBindTexture(GL_TEXTURE_2D, depth);
@@ -98,7 +90,6 @@ FluidBuffer::FluidBuffer(int width, int height) : width(width), height(height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
 	//Attach textures to FBO
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, cloth, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, thickness, 0);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, blurH, 0);
@@ -135,10 +126,6 @@ int FluidBuffer::getWidth() const {
 
 int FluidBuffer::getHeight() const {
 	return height;
-}
-
-void FluidBuffer::setDrawCloth() {
-	glDrawBuffer(GL_COLOR_ATTACHMENT4);
 }
 
 void FluidBuffer::setDrawDepth() {
